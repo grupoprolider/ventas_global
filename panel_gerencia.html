@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Gerencial - Grupo ProLíder</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --gpl-petroleo: #0a3a46;
+            --gpl-dorado: #c5a059;
+            --gpl-borravino: #72224c;
+            --fondo-oscuro: #121a1f;
+            --celda-oscura: #1e2933;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--fondo-oscuro);
+            margin: 0;
+            padding: 15px;
+            color: white;
+            padding-bottom: 40px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* HEADER GERENCIAL */
+        .header-gerencia {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            border-top: 5px solid var(--gpl-dorado);
+            margin-bottom: 20px;
+            position: relative;
+            text-align: center;
+        }
+
+        .btn-logout {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: #c0392b;
+            text-decoration: none;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            background: rgba(192, 57, 43, 0.1);
+            padding: 5px 10px;
+            border-radius: 8px;
+            transition: 0.2s;
+        }
+
+        .btn-logout:hover {
+            background: rgba(192, 57, 43, 0.2);
+        }
+
+        .badge-rol {
+            background: #2ecc71;
+            color: black;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+            display: inline-block;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        h2 {
+            margin: 0;
+            color: white;
+            font-size: 20px;
+            text-transform: uppercase;
+            font-weight: 900;
+        }
+
+        #txtCampana {
+            color: var(--gpl-dorado);
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        /* TABLERO DE COMANDO (KPIs) */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        @media(max-width: 600px) {
+            .kpi-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .kpi-box {
+            background: var(--celda-oscura);
+            padding: 20px 10px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid #333;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .kpi-box span {
+            display: block;
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #aaa;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .kpi-box strong {
+            font-size: 28px;
+            color: white;
+            display: block;
+        }
+
+        .kpi-destacado {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.1) 0%, rgba(39, 174, 96, 0.2) 100%);
+            border: 1px solid #2ecc71;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 25px 30px;
+        }
+
+        .kpi-destacado div {
+            text-align: left;
+        }
+
+        .kpi-destacado span {
+            color: #2ecc71;
+            font-size: 13px;
+        }
+
+        .kpi-destacado strong {
+            font-size: 36px;
+            color: white;
+            font-family: monospace;
+        }
+
+        /* GRAFICOS */
+        .charts-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        @media(max-width: 768px) {
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .chart-card h3 {
+            color: var(--gpl-petroleo);
+            margin: 0 0 15px 0;
+            font-size: 14px;
+            text-transform: uppercase;
+            text-align: center;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 250px;
+            width: 100%;
+        }
+
+        /* ACCORDION DESGLOSE */
+        .agencia-item {
+            border-bottom: 1px solid #eee;
+        }
+        .agencia-item:last-child {
+            border-bottom: none;
+        }
+        .agencia-header {
+            padding: 15px 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fff;
+            transition: 0.2s;
+        }
+        .agencia-header:hover {
+            background: #fdfdfd;
+        }
+        .ag-nombre {
+            font-weight: 900;
+            color: var(--gpl-petroleo);
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .ag-stats-row {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #555;
+        }
+        .ag-stats-row span {
+            background: #f0f2f5;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+        .agencia-body {
+            display: none;
+            padding: 15px 20px;
+            background: #fafafa;
+            border-top: 1px dashed #ddd;
+        }
+        .eq-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .eq-row:last-child {
+            border-bottom: none;
+        }
+        .eq-name {
+            font-weight: bold;
+            color: #333;
+            font-size: 13px;
+        }
+        .eq-lider {
+            font-size: 10px;
+            color: #888;
+        }
+        .eq-metrics {
+            display: flex;
+            gap: 10px;
+            font-size: 12px;
+            text-align: right;
+        }
+        .eq-metrics div {
+            min-width: 50px;
+        }
+        .eq-metrics strong {
+            display: block;
+            color: var(--gpl-petroleo);
+        }
+
+        /* BOTONES ACCION */
+        .botones-accion {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        @media(max-width: 600px) {
+            .botones-accion {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .btn-accion {
+            width: 100%;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 900;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-excel {
+            background: #27ae60;
+            color: white;
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.4);
+        }
+
+        .btn-ranking {
+            background: linear-gradient(135deg, var(--gpl-dorado) 0%, #a68444 100%);
+            color: black;
+            box-shadow: 0 4px 15px rgba(197, 160, 89, 0.4);
+        }
+
+        .btn-accion:active {
+            transform: translateY(3px);
+            box-shadow: none;
+        }
+
+        /* MODAL RANKING */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: var(--fondo-oscuro);
+            width: 95%;
+            max-width: 1400px;
+            height: 90vh;
+            border-radius: 15px;
+            border: 2px solid var(--gpl-dorado);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-header {
+            background: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 5px solid var(--gpl-dorado);
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: var(--gpl-petroleo);
+            font-size: 18px;
+            text-transform: uppercase;
+            font-weight: 900;
+        }
+
+        .btn-cerrar {
+            background: #c0392b;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+
+        .iframe-ranking {
+            flex-grow: 1;
+            border: none;
+            width: 100%;
+            height: 100%;
+            background: var(--fondo-oscuro);
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top:0; left:0; width:100%; height:100%;
+            background: var(--fondo-oscuro);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: var(--gpl-dorado);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="loading" class="loading-overlay">
+        <i class="fa-solid fa-circle-notch fa-spin fa-3x" style="margin-bottom: 20px;"></i>
+        <h2 style="color:white;">Procesando Datos de la Empresa...</h2>
+    </div>
+
+    <div class="container" style="display:none;" id="mainContainer">
+
+        <div class="header-gerencia">
+            <a href="index.html" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Salir</a>
+            <img src="LOGO-gpl.png" alt="GPL" style="max-width: 140px; margin-bottom: 10px;">
+            <br>
+            <span class="badge-rol" style="margin-bottom: 5px;"><i class="fa-solid fa-eye"></i> Visión Gerencial</span>
+            <h2 style="color: var(--gpl-petroleo); margin: 0; font-size: 20px; text-transform: uppercase; font-weight: 900; padding: 0;">Dashboard Corporativo</h2>
+            <div id="txtCampana" style="background: var(--gpl-dorado); color: black; padding: 4px 15px; border-radius: 20px; font-size: 11px; font-weight: 900; text-transform: uppercase; display: inline-block; margin-top: 8px; letter-spacing: 0.5px;">Cargando campaña...</div>
+        </div>
+
+        <div class="kpi-grid">
+            <div class="kpi-box">
+                <span>Ventas Brutas</span>
+                <strong id="kpiBrutas">0</strong>
+            </div>
+            <div class="kpi-box" style="border-color: rgba(231,76,60,0.3);">
+                <span style="color:#e74c3c;">Bajas</span>
+                <strong id="kpiBajas" style="color:#e74c3c;">0</strong>
+            </div>
+            <div class="kpi-box" style="border-color: var(--gpl-dorado);">
+                <span style="color:var(--gpl-dorado);">Ventas Netas</span>
+                <strong id="kpiNetas" style="color:var(--gpl-dorado);">0</strong>
+            </div>
+            <div class="kpi-box" style="border-color: #3498db;">
+                <span style="color:#3498db;">Objetivo Global</span>
+                <strong id="kpiObj" style="color:#3498db;">0</strong>
+            </div>
+            
+            <div class="kpi-box kpi-destacado">
+                <div>
+                    <span><i class="fa-solid fa-money-bill-trend-up"></i> Facturación Total Ingresada</span>
+                </div>
+                <strong id="kpiMonto">$0</strong>
+            </div>
+        </div>
+
+        <div class="charts-container">
+            <div class="chart-card">
+                <h3>Ventas Netas por Agencia</h3>
+                <div class="chart-wrapper">
+                    <canvas id="chartAgencias"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3>Proporción Brutas vs Bajas</h3>
+                <div class="chart-wrapper">
+                    <canvas id="chartBajas"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-equipos" style="margin-bottom: 25px; background: white; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+            <h3 style="color: var(--gpl-petroleo); margin: 0; padding: 15px 20px; font-size: 14px; text-transform: uppercase; border-bottom: 2px solid #eee; background: #f8f9fa; border-radius: 15px 15px 0 0;">
+                <i class="fa-solid fa-sitemap"></i> Desglose de Desempeño por Agencia y Equipo
+            </h3>
+            <ul id="listaDesgloseAgencias" style="list-style:none; padding:0; margin:0; color: #333;">
+                <!-- Accordions here -->
+            </ul>
+        </div>
+
+        <div class="botones-accion">
+            <button class="btn-accion btn-ranking" onclick="abrirRanking()">
+                <i class="fa-solid fa-trophy"></i> Ver Ranking Completo
+            </button>
+            <button class="btn-accion btn-excel" onclick="descargarExcelGerencial()">
+                <i class="fa-solid fa-file-excel"></i> Descargar Reporte Base de Datos
+            </button>
+        </div>
+
+    </div>
+
+    <div id="modalRanking" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Rankings GPL - Seguimiento de Metas</h3> <button class="btn-cerrar" onclick="cerrarRanking()">CERRAR ✖</button>
+            </div>
+            <iframe id="iframeRanking" class="iframe-ranking" src=""></iframe>
+        </div>
+    </div>
+
+    <script>
+        const clienteSupabase = supabase.createClient('https://pumpwqyazqaxeeknrhyo.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1bXB3cXlhenFheGVla25yaHlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MjQ4ODEsImV4cCI6MjA5NDIwMDg4MX0.-AQZZYAt-uskDLUpbiafJXbHgW0lErf8bwEnk7eq1DE');
+
+        window.datosGlobalesExcel = null;
+
+        function formatearPlata(num) {
+            return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(num || 0);
+        }
+
+        function abrirRanking() {
+            document.getElementById('iframeRanking').src = 'ranking_vendedores.html?mode=gerente';
+            document.getElementById('modalRanking').style.display = 'flex';
+        }
+
+        function cerrarRanking() {
+            document.getElementById('modalRanking').style.display = 'none';
+            document.getElementById('iframeRanking').src = '';
+        }
+
+        function toggleAgencia(id) {
+            const body = document.getElementById(`body_${id}`);
+            const icon = document.getElementById(`icon_${id}`);
+            if (body.style.display === 'block') {
+                body.style.display = 'none';
+                icon.classList.remove('fa-minus-circle');
+                icon.classList.add('fa-plus-circle');
+            } else {
+                body.style.display = 'block';
+                icon.classList.remove('fa-plus-circle');
+                icon.classList.add('fa-minus-circle');
+            }
+        }
+
+        async function inicializarDashboard() {
+            try {
+                const hoy = new Date();
+                const campanaStr = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
+                document.getElementById('txtCampana').textContent = campanaStr;
+
+                // 1. Obtener todos los datos necesarios
+                const [resVentas, resPerfiles, resEquipos, resAgencias] = await Promise.all([
+                    clienteSupabase.from('registro_ventas').select('*').eq('campana', campanaStr).eq('es_anulada', false),
+                    clienteSupabase.from('perfiles').select('*'),
+                    clienteSupabase.from('equipos').select('*'),
+                    clienteSupabase.from('agencias').select('*')
+                ]);
+
+                const ventas = resVentas.data || [];
+                const perfiles = resPerfiles.data || [];
+                const equipos = resEquipos.data || [];
+                const agencias = resAgencias.data || [];
+
+                window.datosGlobalesExcel = { ventas, perfiles, equipos, agencias, campanaStr };
+
+                // 2. Procesar KPIs globales
+                let totalBrutas = 0, totalBajas = 0, totalMonto = 0, totalObjetivo = 0;
+                
+                perfiles.forEach(p => {
+                    totalObjetivo += (p.objetivo_campana || 0);
+                });
+
+                ventas.forEach(v => {
+                    totalBrutas += (v.ventas_cerradas || 0);
+                    totalBajas += (v.bajas || 0);
+                    totalMonto += (v.monto || 0);
+                });
+
+                let totalNetas = totalBrutas - totalBajas;
+
+                document.getElementById('kpiBrutas').textContent = totalBrutas;
+                document.getElementById('kpiBajas').textContent = totalBajas;
+                document.getElementById('kpiNetas').textContent = totalNetas;
+                document.getElementById('kpiMonto').textContent = formatearPlata(totalMonto);
+                document.getElementById('kpiObj').textContent = totalObjetivo;
+
+                // 3. Procesar datos para gráficos
+                // Gráfico 1: Agencias
+                let mapAgencias = {};
+                agencias.forEach(a => {
+                    mapAgencias[a.id] = { nombre: a.nombre, netas: 0, color: a.color_hex || '#c5a059' };
+                });
+
+                ventas.forEach(v => {
+                    let vendedor = perfiles.find(p => p.id === v.vendedor_id);
+                    if (vendedor) {
+                        let equipo = equipos.find(e => e.id === vendedor.equipo_id);
+                        if (equipo && mapAgencias[equipo.agencia_id]) {
+                            mapAgencias[equipo.agencia_id].netas += ((v.ventas_cerradas || 0) - (v.bajas || 0));
+                        }
+                    }
+                });
+
+                let labelsAgencias = [];
+                let dataAgencias = [];
+                let colorsAgencias = [];
+
+                Object.values(mapAgencias).sort((a,b) => b.netas - a.netas).forEach(ag => {
+                    if(ag.netas > 0) {
+                        labelsAgencias.push(ag.nombre);
+                        dataAgencias.push(ag.netas);
+                        colorsAgencias.push(ag.color);
+                    }
+                });
+
+                // Renderizar Gráfico de Agencias (Doughnut)
+                const ctxAgencias = document.getElementById('chartAgencias').getContext('2d');
+                new Chart(ctxAgencias, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labelsAgencias,
+                        datasets: [{
+                            data: dataAgencias,
+                            backgroundColor: colorsAgencias,
+                            borderWidth: 2,
+                            borderColor: '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } }
+                        }
+                    }
+                });
+
+                // Renderizar Gráfico Brutas vs Bajas (Pie)
+                const ctxBajas = document.getElementById('chartBajas').getContext('2d');
+                new Chart(ctxBajas, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Ventas Netas', 'Bajas'],
+                        datasets: [{
+                            data: [totalNetas, totalBajas],
+                            backgroundColor: ['#2ecc71', '#e74c3c'],
+                            borderWidth: 2,
+                            borderColor: '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom' }
+                        }
+                    }
+                });
+
+                // 4. Armar el Desglose de Agencias y Equipos
+                let mapAgenciasData = {};
+
+                agencias.forEach(a => {
+                    mapAgenciasData[a.id] = {
+                        id: a.id,
+                        nombre: a.nombre,
+                        netas: 0,
+                        objetivo: 0,
+                        entrevistas: 0,
+                        monto: 0,
+                        color: a.color_hex || 'var(--gpl-dorado)',
+                        equipos: {}
+                    };
+                });
+
+                equipos.forEach(eq => {
+                    if (mapAgenciasData[eq.agencia_id]) {
+                        let lider = perfiles.find(p => p.id === eq.lider_id)?.nombre || 'Sin Líder Asignado';
+                        mapAgenciasData[eq.agencia_id].equipos[eq.id] = {
+                            id: eq.id,
+                            nombre: eq.nombre,
+                            lider: lider,
+                            netas: 0,
+                            objetivo: 0,
+                            entrevistas: 0,
+                            monto: 0
+                        };
+                    }
+                });
+
+                // Sumar Objetivos
+                perfiles.forEach(p => {
+                    let obj = p.objetivo_campana || 0;
+                    if(p.equipo_id) {
+                        let eq = equipos.find(e => e.id === p.equipo_id);
+                        if(eq && mapAgenciasData[eq.agencia_id]) {
+                            mapAgenciasData[eq.agencia_id].objetivo += obj;
+                            if(mapAgenciasData[eq.agencia_id].equipos[eq.id]) {
+                                mapAgenciasData[eq.agencia_id].equipos[eq.id].objetivo += obj;
+                            }
+                        }
+                    }
+                });
+
+                // Sumar Ventas a los Equipos/Agencias
+                ventas.forEach(v => {
+                    let vendedor = perfiles.find(p => p.id === v.vendedor_id);
+                    if (vendedor) {
+                        let eq = equipos.find(e => e.id === vendedor.equipo_id);
+                        if (eq && mapAgenciasData[eq.agencia_id]) {
+                            let netas = (v.ventas_cerradas || 0) - (v.bajas || 0);
+                            let monto = v.monto || 0;
+                            let entrevistas = v.entrevistas || 0;
+                            
+                            mapAgenciasData[eq.agencia_id].netas += netas;
+                            mapAgenciasData[eq.agencia_id].monto += monto;
+                            mapAgenciasData[eq.agencia_id].entrevistas += entrevistas;
+                            
+                            if(mapAgenciasData[eq.agencia_id].equipos[eq.id]) {
+                                mapAgenciasData[eq.agencia_id].equipos[eq.id].netas += netas;
+                                mapAgenciasData[eq.agencia_id].equipos[eq.id].monto += monto;
+                                mapAgenciasData[eq.agencia_id].equipos[eq.id].entrevistas += entrevistas;
+                            }
+                        }
+                    }
+                });
+
+                // Renderizar HTML del Desglose
+                let agenciasArray = Object.values(mapAgenciasData).sort((a, b) => b.netas - a.netas);
+                let htmlDesglose = '';
+
+                agenciasArray.forEach(ag => {
+                    if (ag.objetivo === 0 && ag.netas === 0 && ag.entrevistas === 0) return; // Omitir sin actividad
+                    
+                    let eqArray = Object.values(ag.equipos).sort((a,b) => b.netas - a.netas);
+                    let htmlEquipos = eqArray.map(eq => `
+                        <div class="eq-row">
+                            <div>
+                                <span class="eq-name">${eq.nombre}</span><br>
+                                <span class="eq-lider"><i class="fa-solid fa-crown" style="color:#f1c40f;"></i> ${eq.lider}</span>
+                            </div>
+                            <div class="eq-metrics">
+                                <div><span style="color:#888; font-size:9px;">Obj</span><strong>${eq.objetivo}</strong></div>
+                                <div><span style="color:#888; font-size:9px;">Netas</span><strong style="color:#2ecc71;">${eq.netas}</strong></div>
+                                <div><span style="color:#888; font-size:9px;">Entrev.</span><strong>${eq.entrevistas}</strong></div>
+                                <div><span style="color:#888; font-size:9px;">Factur.</span><strong style="color:var(--gpl-petroleo); font-family:monospace;">$${(eq.monto/1000).toFixed(1)}k</strong></div>
+                            </div>
+                        </div>
+                    `).join('');
+
+                    htmlDesglose += `
+                    <li class="agencia-item">
+                        <div class="agencia-header" onclick="toggleAgencia('${ag.id}')">
+                            <div class="ag-nombre">
+                                <i id="icon_${ag.id}" class="fa-solid fa-plus-circle" style="color:${ag.color}; font-size: 18px;"></i> ${ag.nombre}
+                            </div>
+                            <div class="ag-stats-row">
+                                <span>🎯 Obj: <b style="color:var(--gpl-petroleo);">${ag.objetivo}</b></span>
+                                <span>📈 Netas: <b style="color:#2ecc71;">${ag.netas}</b></span>
+                                <span>🗣️ Entrev: <b>${ag.entrevistas}</b></span>
+                                <span>💰 <b style="color:var(--gpl-petroleo);">$${(ag.monto/1000).toFixed(1)}k</b></span>
+                            </div>
+                        </div>
+                        <div id="body_${ag.id}" class="agencia-body">
+                            ${htmlEquipos || '<div style="font-size:12px; color:#888; text-align:center;">No hay equipos con actividad en esta agencia.</div>'}
+                        </div>
+                    </li>
+                    `;
+                });
+
+                document.getElementById('listaDesgloseAgencias').innerHTML = htmlDesglose;
+
+                // Mostrar Dashboard
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('mainContainer').style.display = 'block';
+
+            } catch (error) {
+                console.error(error);
+                alert("Error cargando el dashboard gerencial.");
+            }
+        }
+
+        function descargarExcelGerencial() {
+            if(!window.datosGlobalesExcel) return alert("Los datos aún no se terminaron de procesar.");
+            const { ventas, perfiles, equipos, agencias, campanaStr } = window.datosGlobalesExcel;
+
+            let hojaDetalle = ventas.map(v => {
+                let vend = perfiles.find(p => p.id === v.vendedor_id);
+                let eq = vend ? equipos.find(e => e.id === vend.equipo_id) : null;
+                let ag = eq ? agencias.find(a => a.id === eq.agencia_id) : null;
+                
+                return { 
+                    "Fecha de Registro": new Date(v.created_at).toLocaleDateString('es-AR'), 
+                    "Semana Informada": "Semana " + (v.semana || "-"), 
+                    "Vendedor/a": vend ? vend.nombre : "S/N", 
+                    "Equipo": eq ? eq.nombre : "Sin Equipo", 
+                    "Agencia": ag ? ag.nombre : "Sin Agencia",
+                    "Vts Brutas": v.ventas_cerradas || 0, 
+                    "Entrevistas Realizadas": v.entrevistas || 0, 
+                    "Bajas Registradas": v.bajas || 0, 
+                    "Ventas Netas": (v.ventas_cerradas || 0) - (v.bajas || 0),
+                    "Beneficio / Ocupación Cliente": v.beneficio || "No Especificado", 
+                    "Banco / Medio de Pago": v.medio_pago || "No Especificado", 
+                    "Monto de Operación ($)": v.monto || 0 
+                };
+            });
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(hojaDetalle), "Reporte Base de Datos");
+            XLSX.writeFile(wb, `Base_Datos_Gerencial_${campanaStr.replace(/ /g, '_')}.xlsx`);
+        }
+
+        // Iniciar
+        window.onload = inicializarDashboard;
+
+    </script>
+</body>
+
+</html>

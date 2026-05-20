@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Maestro GPL v3.0</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --gpl-petroleo: #0a3a46;
+            --gpl-dorado: #c5a059;
+            --gpl-borravino: #72224c;
+            --fondo-oscuro: #1a252c;
+            --celda-oscura: #23323c;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--fondo-oscuro);
+            margin: 0;
+            padding: 0;
+            color: white;
+        }
+
+        .header-admin {
+            background: white;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 5px solid var(--gpl-dorado);
+        }
+
+        .header-admin img {
+            max-width: 150px;
+        }
+
+        .header-admin h1 {
+            color: var(--gpl-petroleo);
+            margin: 5px 0 0 0;
+            font-size: 20px;
+            text-transform: uppercase;
+            font-weight: 900;
+        }
+
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            background: #111;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            border-bottom: 1px solid #444;
+            overflow-x: auto;
+        }
+
+        .nav-tabs li {
+            padding: 15px 20px;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 12px;
+            color: #aaa;
+            border-bottom: 3px solid transparent;
+            white-space: nowrap;
+            transition: 0.2s;
+        }
+
+        .nav-tabs li:hover {
+            background: #222;
+            color: white;
+        }
+
+        .nav-tabs li.active {
+            color: var(--gpl-dorado);
+            border-bottom: 3px solid var(--gpl-dorado);
+            background: #1a252c;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card-admin {
+            background: var(--celda-oscura);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #444;
+            margin-bottom: 20px;
+        }
+
+        h3 {
+            color: var(--gpl-dorado);
+            margin-top: 0;
+            text-transform: uppercase;
+            font-size: 16px;
+            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th {
+            background: #111;
+            color: var(--gpl-dorado);
+            padding: 10px;
+            text-align: left;
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+
+        td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #333;
+            font-size: 13px;
+            vertical-align: middle;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            align-items: end;
+        }
+
+        label {
+            display: block;
+            font-size: 10px;
+            text-transform: uppercase;
+            color: #aaa;
+            margin-bottom: 5px;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #444;
+            background: #111;
+            color: white;
+        }
+
+        button {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 11px;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            filter: brightness(1.1);
+        }
+
+        .btn-add {
+            background: var(--gpl-dorado);
+            color: black;
+        }
+
+        .btn-baja {
+            background: #e74c3c;
+            color: white;
+            box-shadow: 0 2px 5px rgba(231, 76, 60, 0.3);
+        }
+
+        .btn-del {
+            background: #c0392b;
+            color: white;
+        }
+
+        /* Mantenido por si borras agencias */
+        .btn-save {
+            background: #27ae60;
+            color: white;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #777;
+            padding: 20px;
+            font-style: italic;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="header-admin">
+        <img src="LOGO-gpl.png" alt="GPL">
+        <h1>Centro de Mando Maestro</h1>
+    </header>
+
+    <ul class="nav-tabs" id="menuTabs">
+        <li onclick="cambiarTab(0)" class="active"><i class="fa-solid fa-building"></i> Agencias</li>
+        <li onclick="cambiarTab(1)"><i class="fa-solid fa-users-gear"></i> Equipos</li>
+        <li onclick="cambiarTab(2)"><i class="fa-solid fa-user-tie"></i> Personal</li>
+        <li onclick="cambiarTab(3)"><i class="fa-solid fa-bullseye"></i> Metas</li>
+        <li onclick="cambiarTab(4)"><i class="fa-solid fa-list-check"></i> Auditoría</li>
+        <li onclick="cambiarTab(5)"><i class="fa-solid fa-sliders"></i> Opciones</li>
+    </ul>
+
+    <div class="container">
+
+        <div id="tab0" class="tab-content active">
+            <div class="card-admin">
+                <h3>Nueva Agencia</h3>
+                <div class="form-row">
+                    <div><label>Nombre Agencia</label><input type="text" id="ag_nombre"></div>
+                    <div><label>Supervisor/a</label><select id="ag_super"></select></div>
+                    <div><label>Color Hex</label><input type="color" id="ag_color" value="#0a3a46"></div>
+                    <button class="btn-add" onclick="crearAgencia()">Crear Agencia</button>
+                </div>
+                <table id="tabla_agencias">
+                    <thead>
+                        <tr>
+                            <th>Agencia</th>
+                            <th>Supervisor</th>
+                            <th>Color</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tab1" class="tab-content">
+            <div class="card-admin">
+                <h3>Nuevo Equipo</h3>
+                <div class="form-row">
+                    <div><label>Nombre Equipo</label><input type="text" id="eq_nombre"></div>
+                    <div><label>Líder</label><select id="eq_lider"></select></div>
+                    <div><label>Agencia</label><select id="eq_agencia"></select></div>
+                    <button class="btn-add" onclick="crearEquipo()">Crear Equipo</button>
+                </div>
+                <table id="tabla_equipos">
+                    <thead>
+                        <tr>
+                            <th>Equipo</th>
+                            <th>Líder</th>
+                            <th>Agencia</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tab2" class="tab-content">
+            <div class="card-admin" style="border-left: 5px solid #2ecc71;">
+                <h3>Nuevo Ingreso (Alta de Personal)</h3>
+                <div class="form-row">
+                    <div><label>Nombre Completo</label><input type="text" id="per_nombre" placeholder="Ej: Juan Pérez">
+                    </div>
+                    <div>
+                        <label>Rol Inicial</label>
+                        <select id="per_rol">
+                            <option value="Vendedor">Vendedor</option>
+                            <option value="Líder">Líder</option>
+                            <option value="Admin">Admin</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Categoría</label>
+                        <select id="per_cat">
+                            <option value="Senior">Senior (30%)</option>
+                            <option value="Junior">Junior (20%)</option>
+                        </select>
+                    </div>
+                    <button class="btn-save" onclick="crearPersonal()">Dar de Alta</button>
+                </div>
+            </div>
+
+            <div class="card-admin">
+                <h3>Gestión y Asignación de Equipos</h3>
+                <table id="tabla_personal">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Equipo</th>
+                            <th>Rol</th>
+                            <th>Categoría</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tab3" class="tab-content">
+            <div class="card-admin">
+                <h3>Objetivos de Campaña</h3>
+                <div class="form-row">
+                    <div><label>Vendedor/a</label><select id="obj_vendedor"></select></div>
+                    <div><label>Meta Ventas</label><input type="number" id="obj_vts"></div>
+                    <div><label>Meta Importe ($)</label><input type="number" id="obj_monto"></div>
+                    <button class="btn-save" onclick="guardarMetas()">Actualizar</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab4" class="tab-content">
+            <div class="card-admin">
+                <h3>Auditoría de Ventas</h3>
+                <table id="tabla_auditoria">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Vendedor</th>
+                            <th>Vts / Bajas</th>
+                            <th>Importe</th>
+                            <th>Estado / Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tab5" class="tab-content">
+            <div class="card-admin" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <h3>Beneficios / Ocupación</h3>
+                    <div class="form-row">
+                        <div><input type="text" id="opt_ben" placeholder="Ej: Pensionado"></div>
+                        <button class="btn-add" onclick="addOpt('opciones_beneficios', 'opt_ben')">Añadir</button>
+                    </div>
+                    <ul id="lista_ben" style="list-style:none; padding:0;"></ul>
+                </div>
+                <div>
+                    <h3>Bancos / Tarjetas</h3>
+                    <div class="form-row">
+                        <div><input type="text" id="opt_bnc" placeholder="Ej: Galicia"></div>
+                        <button class="btn-add" onclick="addOpt('opciones_bancos', 'opt_bnc')">Añadir</button>
+                    </div>
+                    <ul id="lista_bnc" style="list-style:none; padding:0;"></ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const clienteSupabase = supabase.createClient('https://pumpwqyazqaxeeknrhyo.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1bXB3cXlhenFheGVla25yaHlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MjQ4ODEsImV4cCI6MjA5NDIwMDg4MX0.-AQZZYAt-uskDLUpbiafJXbHgW0lErf8bwEnk7eq1DE');
+
+        function cambiarTab(idx) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-tabs li').forEach(l => l.classList.remove('active'));
+            document.getElementById('tab' + idx).classList.add('active');
+            document.querySelectorAll('.nav-tabs li')[idx].classList.add('active');
+            refrescarDatos();
+        }
+
+        async function refrescarDatos() {
+            try {
+                const { data: gente } = await clienteSupabase.from('perfiles').select('*').order('nombre');
+                const { data: ags } = await clienteSupabase.from('agencias').select('*').order('nombre');
+                const { data: eqs } = await clienteSupabase.from('equipos').select('*').order('nombre');
+
+                const listaGente = gente || [];
+                const listaAgs = ags || [];
+                const listaEqs = eqs || [];
+
+                const optionVacia = '<option value="">-- Seleccionar --</option>';
+                const comboGente = optionVacia + listaGente.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+
+                document.getElementById('ag_super').innerHTML = comboGente;
+                document.getElementById('eq_lider').innerHTML = comboGente;
+                document.getElementById('obj_vendedor').innerHTML = comboGente;
+                document.getElementById('eq_agencia').innerHTML = optionVacia + listaAgs.map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
+
+                cargarAgencias(listaAgs, listaGente);
+                cargarEquipos(listaEqs, listaGente, listaAgs);
+                cargarPersonal(listaGente, listaEqs);
+                cargarAuditoria(listaGente);
+                cargarOpciones();
+            } catch (error) {
+                console.error("Error general al refrescar:", error);
+            }
+        }
+
+        function cargarAgencias(listaAgs, listaGente) {
+            const tbody = document.querySelector('#tabla_agencias tbody');
+            if (!listaAgs.length) return tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No hay agencias creadas.</td></tr>';
+            tbody.innerHTML = listaAgs.map(a => `<tr><td>${a.nombre}</td><td>${listaGente.find(p => p.id === a.supervisor_id)?.nombre || '-'}</td><td><div style="width:20px; height:20px; background:${a.color_hex}; border-radius:50%;"></div></td><td><button class="btn-del" onclick="borrar('agencias', '${a.id}')">Eliminar</button></td></tr>`).join('');
+        }
+
+        async function crearAgencia() {
+            const n = document.getElementById('ag_nombre').value.trim();
+            const s = document.getElementById('ag_super').value;
+            const c = document.getElementById('ag_color').value;
+            if (!n) return alert("Ingresá un nombre para la agencia");
+            const { error } = await clienteSupabase.from('agencias').insert([{ nombre: n, supervisor_id: s === "" ? null : s, color_hex: c }]);
+            if (error) alert("Error: " + error.message); else { document.getElementById('ag_nombre').value = ''; refrescarDatos(); }
+        }
+
+        function cargarEquipos(listaEqs, listaGente, listaAgs) {
+            const tbody = document.querySelector('#tabla_equipos tbody');
+            if (!listaEqs.length) return tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No hay equipos creados.</td></tr>';
+            tbody.innerHTML = listaEqs.map(e => `<tr><td>${e.nombre}</td><td>${listaGente.find(p => p.id === e.lider_id)?.nombre || '-'}</td><td>${listaAgs.find(a => a.id === e.agencia_id)?.nombre || '-'}</td><td><button class="btn-del" onclick="borrar('equipos', '${e.id}')">Eliminar</button></td></tr>`).join('');
+        }
+
+        async function crearEquipo() {
+            const n = document.getElementById('eq_nombre').value.trim();
+            const l = document.getElementById('eq_lider').value;
+            const a = document.getElementById('eq_agencia').value;
+            if (!n) return alert("Ingresá un nombre para el equipo");
+            const { error } = await clienteSupabase.from('equipos').insert([{ nombre: n, lider_id: l === "" ? null : l, agencia_id: a === "" ? null : a }]);
+            if (error) alert("Error: " + error.message); else { document.getElementById('eq_nombre').value = ''; refrescarDatos(); }
+        }
+
+        function cargarPersonal(perfiles, equipos) {
+            const tbody = document.querySelector('#tabla_personal tbody');
+            tbody.innerHTML = perfiles.map(p => `<tr><td>${p.nombre}</td><td><select onchange="updatePerfil('${p.id}', 'equipo_id', this.value)"><option value="">Sin Equipo</option>${equipos.map(e => `<option value="${e.id}" ${e.id === p.equipo_id ? 'selected' : ''}>${e.nombre}</option>`).join('')}</select></td><td><select onchange="updatePerfil('${p.id}', 'rol', this.value)"><option value="Vendedor" ${p.rol === 'Vendedor' ? 'selected' : ''}>Vendedor</option><option value="Líder" ${p.rol === 'Líder' ? 'selected' : ''}>Líder</option><option value="Admin" ${p.rol === 'Admin' ? 'selected' : ''}>Admin</option></select></td><td><select onchange="updatePerfil('${p.id}', 'categoria', this.value)"><option value="Senior" ${p.categoria === 'Senior' ? 'selected' : ''}>Senior</option><option value="Junior" ${p.categoria === 'Junior' ? 'selected' : ''}>Junior</option></select></td><td><button class="btn-del" onclick="borrar('perfiles', '${p.id}')">BAJA</button></td></tr>`).join('');
+        }
+
+        async function crearPersonal() {
+            const n = document.getElementById('per_nombre').value.trim();
+            const r = document.getElementById('per_rol').value;
+            const c = document.getElementById('per_cat').value;
+            if (!n) return alert("Ingresá el nombre");
+            const { error } = await clienteSupabase.from('perfiles').insert([{ nombre: n, rol: r, categoria: c }]);
+            if (error) alert("Error: " + error.message); else { document.getElementById('per_nombre').value = ''; refrescarDatos(); }
+        }
+
+        async function updatePerfil(id, campo, valor) {
+            const val = valor === "" ? null : valor;
+            await clienteSupabase.from('perfiles').update({ [campo]: val }).eq('id', id);
+        }
+
+        async function guardarMetas() {
+            const id = document.getElementById('obj_vendedor').value;
+            const vts = parseInt(document.getElementById('obj_vts').value) || 0;
+            const monto = parseFloat(document.getElementById('obj_monto').value) || 0;
+            if (!id) return alert("Seleccioná un vendedor");
+            const { error } = await clienteSupabase.from('perfiles').update({ objetivo_campana: vts, objetivo_monto: monto }).eq('id', id);
+            if (error) alert("Error: " + error.message); else alert("¡Metas guardadas!");
+        }
+
+        // --- SISTEMA DE AUDITORÍA Y ASIENTOS DE REVERSIÓN ---
+        async function cargarAuditoria(listaGente) {
+            const { data: vtas, error } = await clienteSupabase.from('registro_ventas').select('*').order('created_at', { ascending: false }).limit(100);
+            const tbody = document.querySelector('#tabla_auditoria tbody');
+
+            if (error) return tbody.innerHTML = `<tr><td colspan="5" class="empty-state">Error cargando ventas.</td></tr>`;
+            if (!vtas || vtas.length === 0) return tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Aún no hay ventas.</td></tr>';
+
+            tbody.innerHTML = vtas.map(v => {
+                const nombreVendedor = listaGente.find(p => p.id === v.vendedor_id)?.nombre || 'Desconocido';
+
+                const esReversion = (v.monto < 0);
+                const fueAnulada = (v.es_anulada === true);
+
+                let btnAccion = '';
+                let estiloFila = '';
+
+                if (esReversion) {
+                    // Esta es la fila roja que descuenta
+                    estiloFila = 'background-color: rgba(231, 76, 60, 0.08); color: #ff6b6b; font-weight: bold;';
+                    btnAccion = `<span style="color:#ff6b6b; font-size: 11px; text-transform: uppercase;"><i class="fa-solid fa-arrow-trend-down"></i> Asiento de Baja</span>`;
+                } else if (fueAnulada) {
+                    // Esta es la venta original ya anulada (grisada y tachada)
+                    estiloFila = 'opacity: 0.5; text-decoration: line-through;';
+                    btnAccion = `<span style="color:#e74c3c; font-weight:bold; font-size: 11px;"><i class="fa-solid fa-ban"></i> ANULADA</span>`;
+                } else {
+                    // Esta es una venta normal viva y coleando (Botón disponible)
+                    btnAccion = `<button class="btn-baja" onclick="darDeBajaVenta('${v.id}')"><i class="fa-solid fa-arrow-trend-down"></i> DAR DE BAJA</button>`;
+                }
+
+                return `
+                    <tr style="${estiloFila}">
+                        <td>${v.created_at ? new Date(v.created_at).toLocaleDateString() : '-'}</td>
+                        <td>${nombreVendedor}</td>
+                        <td>${esReversion ? '-' + v.bajas : (v.ventas_cerradas || 0)}</td>
+                        <td>$${(v.monto || 0).toLocaleString()}</td>
+                        <td>${btnAccion}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function darDeBajaVenta(idVentaOriginal) {
+            if (!confirm("¿Confirmás la BAJA de esta operación? Se generará un asiento negativo automático para descontar la comisión y los puntos en el ranking.")) return;
+
+            // 1. Traer la venta original intacta
+            const { data: venta, error: errBusqueda } = await clienteSupabase.from('registro_ventas').select('*').eq('id', idVentaOriginal).single();
+            if (errBusqueda || !venta) return alert("Error al buscar la operación.");
+
+            // 2. Insertar la reversión (Restar)
+            const { error: errInsert } = await clienteSupabase.from('registro_ventas').insert([{
+                vendedor_id: venta.vendedor_id,
+                ventas_cerradas: 0,
+                entrevistas: 0, // Las entrevistas ya se hicieron, no se restan
+                bajas: venta.ventas_cerradas || 1, // Se clava como baja
+                monto: -(venta.monto || 0), // Importe en negativo
+                semana: venta.semana,
+                campana: venta.campana,
+                beneficio: venta.beneficio,
+                medio_pago: venta.medio_pago
+            }]);
+
+            if (errInsert) return alert("Error al registrar la baja: " + errInsert.message);
+
+            // 3. Marcar la original como anulada
+            await clienteSupabase.from('registro_ventas').update({ es_anulada: true }).eq('id', idVentaOriginal);
+
+            alert("¡Baja impactada correctamente en los rankings!");
+            refrescarDatos();
+        }
+
+        // Mantenemos la función original para las opciones
+        async function borrar(tabla, id) {
+            if (confirm("¿Estás seguro? Esta acción no se puede deshacer.")) {
+                await clienteSupabase.from(tabla).delete().eq('id', id);
+                refrescarDatos();
+            }
+        }
+
+        async function cargarOpciones() {
+            const { data: benfs } = await clienteSupabase.from('opciones_beneficios').select('*').order('nombre');
+            if (benfs) document.getElementById('lista_ben').innerHTML = benfs.map(b => `<li style="padding:8px; border-bottom:1px solid #333; display:flex; justify-content:space-between;">${b.nombre} <button class="btn-del" onclick="borrarOpt('opciones_beneficios', '${b.id}')">X</button></li>`).join('');
+
+            const { data: bncs } = await clienteSupabase.from('opciones_bancos').select('*').order('nombre');
+            if (bncs) document.getElementById('lista_bnc').innerHTML = bncs.map(b => `<li style="padding:8px; border-bottom:1px solid #333; display:flex; justify-content:space-between;">${b.nombre} <button class="btn-del" onclick="borrarOpt('opciones_bancos', '${b.id}')">X</button></li>`).join('');
+        }
+
+        async function addOpt(tabla, inputId) {
+            const val = document.getElementById(inputId).value;
+            if (!val) return;
+            await clienteSupabase.from(tabla).insert([{ nombre: val }]);
+            document.getElementById(inputId).value = ''; cargarOpciones();
+        }
+
+        async function borrarOpt(tabla, id) {
+            await clienteSupabase.from(tabla).delete().eq('id', id); cargarOpciones();
+        }
+
+        refrescarDatos();
+    </script>
+</body>
+
+</html>

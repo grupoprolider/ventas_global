@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Líder - Grupo ProLíder</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --gpl-petroleo: #0a3a46;
+            --gpl-dorado: #c5a059;
+            --gpl-borravino: #72224c;
+            --blanco: #ffffff;
+            --fondo-oscuro: #1a252c;
+            --celda-oscura: #23323c;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 15px;
+            color: #333;
+            padding-bottom: 40px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* HEADER PERFIL LIDER */
+        .card-perfil {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            border-left: 8px solid var(--gpl-borravino); /* Color distintivo para lider */
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .btn-logout {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: #c0392b;
+            text-decoration: none;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            background: rgba(192, 57, 43, 0.1);
+            padding: 5px 10px;
+            border-radius: 8px;
+            transition: 0.2s;
+        }
+
+        .btn-logout:hover {
+            background: rgba(192, 57, 43, 0.2);
+        }
+
+        .badge-rol {
+            background: var(--gpl-borravino);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+
+        h2 {
+            margin: 0;
+            color: var(--gpl-petroleo);
+            font-size: 22px;
+            text-transform: uppercase;
+            font-weight: 900;
+            padding-right: 80px;
+        }
+
+        p.equipo-txt {
+            margin: 5px 0 0 0;
+            color: #666;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        /* DASHBOARD METRICAS EQUIPO */
+        .card-metricas {
+            background: var(--gpl-petroleo);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 6px 15px rgba(10, 58, 70, 0.3);
+        }
+        
+        .card-metricas h3 {
+            margin: 0 0 15px 0;
+            font-size: 14px;
+            color: var(--gpl-dorado);
+            text-transform: uppercase;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 10px;
+            text-align: center;
+        }
+
+        .metricas-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            text-align: center;
+        }
+
+        .metrica-box {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .metrica-box span {
+            display: block;
+            font-size: 10px;
+            text-transform: uppercase;
+            color: #a8d5e2;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .metrica-box strong {
+            font-size: 22px;
+            color: white;
+        }
+        
+        .metrica-monto {
+            grid-column: span 3;
+            background: rgba(197, 160, 89, 0.15);
+            border: 1px solid var(--gpl-dorado);
+        }
+        
+        .metrica-monto span {
+            color: var(--gpl-dorado);
+        }
+        
+        .metrica-monto strong {
+            font-size: 26px;
+            color: #2ecc71;
+            font-family: monospace;
+        }
+
+        /* TABLA INTEGRANTES */
+        .card-integrantes {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .card-integrantes h3 {
+            background: #f8f9fa;
+            margin: 0;
+            padding: 15px 20px;
+            font-size: 13px;
+            color: var(--gpl-petroleo);
+            text-transform: uppercase;
+            border-bottom: 2px solid #eee;
+        }
+
+        .lista-integrantes {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .integrante-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .integrante-item:last-child {
+            border-bottom: none;
+        }
+
+        .integ-info {
+            flex: 1;
+        }
+
+        .integ-nombre {
+            font-weight: bold;
+            color: #333;
+            font-size: 14px;
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        .integ-rol {
+            font-size: 11px;
+            color: #888;
+            background: #eee;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .integ-stats {
+            text-align: right;
+        }
+
+        .integ-netas {
+            font-size: 18px;
+            font-weight: 900;
+            color: var(--gpl-petroleo);
+            display: block;
+        }
+
+        .integ-monto {
+            font-size: 12px;
+            color: #2ecc71;
+            font-weight: bold;
+            font-family: monospace;
+        }
+
+        /* BOTON RANKING Y CARGA */
+        .botones-accion {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        .btn-accion {
+            width: 100%;
+            border: none;
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 900;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-ver-ranking {
+            background: linear-gradient(135deg, var(--gpl-dorado) 0%, #a68444 100%);
+            color: black;
+            box-shadow: 0 4px 15px rgba(197, 160, 89, 0.4);
+        }
+
+        .btn-mi-panel {
+            background: var(--fondo-oscuro);
+            color: white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .btn-accion:active {
+            transform: translateY(3px);
+            box-shadow: none;
+        }
+
+        /* MODAL (VENTANA FLOTANTE) DEL RANKING */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: var(--fondo-oscuro);
+            width: 95%;
+            max-width: 1400px;
+            height: 90vh;
+            border-radius: 15px;
+            border: 2px solid var(--gpl-dorado);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-header {
+            background: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 5px solid var(--gpl-dorado);
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: var(--gpl-petroleo);
+            font-size: 18px;
+            text-transform: uppercase;
+            font-weight: 900;
+        }
+
+        .btn-cerrar {
+            background: #c0392b;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+
+        .iframe-ranking {
+            flex-grow: 1;
+            border: none;
+            width: 100%;
+            height: 100%;
+            background: var(--fondo-oscuro);
+        }
+        
+        .empty-state { text-align: center; padding: 30px 20px; color: #777; font-weight: bold; font-size: 13px; }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <div class="card-perfil" style="text-align: center; border-left: none; border-top: 5px solid var(--gpl-dorado);">
+            <a href="index.html" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Salir</a>
+            <img src="LOGO-gpl.png" alt="GPL" style="max-width: 140px; margin-bottom: 10px;">
+            <br>
+            <span class="badge-rol" style="margin-bottom: 5px;"><i class="fa-solid fa-star"></i> Panel de Líder</span>
+            <h2 id="txtNombreLider" style="padding: 0; font-size: 20px;">Cargando...</h2>
+            <div id="txtNombreEquipo" style="background: var(--gpl-dorado); color: black; padding: 4px 15px; border-radius: 20px; font-size: 11px; font-weight: 900; text-transform: uppercase; display: inline-block; margin-top: 8px; letter-spacing: 0.5px;">Sincronizando información...</div>
+        </div>
+
+        <div class="card-metricas">
+            <h3><i class="fa-solid fa-chart-pie"></i> Rendimiento del Equipo - Campaña Actual</h3>
+            <div class="metricas-grid">
+                <div class="metrica-box">
+                    <span>Brutas</span>
+                    <strong id="totBrutas">0</strong>
+                </div>
+                <div class="metrica-box" style="border-color: rgba(231, 76, 60, 0.3);">
+                    <span style="color: #e74c3c;">Bajas</span>
+                    <strong id="totBajas" style="color: #ff7675;">0</strong>
+                </div>
+                <div class="metrica-box" style="border-color: var(--gpl-dorado);">
+                    <span style="color: var(--gpl-dorado);">Netas</span>
+                    <strong id="totNetas" style="color: var(--gpl-dorado);">0</strong>
+                </div>
+                <div class="metrica-box metrica-monto">
+                    <span>Facturación Total Equipo</span>
+                    <strong id="totMonto">$0</strong>
+                </div>
+                <div class="metrica-box" style="border-color: #3498db; grid-column: span 1;">
+                    <span style="color: #3498db;">Obj. Equipo</span>
+                    <strong id="totObj" style="color: #3498db;">0</strong>
+                </div>
+                <div class="metrica-box" style="border-color: #9b59b6; grid-column: span 2;">
+                    <span style="color: #9b59b6;">Incidencia vs Empresa</span>
+                    <strong id="totIncidencia" style="color: #9b59b6;">0%</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-integrantes">
+            <h3><i class="fa-solid fa-users"></i> Desempeño Individual</h3>
+            <ul id="listaIntegrantes" class="lista-integrantes">
+                <li><div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i> Cargando miembros del equipo...</div></li>
+            </ul>
+        </div>
+
+        <div class="botones-accion">
+            <button class="btn-accion btn-ver-ranking" onclick="abrirRanking()">
+                <i class="fa-solid fa-trophy"></i> Ver Ranking Nacional
+            </button>
+            <button class="btn-accion btn-mi-panel" onclick="irAMiPanel()">
+                <i class="fa-solid fa-user-gear"></i> Cargar mis propias ventas
+            </button>
+        </div>
+
+    </div>
+
+    <div id="modalRanking" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Rankings GPL - Seguimiento de Metas</h3> <button class="btn-cerrar" onclick="cerrarRanking()">CERRAR ✖</button>
+            </div>
+            <iframe id="iframeRanking" class="iframe-ranking" src=""></iframe>
+        </div>
+    </div>
+
+    <script>
+        const clienteSupabase = supabase.createClient('https://pumpwqyazqaxeeknrhyo.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1bXB3cXlhenFheGVla25yaHlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MjQ4ODEsImV4cCI6MjA5NDIwMDg4MX0.-AQZZYAt-uskDLUpbiafJXbHgW0lErf8bwEnk7eq1DE');
+
+        let idSeguroURL = null;
+
+        function formatearPlata(num) {
+            return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(num || 0);
+        }
+
+        function abrirRanking() {
+            document.getElementById('iframeRanking').src = 'ranking_vendedores.html';
+            document.getElementById('modalRanking').style.display = 'flex';
+        }
+
+        function cerrarRanking() {
+            document.getElementById('modalRanking').style.display = 'none';
+            document.getElementById('iframeRanking').src = '';
+        }
+        
+        function irAMiPanel() {
+            if(idSeguroURL) {
+                window.location.href = `panel_vendedor.html?id=${idSeguroURL}`;
+            }
+        }
+
+        async function init() {
+            const urlParams = new URLSearchParams(window.location.search);
+            idSeguroURL = urlParams.get('id');
+
+            if (!idSeguroURL) {
+                alert("Acceso denegado. Por favor, ingresá desde el Portal principal de Grupo ProLíder.");
+                window.location.href = 'index.html';
+                return;
+            }
+
+            cargarDatosLider(idSeguroURL);
+        }
+
+        async function cargarDatosLider(idLider) {
+            try {
+                // 1. Buscar perfil del líder
+                const { data: perfilLider, error: errPerfil } = await clienteSupabase.from('perfiles').select('*').eq('id', idLider).single();
+                if (errPerfil || !perfilLider) throw new Error("Perfil no encontrado");
+                
+                document.getElementById('txtNombreLider').textContent = perfilLider.nombre;
+
+                // 2. Buscar el equipo al que pertenece este usuario (que es líder)
+                const { data: equipo, error: errEquipo } = await clienteSupabase.from('equipos').select('*').eq('id', perfilLider.equipo_id).single();
+                
+                if (errEquipo || !equipo) {
+                    document.getElementById('txtNombreEquipo').textContent = "No tienes un equipo asignado.";
+                    document.getElementById('listaIntegrantes').innerHTML = `<li><div class="empty-state">No hay integrantes para mostrar.</div></li>`;
+                    return;
+                }
+
+                document.getElementById('txtNombreEquipo').textContent = `Líder del Equipo: ${equipo.nombre}`;
+
+                // 3. Obtener todos los perfiles que pertenecen a este equipo
+                const { data: integrantes, error: errIntegrantes } = await clienteSupabase.from('perfiles').select('*').eq('equipo_id', equipo.id);
+                if (errIntegrantes) throw errIntegrantes;
+
+                const idsIntegrantes = integrantes.map(i => i.id);
+
+                // 4. Obtener las ventas de esta campaña para los integrantes del equipo Y de la empresa
+                const hoy = new Date();
+                const campanaStr = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
+                
+                // Traemos TODAS las ventas de la empresa para calcular la incidencia
+                const { data: todasVentas } = await clienteSupabase.from('registro_ventas')
+                    .select('*')
+                    .eq('campana', campanaStr)
+                    .eq('es_anulada', false);
+
+                let totalBrutas = 0, totalBajas = 0, globalMonto = 0, totalObjetivoEquipo = 0, globalNetasEmpresa = 0;
+                let mapStats = {};
+                
+                // Inicializar mapa de stats por integrante y sumar objetivos
+                integrantes.forEach(i => {
+                    let obj = i.objetivo_campana || 0;
+                    mapStats[i.id] = { nombre: i.nombre, rol: i.rol || 'Vendedor', brutas: 0, bajas: 0, netas: 0, monto: 0, entrevistas: 0, objetivo: obj };
+                    totalObjetivoEquipo += obj;
+                });
+
+                // Calcular netas globales de la empresa
+                (todasVentas || []).forEach(v => {
+                    globalNetasEmpresa += ((v.ventas_cerradas || 0) - (v.bajas || 0));
+                });
+
+                // Procesar ventas sólo del equipo
+                const ventasEquipo = (todasVentas || []).filter(v => idsIntegrantes.includes(v.vendedor_id));
+                
+                ventasEquipo.forEach(v => {
+                    let vts = v.ventas_cerradas || 0;
+                    let baj = v.bajas || 0;
+                    let mnt = v.monto || 0;
+                    let ent = v.entrevistas || 0;
+                    
+                    totalBrutas += vts;
+                    totalBajas += baj;
+                    globalMonto += mnt;
+                    
+                    if(mapStats[v.vendedor_id]) {
+                        mapStats[v.vendedor_id].brutas += vts;
+                        mapStats[v.vendedor_id].bajas += baj;
+                        mapStats[v.vendedor_id].netas += (vts - baj);
+                        mapStats[v.vendedor_id].monto += mnt;
+                        mapStats[v.vendedor_id].entrevistas += ent;
+                    }
+                });
+
+                let netasEquipo = totalBrutas - totalBajas;
+                let incidenciaEquipo = globalNetasEmpresa > 0 ? ((netasEquipo / globalNetasEmpresa) * 100).toFixed(1) : 0;
+
+                // Actualizar contadores del dashboard
+                document.getElementById('totBrutas').textContent = totalBrutas;
+                document.getElementById('totBajas').textContent = totalBajas;
+                document.getElementById('totNetas').textContent = netasEquipo;
+                document.getElementById('totMonto').textContent = formatearPlata(globalMonto);
+                document.getElementById('totObj').textContent = totalObjetivoEquipo;
+                document.getElementById('totIncidencia').textContent = `${incidenciaEquipo}%`;
+
+                // Renderizar lista de integrantes ordenados por ventas netas
+                let listaFinal = Object.values(mapStats).sort((a,b) => b.netas - a.netas || b.monto - a.monto);
+                
+                if (listaFinal.length === 0) {
+                    document.getElementById('listaIntegrantes').innerHTML = `<li><div class="empty-state">No hay miembros en el equipo aún.</div></li>`;
+                } else {
+                    document.getElementById('listaIntegrantes').innerHTML = listaFinal.map(int => {
+                        let inc = globalNetasEmpresa > 0 ? ((int.netas / globalNetasEmpresa) * 100).toFixed(1) : 0;
+                        return `
+                        <li class="integrante-item">
+                            <div class="integ-info">
+                                <span class="integ-nombre">${int.nombre} ${(int.rol || '').toLowerCase() === 'lider' ? '<i class="fa-solid fa-crown" style="color:var(--gpl-dorado); font-size:11px;" title="Líder"></i>' : ''}</span>
+                                <span class="integ-rol">Brutas: ${int.brutas} | Bajas: ${int.bajas} | Entrevistas: ${int.entrevistas}</span>
+                                <div style="font-size: 11px; color: #666; margin-top: 4px; font-weight: bold;">
+                                    🎯 Obj: <span style="color:var(--gpl-petroleo)">${int.objetivo}</span> &nbsp;|&nbsp; 📊 Incidencia Emp: <span style="color:#9b59b6">${inc}%</span>
+                                </div>
+                            </div>
+                            <div class="integ-stats">
+                                <span class="integ-netas">${int.netas}</span>
+                                <span class="integ-monto">${formatearPlata(int.monto)}</span>
+                            </div>
+                        </li>
+                        `;
+                    }).join('');
+                }
+
+            } catch (error) {
+                console.error("Error al cargar datos del líder:", error);
+                alert("Hubo un problema al sincronizar los datos del equipo.");
+            }
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

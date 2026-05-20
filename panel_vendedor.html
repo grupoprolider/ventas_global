@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Panel GPL - Grupo ProLíder</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --gpl-petroleo: #0a3a46;
+            --gpl-dorado: #c5a059;
+            --gpl-borravino: #72224c;
+            --blanco: #ffffff;
+            --fondo-oscuro: #1a252c;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 15px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        /* HEADER PERFIL */
+        .card-perfil {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            border-left: 8px solid var(--gpl-dorado);
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .btn-logout {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: #c0392b;
+            text-decoration: none;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            background: rgba(192, 57, 43, 0.1);
+            padding: 5px 10px;
+            border-radius: 8px;
+            transition: 0.2s;
+        }
+
+        .btn-logout:hover {
+            background: rgba(192, 57, 43, 0.2);
+        }
+
+        h2 {
+            margin: 0;
+            color: var(--gpl-petroleo);
+            font-size: 24px;
+            text-transform: uppercase;
+            font-weight: 900;
+            padding-right: 80px;
+        }
+
+        p.equipo-txt {
+            margin: 5px 0 0 0;
+            color: #666;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        /* BLOQUE CAMBIAR PIN */
+        .card-seguridad {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+            border: 1px solid #e1e8ea;
+        }
+
+        .card-seguridad h4 {
+            margin: 0 0 10px 0;
+            font-size: 11px;
+            color: var(--gpl-petroleo);
+            text-transform: uppercase;
+            font-weight: 800;
+        }
+
+        .row-pin {
+            display: flex;
+            gap: 10px;
+        }
+
+        .row-pin input {
+            flex: 1;
+            padding: 10px;
+            font-size: 14px;
+        }
+
+        .btn-pin {
+            background: var(--gpl-petroleo);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 12px;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        /* TERMÓMETRO DINÁMICO AZUL */
+        .card-comision {
+            background: var(--gpl-petroleo);
+            color: white;
+            padding: 25px 20px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 15px;
+            box-shadow: 0 6px 15px rgba(10, 58, 70, 0.3);
+        }
+
+        .badge-categoria {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            display: inline-block;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .monto-grande {
+            font-size: 38px;
+            font-weight: 900;
+            color: var(--gpl-dorado);
+            display: block;
+            margin: 5px 0 15px 0;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .progreso-barra {
+            background: rgba(0, 0, 0, 0.3);
+            height: 14px;
+            border-radius: 10px;
+            margin: 15px 0;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .progreso-llenado {
+            background: var(--gpl-dorado);
+            height: 100%;
+            width: 0%;
+            transition: 1s ease-in-out;
+        }
+
+        .progreso-superado {
+            background: #2ecc71 !important;
+        }
+
+        .metas-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        .meta-item {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .meta-valor {
+            font-weight: bold;
+            font-size: 15px;
+            color: #fff;
+            display: block;
+            margin-top: 3px;
+        }
+
+        .mensaje-motivador {
+            color: #a8d5e2;
+            font-size: 14px;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        /* BOTÓN DE RANKING FLOTANTE */
+        .btn-ver-ranking {
+            width: 100%;
+            background: linear-gradient(135deg, var(--gpl-dorado) 0%, #a68444 100%);
+            color: black;
+            border: none;
+            padding: 18px;
+            border-radius: 15px;
+            font-size: 16px;
+            font-weight: 900;
+            cursor: pointer;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            box-shadow: 0 4px 15px rgba(197, 160, 89, 0.4);
+            transition: 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-ver-ranking:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+
+        /* FORMULARIO DE CARGA */
+        .card-carga {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .card-carga h3 {
+            margin-top: 0;
+            color: var(--gpl-petroleo);
+            border-bottom: 2px solid #f0f2f5;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .grid-carga {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        label {
+            display: block;
+            font-size: 11px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #666;
+            text-transform: uppercase;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+            background-color: #f9f9f9;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: var(--gpl-dorado);
+            outline: none;
+            background-color: #fff;
+        }
+
+        .btn-enviar {
+            width: 100%;
+            background: var(--gpl-borravino);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            text-transform: uppercase;
+            box-shadow: 0 4px 0 #4a1631;
+            transition: 0.2s;
+        }
+
+        .btn-enviar:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+
+        /* MODAL (VENTANA FLOTANTE) DEL RANKING */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: var(--fondo-oscuro);
+            width: 95%;
+            max-width: 1400px;
+            height: 90vh;
+            border-radius: 15px;
+            border: 2px solid var(--gpl-dorado);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-header {
+            background: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 5px solid var(--gpl-dorado);
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: var(--gpl-petroleo);
+            font-size: 18px;
+            text-transform: uppercase;
+            font-weight: 900;
+        }
+
+        .btn-cerrar {
+            background: #c0392b;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+
+        .iframe-ranking {
+            flex-grow: 1;
+            border: none;
+            width: 100%;
+            height: 100%;
+            background: var(--fondo-oscuro);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <div class="card-perfil" style="text-align: center; border-left: none; border-top: 5px solid var(--gpl-dorado);">
+            <a href="index.html" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Salir</a>
+            <img src="LOGO-gpl.png" alt="GPL" style="max-width: 140px; margin-bottom: 10px;">
+            <h2 id="txtNombre" style="padding: 0; font-size: 20px;">Cargando...</h2>
+            <div id="txtEquipo" style="background: var(--gpl-dorado); color: black; padding: 4px 15px; border-radius: 20px; font-size: 11px; font-weight: 900; text-transform: uppercase; display: inline-block; margin-top: 8px; letter-spacing: 0.5px;">Sincronizando información...</div>
+        </div>
+
+        <div class="card-seguridad">
+            <h4><i class="fa-solid fa-lock"></i> Seguridad</h4>
+            <div class="row-pin">
+                <input type="password" id="inputNuevoPin" placeholder="Nuevo PIN (4 números)" maxlength="4">
+                <button type="button" class="btn-pin" onclick="cambiarMiPin()">Guardar</button>
+            </div>
+        </div>
+
+        <div class="card-seguridad" id="blockMisMetas">
+            <h4><i class="fa-solid fa-bullseye"></i> Mis Metas Personales</h4>
+            <p style="font-size: 11px; color: #666; margin: 0 0 10px 0; line-height: 1.3;">Definí tus propios objetivos para esta campaña. Crecer empieza por comprometerse.</p>
+            <div class="row-pin" style="margin-bottom: 10px;">
+                <input type="number" id="inputMiMetaVentas" placeholder="Cant. Ventas (ej: 30)" style="border: 1px solid #ccc; border-radius: 6px;">
+                <input type="number" id="inputMiMetaMonto" placeholder="Monto $ (ej: 2500000)" style="border: 1px solid #ccc; border-radius: 6px;">
+            </div>
+            <button type="button" class="btn-pin" style="width: 100%; background: var(--gpl-dorado); color: black;" onclick="guardarMisMetas()">Comprometerme con mi Meta</button>
+        </div>
+
+        <div class="card-comision">
+            <div id="txtCategoria" class="badge-categoria">...</div>
+            <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.9;">Comisión
+                Ganada Campaña</div>
+            <div id="txtComision" class="monto-grande">$ 0</div>
+            <div class="progreso-barra">
+                <div id="barraProgreso" class="progreso-llenado"></div>
+            </div>
+            <div class="metas-grid">
+                <div class="meta-item"><span>OBJETIVO VENTAS</span><span id="txtMetaVentas" class="meta-valor">0 /
+                        0</span></div>
+                <div class="meta-item"><span>OBJETIVO IMPORTE</span><span id="txtMetaMonto" class="meta-valor">$0 /
+                        $0</span></div>
+            </div>
+            <div id="txtMensajeMotivador" class="mensaje-motivador">Sincronizando con la base de datos...</div>
+        </div>
+
+        <button class="btn-ver-ranking" onclick="abrirRanking()">🏆 VER RANKING EN VIVO</button>
+
+        <div class="card-carga">
+            <h3>Cargar Producción</h3>
+            <form id="formVenta">
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label>Semana de Campaña</label>
+                    <select id="inputSemana">
+                        <option value="1">Semana 1</option>
+                        <option value="2">Semana 2</option>
+                        <option value="3">Semana 3</option>
+                        <option value="4">Semana 4</option>
+                        <option value="5">Semana 5</option>
+                    </select>
+                </div>
+                <div class="grid-carga">
+                    <div><label>Ventas Cerradas</label><input type="number" id="inputVentas" value="0" min="0"></div>
+                    <div><label>Entrevistas</label><input type="number" id="inputEntrevistas" value="0" min="0"></div>
+                </div>
+                <div style="margin-top: 15px;">
+                    <label>Beneficio / Ocupación</label>
+                    <select id="inputBeneficio">
+                        <option value="">-- Seleccionar --</option>
+                    </select>
+                </div>
+                <div style="margin-top: 15px;">
+                    <label>Banco / Tarjeta</label>
+                    <select id="inputBanco">
+                        <option value="">-- Seleccionar --</option>
+                    </select>
+                </div>
+                <div style="margin-top: 15px;">
+                    <label>Importe Total Vendido ($)</label>
+                    <input type="number" id="inputMonto" placeholder="Ej: 89000" min="0">
+                </div>
+                <button type="button" class="btn-enviar" onclick="enviarProduccion()">Subir Mis Números</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="modalRanking" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Rankings GPL - Seguimiento de Metas</h3> <button class="btn-cerrar" onclick="cerrarRanking()">CERRAR
+                    ✖</button>
+            </div>
+            <iframe id="iframeRanking" class="iframe-ranking" src=""></iframe>
+        </div>
+    </div>
+
+    <script>
+        const clienteSupabase = supabase.createClient('https://pumpwqyazqaxeeknrhyo.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1bXB3cXlhenFheGVla25yaHlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MjQ4ODEsImV4cCI6MjA5NDIwMDg4MX0.-AQZZYAt-uskDLUpbiafJXbHgW0lErf8bwEnk7eq1DE');
+
+        let vendedorActual = null;
+        let idSeguroURL = null;
+
+        function formatearPlata(num) {
+            return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(num || 0);
+        }
+
+        function abrirRanking() {
+            document.getElementById('iframeRanking').src = 'ranking_vendedores.html';
+            document.getElementById('modalRanking').style.display = 'flex';
+        }
+
+        function cerrarRanking() {
+            document.getElementById('modalRanking').style.display = 'none';
+            document.getElementById('iframeRanking').src = '';
+        }
+
+        async function init() {
+            const urlParams = new URLSearchParams(window.location.search);
+            idSeguroURL = urlParams.get('id');
+
+            if (!idSeguroURL) {
+                alert("Acceso denegado. Por favor, ingresá desde el Portal principal de Grupo ProLíder.");
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const { data: benfs } = await clienteSupabase.from('opciones_beneficios').select('*').order('nombre');
+            const selBen = document.getElementById('inputBeneficio');
+            if (benfs) benfs.forEach(b => selBen.innerHTML += `<option value="${b.nombre}">${b.nombre}</option>`);
+
+            const { data: bncs } = await clienteSupabase.from('opciones_bancos').select('*').order('nombre');
+            const selBnc = document.getElementById('inputBanco');
+            if (bncs) bncs.forEach(b => selBnc.innerHTML += `<option value="${b.nombre}">${b.nombre}</option>`);
+
+            cargarDatosVendedor(idSeguroURL);
+        }
+
+        async function cargarDatosVendedor(id) {
+            try {
+                const { data: p, error } = await clienteSupabase.from('perfiles').select('*, equipos!perfiles_equipo_id_fkey(nombre)').eq('id', id).single();
+                if (error || !p) {
+                    alert("No se encontró el perfil. Volviendo al inicio.");
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                vendedorActual = p;
+
+                if (localStorage.getItem('metaFijada_' + id)) {
+                    const blockMeta = document.getElementById('blockMisMetas');
+                    if (blockMeta) {
+                        blockMeta.innerHTML = `<div style="text-align:center; padding:10px; color:#27ae60; font-weight:bold;"><i class="fa-solid fa-check-circle"></i> Meta de la campaña fijada con éxito. ¡Éxitos!</div>`;
+                    }
+                }
+
+                document.getElementById('txtNombre').textContent = p.nombre;
+                document.getElementById('txtEquipo').textContent = `Equipo: ${p.equipos?.nombre || 'Sin Equipo'}`;
+
+                let categoria = p.categoria || 'Senior';
+                let porcentaje = (categoria.toLowerCase() === 'senior') ? 30 : 20;
+                document.getElementById('txtCategoria').textContent = `${categoria.toUpperCase()} (${porcentaje}%)`;
+
+                const hoy = new Date();
+                const campanaStr = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
+
+                const { data: vtas } = await clienteSupabase.from('registro_ventas').select('monto, ventas_cerradas, bajas').eq('vendedor_id', id).eq('campana', campanaStr);
+
+                let totalMonto = 0, totalVts = 0;
+                vtas?.forEach(v => {
+                    totalMonto += (v.monto || 0);
+                    totalVts += ((v.ventas_cerradas || 0) - (v.bajas || 0));
+                });
+
+                const gananciaReal = totalMonto * (porcentaje / 100);
+                const metaMonto = p.objetivo_monto || 1;
+                const metaVentas = p.objetivo_campana || 1;
+
+                document.getElementById('txtComision').textContent = formatearPlata(gananciaReal);
+                document.getElementById('txtMetaVentas').textContent = `${totalVts} / ${metaVentas}`;
+                document.getElementById('txtMetaMonto').textContent = `${formatearPlata(totalMonto)} / ${formatearPlata(metaMonto)}`;
+
+                let porcMonto = (totalMonto / metaMonto) * 100;
+                let barra = document.getElementById('barraProgreso');
+                let msj = document.getElementById('txtMensajeMotivador');
+
+                if (totalMonto >= metaMonto && totalVts >= metaVentas) {
+                    barra.style.width = '100%';
+                    barra.classList.add('progreso-superado');
+                    msj.innerHTML = `🔥 ¡OBJETIVO SUPERADO! Llevás ${formatearPlata(totalMonto - metaMonto)} extra.`;
+                    msj.style.color = '#2ecc71';
+                } else {
+                    barra.style.width = Math.min(porcMonto, 100) + '%';
+                    barra.classList.remove('progreso-superado');
+                    let faltaMonto = Math.max(0, metaMonto - totalMonto);
+                    let faltaVts = Math.max(0, metaVentas - totalVts);
+                    msj.innerHTML = `¡Fuerza! Te faltan ${faltaVts} ventas y ${formatearPlata(faltaMonto)} para la meta.`;
+                    msj.style.color = '#a8d5e2';
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function cambiarMiPin() {
+            const nuevoPin = document.getElementById('inputNuevoPin').value.trim();
+
+            if (!nuevoPin || nuevoPin.length < 4 || isNaN(nuevoPin)) {
+                return alert("Por favor, ingresá un PIN válido de 4 números.");
+            }
+
+            const { error } = await clienteSupabase.from('perfiles').update({ pin_acceso: nuevoPin }).eq('id', vendedorActual.id);
+
+            if (error) {
+                alert("Error al actualizar el PIN: " + error.message);
+            } else {
+                alert("¡PIN modificado con éxito! Recordalo para tu próximo ingreso a la plataforma.");
+                document.getElementById('inputNuevoPin').value = '';
+            }
+        }
+
+        async function guardarMisMetas() {
+            const vts = parseInt(document.getElementById('inputMiMetaVentas').value);
+            const monto = parseFloat(document.getElementById('inputMiMetaMonto').value);
+
+            if (!vts || !monto) return alert("Por favor, ingresá tanto la cantidad de ventas como el monto esperado.");
+
+            if (!confirm("Atención: Una vez que fijes tu objetivo, no podrás volver a editarlo. Solo el Administrador podrá hacerlo. ¿Estás seguro de que esta es la meta con la que te comprometes?")) {
+                return;
+            }
+
+            const { error } = await clienteSupabase.from('perfiles').update({ objetivo_campana: vts, objetivo_monto: monto }).eq('id', vendedorActual.id);
+
+            if (error) {
+                alert("Error al guardar la meta: " + error.message);
+            } else {
+                alert("¡Excelente! Meta personal fijada de forma permanente. ¡A romperla esta campaña!");
+                localStorage.setItem('metaFijada_' + vendedorActual.id, 'true');
+                document.getElementById('blockMisMetas').innerHTML = `<div style="text-align:center; padding:10px; color:#27ae60; font-weight:bold;"><i class="fa-solid fa-check-circle"></i> Meta de la campaña fijada con éxito. ¡Éxitos!</div>`;
+                cargarDatosVendedor(idSeguroURL);
+            }
+        }
+
+        async function enviarProduccion() {
+            const vts = parseInt(document.getElementById('inputVentas').value);
+            const ent = parseInt(document.getElementById('inputEntrevistas').value);
+            const monto = parseFloat(document.getElementById('inputMonto').value) || 0;
+            const sem = document.getElementById('inputSemana').value;
+            const beneficio = document.getElementById('inputBeneficio').value;
+            const banco = document.getElementById('inputBanco').value;
+
+            if (vts > 0 && (beneficio === "" || banco === "")) {
+                alert("Para el reporte comercial, seleccioná el Beneficio y el Banco del cliente.");
+                return;
+            }
+
+            const btn = document.querySelector('.btn-enviar');
+            btn.textContent = "SUBIENDO..."; btn.disabled = true;
+
+            const hoy = new Date();
+            const campanaStr = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
+
+            // AQUÍ ESTABA EL ERROR. Cambiado a "entrevistas" en lugar de "interviews"
+            const { error } = await clienteSupabase.from('registro_ventas').insert([{
+                vendedor_id: vendedorActual.id, ventas_cerradas: vts, entrevistas: ent, monto: monto, semana: sem, campana: campanaStr, beneficio: beneficio, medio_pago: banco
+            }]);
+
+            btn.textContent = "SUBIR MIS NÚMEROS"; btn.disabled = false;
+
+            if (error) {
+                alert("Error: " + error.message);
+            } else {
+                cargarDatosVendedor(idSeguroURL);
+                document.getElementById('formVenta').reset();
+                if (confirm("¡Carga exitosa! Tus números se actualizaron. ¿Querés ver cómo quedaste en el Ranking ahora mismo?")) {
+                    abrirRanking();
+                }
+            }
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

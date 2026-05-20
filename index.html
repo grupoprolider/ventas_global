@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal GPL - Grupo ProLíder</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --gpl-petroleo: #0a3a46;
+            --gpl-dorado: #c5a059;
+            --fondo-oscuro: #121a1f;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--fondo-oscuro) 0%, #061117 100%);
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+        }
+
+        .login-box {
+            background: #ffffff;
+            padding: 35px 25px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+            text-align: center;
+            width: 90%;
+            max-width: 380px;
+            border-top: 6px solid var(--gpl-dorado);
+            animation: containerFade 0.5s ease;
+        }
+
+        @keyframes containerFade {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .login-box img {
+            max-width: 160px;
+            margin-bottom: 15px;
+        }
+
+        .login-box h1 {
+            margin: 0 0 5px 0;
+            color: var(--gpl-petroleo);
+            font-size: 20px;
+            text-transform: uppercase;
+            font-weight: 900;
+            letter-spacing: 0.5px;
+        }
+
+        .login-box p {
+            color: #666;
+            font-size: 11px;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+        }
+
+        .seccion-acceso {
+            background: #f4f7f8;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            border: 1px solid #e1e8ea;
+            text-align: left;
+        }
+
+        .seccion-acceso h3 {
+            margin: 0 0 10px 0;
+            font-size: 11px;
+            color: var(--gpl-petroleo);
+            text-transform: uppercase;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        select,
+        input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            background: white;
+            color: #333;
+            font-size: 14px;
+            font-weight: 600;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+        }
+
+        .btn-entrar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 900;
+            text-transform: uppercase;
+            cursor: pointer;
+            text-decoration: none;
+            transition: 0.2s;
+            box-sizing: border-box;
+            border: none;
+        }
+
+        .btn-vendedor {
+            background: var(--gpl-petroleo);
+            color: white;
+            box-shadow: 0 3px 10px rgba(10, 58, 70, 0.2);
+        }
+
+        .btn-vendedor:hover {
+            background: #061e24;
+        }
+
+        .btn-gerente {
+            background: #27ae60;
+            color: white;
+            box-shadow: 0 3px 10px rgba(39, 174, 96, 0.2);
+        }
+
+        .btn-gerente:hover {
+            background: #1e7e34;
+        }
+
+        .btn-admin {
+            background: #e74c3c;
+            color: white;
+            box-shadow: 0 3px 10px rgba(231, 76, 60, 0.2);
+        }
+
+        .btn-admin:hover {
+            background: #c0392b;
+        }
+
+        .footer-txt {
+            margin-top: 20px;
+            font-size: 10px;
+            color: #999;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="login-box">
+        <img src="LOGO-gpl.png" alt="GPL">
+        <h1>Suite Comercial v3.0</h1>
+        <p>Sistema de Control de Ventas</p>
+
+        <div class="seccion-acceso">
+            <h3><i class="fa-solid fa-user"></i> Acceso Personal de Ventas</h3>
+            <select id="selectVendedor">
+                <option value="">-- Buscá tu Nombre --</option>
+            </select>
+            <input type="password" id="passVendedor" placeholder="Tu PIN de 4 dígitos">
+            <button onclick="ingresarVendedor()" id="btnIngresoVend" class="btn-entrar btn-vendedor">
+                <i class="fa-solid fa-right-to-bracket"></i> Ingresar a mi Panel
+            </button>
+        </div>
+
+        <div class="seccion-acceso" style="background: #fafffb; border-color: #c3e6cb;">
+            <h3 style="color: #1e7e34;"><i class="fa-solid fa-chart-line"></i> Acceso Gerencia Comercial</h3>
+            <input type="password" id="passGerente" placeholder="PIN Gerencial Comercial">
+            <button onclick="ingresarGerente()" class="btn-entrar btn-gerente">
+                <i class="fa-solid fa-file-excel"></i> Ver Rankings y Descargar Excel
+            </button>
+        </div>
+
+        <div class="seccion-acceso">
+            <h3><i class="fa-solid fa-lock"></i> Panel Maestro (Sistemas)</h3>
+            <input type="password" id="passAdmin" placeholder="Ingresá el PIN Maestro">
+            <button onclick="ingresarAdmin()" class="btn-entrar btn-admin">
+                <i class="fa-solid fa-shield-halved"></i> Control Maestro
+            </button>
+        </div>
+
+        <div class="footer-txt">Grupo ProLíder Comercial</div>
+    </div>
+
+    <script>
+        const clienteSupabase = supabase.createClient('https://pumpwqyazqaxeeknrhyo.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1bXB3cXlhenFheGVla25yaHlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MjQ4ODEsImV4cCI6MjA5NDIwMDg4MX0.-AQZZYAt-uskDLUpbiafJXbHgW0lErf8bwEnk7eq1DE');
+
+        async function cargarListaVendedores() {
+            try {
+                const { data, error } = await clienteSupabase.from('perfiles').select('id, nombre').order('nombre');
+                if (error) throw error;
+
+                const select = document.getElementById('selectVendedor');
+                if (data) {
+                    data.forEach(p => {
+                        const opt = document.createElement('option');
+                        opt.value = p.id;
+                        opt.textContent = p.nombre;
+                        select.appendChild(opt);
+                    });
+                }
+            } catch (err) {
+                console.error("Error cargando personal:", err.message);
+            }
+        }
+
+        async function ingresarVendedor() {
+            const idVendedor = document.getElementById('selectVendedor').value;
+            const pinIngresado = document.getElementById('passVendedor').value;
+            const btn = document.getElementById('btnIngresoVend');
+
+            if (!idVendedor) return alert("Por favor, seleccioná tu nombre en la lista.");
+            if (!pinIngresado) return alert("Por favor, ingresá tu PIN de seguridad.");
+
+            btn.textContent = "Verificando...";
+            btn.disabled = true;
+
+            try {
+                const { data, error } = await clienteSupabase.from('perfiles').select('pin_acceso, rol').eq('id', idVendedor).single();
+                if (error) throw error;
+
+                if (data.pin_acceso === pinIngresado) {
+                    const rol = (data.rol || '').toLowerCase();
+                    if (rol === 'lider' || rol === 'líder') {
+                        window.location.href = `panel_lider.html?id=${idVendedor}`;
+                    } else if (rol === 'supervisor') {
+                        window.location.href = `panel_supervisor.html?id=${idVendedor}`;
+                    } else if (rol === 'gerencia' || rol === 'gerente') {
+                        window.location.href = `panel_gerencia.html`;
+                    } else {
+                        window.location.href = `panel_vendedor.html?id=${idVendedor}`;
+                    }
+                } else {
+                    alert("PIN incorrecto. Intentalo de nuevo.");
+                    document.getElementById('passVendedor').value = '';
+                }
+            } catch (err) {
+                alert("Hubo un error al verificar la identidad.");
+                console.error(err);
+            } finally {
+                btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Ingresar a mi Panel';
+                btn.disabled = false;
+            }
+        }
+
+        function ingresarGerente() {
+            const pin = document.getElementById('passGerente').value;
+            // Claves exclusivas para Gerencia Comercial
+            if (pin === 'gplgerente' || pin === '5678') {
+                window.location.href = 'panel_gerencia.html';
+            } else {
+                alert("PIN Gerencial incorrecto. Acceso denegado.");
+                document.getElementById('passGerente').value = '';
+            }
+        }
+
+        function ingresarAdmin() {
+            const pin = document.getElementById('passAdmin').value;
+            if (pin === 'gpl2026' || pin === '1234') {
+                window.location.href = 'admin_master.html';
+            } else {
+                alert("PIN maestro incorrecto. Acceso denegado.");
+                document.getElementById('passAdmin').value = '';
+            }
+        }
+
+        cargarListaVendedores();
+    </script>
+</body>
+
+</html>

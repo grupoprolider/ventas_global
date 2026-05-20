@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Supervisión - Grupo ProLíder</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --gpl-petroleo: #0a3a46;
+            --gpl-dorado: #c5a059;
+            --gpl-borravino: #72224c;
+            --blanco: #ffffff;
+            --fondo-oscuro: #1a252c;
+            --celda-oscura: #23323c;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 15px;
+            color: #333;
+            padding-bottom: 40px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        /* HEADER PERFIL SUPERVISOR */
+        .card-perfil {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            border-left: 8px solid var(--gpl-petroleo);
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .btn-logout {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: #c0392b;
+            text-decoration: none;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            background: rgba(192, 57, 43, 0.1);
+            padding: 5px 10px;
+            border-radius: 8px;
+            transition: 0.2s;
+        }
+
+        .btn-logout:hover {
+            background: rgba(192, 57, 43, 0.2);
+        }
+
+        .badge-rol {
+            background: var(--gpl-petroleo);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+
+        h2 {
+            margin: 0;
+            color: var(--gpl-petroleo);
+            font-size: 22px;
+            text-transform: uppercase;
+            font-weight: 900;
+            padding-right: 80px;
+        }
+
+        p.agencia-txt {
+            margin: 5px 0 0 0;
+            color: #666;
+            font-size: 15px;
+            font-weight: bold;
+        }
+
+        /* DASHBOARD METRICAS AGENCIA */
+        .card-metricas {
+            background: var(--fondo-oscuro);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+            border: 2px solid var(--gpl-dorado);
+        }
+        
+        .card-metricas h3 {
+            margin: 0 0 15px 0;
+            font-size: 14px;
+            color: var(--gpl-dorado);
+            text-transform: uppercase;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.3);
+            padding-bottom: 10px;
+            text-align: center;
+        }
+
+        .metricas-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            text-align: center;
+        }
+
+        .metrica-box {
+            background: var(--celda-oscura);
+            padding: 15px 10px;
+            border-radius: 10px;
+            border: 1px solid #333;
+        }
+
+        .metrica-box span {
+            display: block;
+            font-size: 10px;
+            text-transform: uppercase;
+            color: #aaa;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .metrica-box strong {
+            font-size: 24px;
+            color: white;
+        }
+        
+        .metrica-destacada {
+            grid-column: span 3;
+            background: rgba(197, 160, 89, 0.1);
+            border: 1px solid var(--gpl-dorado);
+        }
+        
+        .metrica-destacada span {
+            color: var(--gpl-dorado);
+            font-size: 12px;
+        }
+        
+        .metrica-destacada strong {
+            font-size: 28px;
+            color: #2ecc71;
+            font-family: monospace;
+        }
+
+        /* TABLA DE EQUIPOS */
+        .card-equipos {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .card-equipos h3 {
+            background: #f8f9fa;
+            margin: 0;
+            padding: 15px 20px;
+            font-size: 13px;
+            color: var(--gpl-petroleo);
+            text-transform: uppercase;
+            border-bottom: 2px solid #eee;
+        }
+
+        .lista-equipos {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .equipo-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .equipo-item:last-child {
+            border-bottom: none;
+        }
+
+        .equipo-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .eq-nombre {
+            font-weight: 900;
+            color: var(--gpl-petroleo);
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .eq-lider {
+            font-size: 11px;
+            color: #666;
+            background: #f0f2f5;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .eq-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            background: #fdfdfd;
+            border: 1px solid #f0f0f0;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .eq-stat {
+            text-align: center;
+        }
+
+        .eq-stat span {
+            display: block;
+            font-size: 9px;
+            text-transform: uppercase;
+            color: #888;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+
+        .eq-stat strong {
+            font-size: 15px;
+            color: #333;
+        }
+
+        /* BOTONES ACCION */
+        .botones-accion {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        .btn-accion {
+            width: 100%;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 900;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-ver-ranking {
+            background: linear-gradient(135deg, var(--gpl-dorado) 0%, #a68444 100%);
+            color: black;
+            box-shadow: 0 4px 15px rgba(197, 160, 89, 0.4);
+        }
+
+        .btn-accion:active {
+            transform: translateY(3px);
+            box-shadow: none;
+        }
+
+        /* MODAL RANKING */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: var(--fondo-oscuro);
+            width: 95%;
+            max-width: 1400px;
+            height: 90vh;
+            border-radius: 15px;
+            border: 2px solid var(--gpl-dorado);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-header {
+            background: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 5px solid var(--gpl-dorado);
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: var(--gpl-petroleo);
+            font-size: 18px;
+            text-transform: uppercase;
+            font-weight: 900;
+        }
+
+        .btn-cerrar {
+            background: #c0392b;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+
+        .iframe-ranking {
+            flex-grow: 1;
+            border: none;
+            width: 100%;
+            height: 100%;
+            background: var(--fondo-oscuro);
+        }
+        
+        .empty-state { text-align: center; padding: 30px 20px; color: #777; font-weight: bold; font-size: 13px; }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <div class="card-perfil" style="text-align: center; border-left: none; border-top: 5px solid var(--gpl-dorado);">
+            <a href="index.html" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Salir</a>
+            <img src="LOGO-gpl.png" alt="GPL" style="max-width: 140px; margin-bottom: 10px;">
+            <br>
+            <span class="badge-rol" style="margin-bottom: 5px;"><i class="fa-solid fa-building-user"></i> Panel de Supervisión</span>
+            <h2 id="txtNombreSupervisor" style="padding: 0; font-size: 20px;">Cargando...</h2>
+            <div id="txtNombreAgencia" style="background: var(--gpl-dorado); color: black; padding: 4px 15px; border-radius: 20px; font-size: 11px; font-weight: 900; text-transform: uppercase; display: inline-block; margin-top: 8px; letter-spacing: 0.5px;">Sincronizando información...</div>
+        </div>
+
+        <div id="selectorAgenciasContainer" style="display: none; margin-bottom: 20px;">
+            <select id="selectAgencia" onchange="cambiarAgencia()" style="padding: 16px; font-size: 15px; font-weight: 900; color: var(--gpl-petroleo); border: 2px solid var(--gpl-dorado); border-radius: 12px; width: 100%; box-sizing: border-box; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1); outline: none; background: white; text-align: center; text-transform: uppercase;">
+            </select>
+        </div>
+
+        <div class="card-metricas">
+            <h3><i class="fa-solid fa-chart-pie"></i> Rendimiento Global Agencia - Campaña Actual</h3>
+            <div class="metricas-grid">
+                <div class="metrica-box">
+                    <span>Ventas Brutas</span>
+                    <strong id="totBrutas">0</strong>
+                </div>
+                <div class="metrica-box" style="border-color: rgba(231, 76, 60, 0.3);">
+                    <span style="color: #e74c3c;">Bajas</span>
+                    <strong id="totBajas" style="color: #ff7675;">0</strong>
+                </div>
+                <div class="metrica-box" style="border-color: var(--gpl-dorado);">
+                    <span style="color: var(--gpl-dorado);">Netas</span>
+                    <strong id="totNetas" style="color: var(--gpl-dorado);">0</strong>
+                </div>
+                
+                <div class="metrica-box" style="border-color: #3498db; grid-column: span 1;">
+                    <span style="color: #3498db;">Objetivo Agencia</span>
+                    <strong id="totObj" style="color: #3498db;">0</strong>
+                </div>
+                <div class="metrica-box" style="border-color: #9b59b6; grid-column: span 2;">
+                    <span style="color: #9b59b6;">Incidencia vs Empresa</span>
+                    <strong id="totIncidencia" style="color: #9b59b6;">0%</strong>
+                </div>
+
+                <div class="metrica-box metrica-destacada">
+                    <span>Facturación Total Agencia</span>
+                    <strong id="totMonto">$0</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-equipos">
+            <h3><i class="fa-solid fa-layer-group"></i> Desglose por Equipos</h3>
+            <ul id="listaEquipos" class="lista-equipos">
+                <li><div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i> Cargando equipos...</div></li>
+            </ul>
+        </div>
+
+        <div class="botones-accion">
+            <button class="btn-accion btn-ver-ranking" onclick="abrirRanking()">
+                <i class="fa-solid fa-trophy"></i> Ver Ranking Nacional
+            </button>
+        </div>
+
+    </div>
+
+    <div id="modalRanking" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Rankings GPL - Seguimiento de Metas</h3> <button class="btn-cerrar" onclick="cerrarRanking()">CERRAR ✖</button>
+            </div>
+            <iframe id="iframeRanking" class="iframe-ranking" src=""></iframe>
+        </div>
+    </div>
+
+    <script>
+        const clienteSupabase = supabase.createClient('https://pumpwqyazqaxeeknrhyo.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1bXB3cXlhenFheGVla25yaHlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MjQ4ODEsImV4cCI6MjA5NDIwMDg4MX0.-AQZZYAt-uskDLUpbiafJXbHgW0lErf8bwEnk7eq1DE');
+
+        let idSeguroURL = null;
+
+        function formatearPlata(num) {
+            return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(num || 0);
+        }
+
+        function abrirRanking() {
+            document.getElementById('iframeRanking').src = 'ranking_vendedores.html';
+            document.getElementById('modalRanking').style.display = 'flex';
+        }
+
+        function cerrarRanking() {
+            document.getElementById('modalRanking').style.display = 'none';
+            document.getElementById('iframeRanking').src = '';
+        }
+
+        async function init() {
+            const urlParams = new URLSearchParams(window.location.search);
+            idSeguroURL = urlParams.get('id');
+
+            if (!idSeguroURL) {
+                alert("Acceso denegado. Por favor, ingresá desde el Portal principal.");
+                window.location.href = 'index.html';
+                return;
+            }
+
+            cargarDatosSupervisor(idSeguroURL);
+        }
+
+        let globalAgencias = [];
+        let globalEquipos = [];
+        let globalIntegrantes = [];
+        let globalVentas = [];
+        let globalNetasEmpresa = 0;
+
+        async function cargarDatosSupervisor(idSupervisor) {
+            try {
+                // 1. Buscar perfil del supervisor
+                const { data: perfilSupervisor, error: errPerfil } = await clienteSupabase.from('perfiles').select('*').eq('id', idSupervisor).single();
+                if (errPerfil || !perfilSupervisor) throw new Error("Perfil no encontrado");
+                
+                document.getElementById('txtNombreSupervisor').textContent = perfilSupervisor.nombre;
+
+                // 2. Buscar las agencias que supervisa este usuario
+                const { data: agencias, error: errAgencia } = await clienteSupabase.from('agencias').select('*').eq('supervisor_id', idSupervisor);
+                
+                if (errAgencia || !agencias || agencias.length === 0) {
+                    document.getElementById('txtNombreAgencia').textContent = "No tienes una agencia asignada a tu cargo.";
+                    document.getElementById('listaEquipos').innerHTML = `<li><div class="empty-state">No hay equipos para mostrar.</div></li>`;
+                    return;
+                }
+                
+                globalAgencias = agencias;
+
+                const idsAgencias = agencias.map(a => a.id);
+
+                // 3. Obtener todos los equipos que pertenecen a estas agencias
+                const { data: equipos, error: errEquipos } = await clienteSupabase.from('equipos').select('*').in('agencia_id', idsAgencias);
+                if (errEquipos) throw errEquipos;
+                globalEquipos = equipos || [];
+
+                // 4. Obtener todos los perfiles de estos equipos
+                let idsEquipos = globalEquipos.map(e => e.id);
+                if (idsEquipos.length > 0) {
+                    const { data: integrantes, error: errIntegrantes } = await clienteSupabase.from('perfiles').select('*').in('equipo_id', idsEquipos);
+                    if (errIntegrantes) throw errIntegrantes;
+                    globalIntegrantes = integrantes || [];
+                }
+
+                // 5. Obtener ventas de toda la empresa (para incidencia)
+                const hoy = new Date();
+                const campanaStr = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
+                
+                const { data: todasVentas } = await clienteSupabase.from('registro_ventas')
+                    .select('*')
+                    .eq('campana', campanaStr)
+                    .eq('es_anulada', false);
+                globalVentas = todasVentas || [];
+
+                globalNetasEmpresa = 0;
+                globalVentas.forEach(v => {
+                    globalNetasEmpresa += ((v.ventas_cerradas || 0) - (v.bajas || 0));
+                });
+
+                // Mostrar selector si hay multiples agencias
+                if (globalAgencias.length > 1) {
+                    const sel = document.getElementById('selectAgencia');
+                    sel.innerHTML = globalAgencias.map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
+                    document.getElementById('selectorAgenciasContainer').style.display = 'block';
+                }
+
+                // Renderizar la primera agencia por defecto
+                renderizarAgencia(globalAgencias[0].id);
+
+            } catch (error) {
+                console.error("Error al cargar datos del supervisor:", error);
+                alert("Hubo un problema al sincronizar los datos de la agencia.");
+            }
+        }
+
+        function cambiarAgencia() {
+            const idAgencia = document.getElementById('selectAgencia').value;
+            renderizarAgencia(idAgencia);
+        }
+
+        function renderizarAgencia(idAgencia) {
+            const agencia = globalAgencias.find(a => a.id === idAgencia);
+            if (!agencia) return;
+
+            document.getElementById('txtNombreAgencia').textContent = `Agencia: ${agencia.nombre}`;
+            if (agencia.color_hex) {
+                document.querySelector('.card-perfil').style.borderLeftColor = agencia.color_hex;
+            } else {
+                document.querySelector('.card-perfil').style.borderLeftColor = 'var(--gpl-petroleo)';
+            }
+
+            // Filtrar equipos de esta agencia
+            const equiposAgencia = globalEquipos.filter(e => e.agencia_id === idAgencia);
+            
+            if(equiposAgencia.length === 0) {
+                document.getElementById('listaEquipos').innerHTML = `<li><div class="empty-state">No hay equipos registrados en esta agencia.</div></li>`;
+                document.getElementById('totBrutas').textContent = 0;
+                document.getElementById('totBajas').textContent = 0;
+                document.getElementById('totNetas').textContent = 0;
+                document.getElementById('totMonto').textContent = "$0";
+                document.getElementById('totObj').textContent = 0;
+                document.getElementById('totIncidencia').textContent = `0%`;
+                return;
+            }
+
+            const idsEquiposAgencia = equiposAgencia.map(e => e.id);
+            const integrantesAgencia = globalIntegrantes.filter(i => idsEquiposAgencia.includes(i.equipo_id));
+            const idsIntegrantes = integrantesAgencia.map(i => i.id);
+            const ventasAgencia = globalVentas.filter(v => idsIntegrantes.includes(v.vendedor_id));
+
+            let totalAgenciaBrutas = 0, totalAgenciaBajas = 0, totalAgenciaMonto = 0, totalAgenciaObjetivo = 0;
+            
+            // Mapeo de stats por equipo
+            let mapEquipos = {};
+            equiposAgencia.forEach(eq => {
+                let lider = integrantesAgencia.find(i => i.id === eq.lider_id)?.nombre || 'Sin Líder Asignado';
+                mapEquipos[eq.id] = { nombre: eq.nombre, lider: lider, brutas: 0, bajas: 0, netas: 0, monto: 0, objetivo: 0 };
+            });
+
+            // Sumar objetivos
+            integrantesAgencia.forEach(i => {
+                let obj = i.objetivo_campana || 0;
+                totalAgenciaObjetivo += obj;
+                if(mapEquipos[i.equipo_id]) mapEquipos[i.equipo_id].objetivo += obj;
+            });
+
+            // Procesar ventas asignándolas a sus equipos correspondientes
+            ventasAgencia.forEach(v => {
+                let vts = v.ventas_cerradas || 0;
+                let baj = v.bajas || 0;
+                let mnt = v.monto || 0;
+                
+                totalAgenciaBrutas += vts;
+                totalAgenciaBajas += baj;
+                totalAgenciaMonto += mnt;
+                
+                let vendedor = integrantesAgencia.find(i => i.id === v.vendedor_id);
+                if (vendedor && mapEquipos[vendedor.equipo_id]) {
+                    mapEquipos[vendedor.equipo_id].brutas += vts;
+                    mapEquipos[vendedor.equipo_id].bajas += baj;
+                    mapEquipos[vendedor.equipo_id].netas += (vts - baj);
+                    mapEquipos[vendedor.equipo_id].monto += mnt;
+                }
+            });
+
+            let totalAgenciaNetas = totalAgenciaBrutas - totalAgenciaBajas;
+            let incidenciaAgencia = globalNetasEmpresa > 0 ? ((totalAgenciaNetas / globalNetasEmpresa) * 100).toFixed(1) : 0;
+
+            document.getElementById('totBrutas').textContent = totalAgenciaBrutas;
+            document.getElementById('totBajas').textContent = totalAgenciaBajas;
+            document.getElementById('totNetas').textContent = totalAgenciaNetas;
+            document.getElementById('totMonto').textContent = formatearPlata(totalAgenciaMonto);
+            document.getElementById('totObj').textContent = totalAgenciaObjetivo;
+            document.getElementById('totIncidencia').textContent = `${incidenciaAgencia}%`;
+
+            let listaEquiposFinal = Object.values(mapEquipos).sort((a,b) => b.netas - a.netas || b.monto - a.monto);
+            
+            document.getElementById('listaEquipos').innerHTML = listaEquiposFinal.map(eq => {
+                let inc = globalNetasEmpresa > 0 ? ((eq.netas / globalNetasEmpresa) * 100).toFixed(1) : 0;
+                return `
+                <li class="equipo-item">
+                    <div class="equipo-header">
+                        <span class="eq-nombre"><i class="fa-solid fa-users" style="color:var(--gpl-dorado);"></i> ${eq.nombre}</span>
+                        <span class="eq-lider"><i class="fa-solid fa-crown" style="color:#f1c40f;"></i> ${eq.lider}</span>
+                    </div>
+                    <div class="eq-stats-grid">
+                        <div class="eq-stat">
+                            <span>Netas</span>
+                            <strong style="color:var(--gpl-petroleo)">${eq.netas}</strong>
+                        </div>
+                        <div class="eq-stat">
+                            <span>Objetivo</span>
+                            <strong>${eq.objetivo}</strong>
+                        </div>
+                        <div class="eq-stat">
+                            <span>Incidencia</span>
+                            <strong style="color:#9b59b6">${inc}%</strong>
+                        </div>
+                        <div class="eq-stat">
+                            <span>Facturación</span>
+                            <strong style="color:#2ecc71; font-family:monospace; font-size:12px;">$${(eq.monto/1000).toFixed(1)}k</strong>
+                        </div>
+                    </div>
+                </li>
+                `;
+            }).join('');
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
