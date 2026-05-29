@@ -425,9 +425,10 @@
                         <option value="5">Semana 5</option>
                     </select>
                 </div>
+                <p style="font-size: 11px; color: var(--gpl-dorado); font-weight: bold; margin-bottom: 15px; text-transform: uppercase;">* Las ventas se cargan individualmente (1 por vez) para asociar el banco y beneficio correcto.</p>
                 <div class="grid-carga">
-                    <div><label>Ventas Cerradas</label><input type="number" id="inputVentas" value="0" min="0"></div>
-                    <div><label>Entrevistas</label><input type="number" id="inputEntrevistas" value="0" min="0"></div>
+                    <div style="display: none;"><label>Ventas Cerradas</label><input type="number" id="inputVentas" value="1" min="1"></div>
+                    <div><label>Cantidad de Entrevistas</label><input type="number" id="inputEntrevistas" value="0" min="0"></div>
                 </div>
                 <div style="margin-top: 15px;">
                     <label>Beneficio / Ocupación</label>
@@ -468,6 +469,34 @@
 
         function formatearPlata(num) {
             return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(num || 0);
+        }
+
+        function getDiasHabiles() {
+            const hoy = new Date();
+            let yearInicio = hoy.getFullYear();
+            let monthInicio = hoy.getMonth();
+            
+            if (hoy.getDate() < 16) {
+                monthInicio--; 
+            }
+            
+            let fechaInicio = new Date(yearInicio, monthInicio, 16);
+            let fechaFin = new Date(yearInicio, monthInicio + 1, 15);
+            
+            let totales = 0;
+            let transcurridos = 0;
+            
+            for (let d = new Date(fechaInicio); d <= fechaFin; d.setDate(d.getDate() + 1)) {
+                let diaSemana = d.getDay();
+                if (diaSemana !== 0 && diaSemana !== 6) { // Lunes a Viernes
+                    totales++;
+                    if (d <= hoy) {
+                        transcurridos++;
+                    }
+                }
+            }
+            if (transcurridos === 0) transcurridos = 1;
+            return { totales, transcurridos, restantes: Math.max(0, totales - transcurridos) };
         }
 
         function abrirRanking() {
@@ -539,28 +568,40 @@
 
                 const gananciaReal = totalMonto * (porcentaje / 100);
                 const metaMonto = p.objetivo_monto || 1;
-                const metaVentas = p.objetivo_campana || 1;
+                const metaVentas = p.objetivo_campana || 20;
+
+                // CÁLCULO DE PROYECCIÓN
+                const dias = getDiasHabiles();
+                const proyeccion = Math.round((totalVts / dias.transcurridos) * dias.totales);
+                const ritmoIdeal = metaVentas / dias.totales;
+                const ventasEsperadasHoy = ritmoIdeal * dias.transcurridos;
+                const atraso = ventasEsperadasHoy - totalVts;
 
                 document.getElementById('txtComision').textContent = formatearPlata(gananciaReal);
-                document.getElementById('txtMetaVentas').textContent = `${totalVts} / ${metaVentas}`;
+                document.getElementById('txtMetaVentas').innerHTML = `${totalVts} / ${metaVentas} <span style="display:block; font-size:10px; color:#a8d5e2; margin-top:2px; font-weight:900;">PROY. MES: ${proyeccion}</span>`;
                 document.getElementById('txtMetaMonto').textContent = `${formatearPlata(totalMonto)} / ${formatearPlata(metaMonto)}`;
 
                 let porcMonto = (totalMonto / metaMonto) * 100;
                 let barra = document.getElementById('barraProgreso');
                 let msj = document.getElementById('txtMensajeMotivador');
 
-                if (totalMonto >= metaMonto && totalVts >= metaVentas) {
+                if (totalVts >= metaVentas) {
                     barra.style.width = '100%';
                     barra.classList.add('progreso-superado');
-                    msj.innerHTML = `🔥 ¡OBJETIVO SUPERADO! Llevás ${formatearPlata(totalMonto - metaMonto)} extra.`;
+                    msj.innerHTML = `🔥 ¡OBJETIVO SUPERADO! Tu proyección apunta a ${proyeccion} ventas. ¡No aflojes!`;
                     msj.style.color = '#2ecc71';
                 } else {
                     barra.style.width = Math.min(porcMonto, 100) + '%';
                     barra.classList.remove('progreso-superado');
-                    let faltaMonto = Math.max(0, metaMonto - totalMonto);
-                    let faltaVts = Math.max(0, metaVentas - totalVts);
-                    msj.innerHTML = `¡Fuerza! Te faltan ${faltaVts} ventas y ${formatearPlata(faltaMonto)} para la meta.`;
-                    msj.style.color = '#a8d5e2';
+                    
+                    if (atraso > 0) {
+                        let ventasDiariasNecesarias = Math.ceil((metaVentas - totalVts) / (dias.restantes || 1));
+                        msj.innerHTML = `⚠️ Estás atrasado en tu objetivo.<br>¡Acelera! Necesitás un ritmo de <strong>${ventasDiariasNecesarias} ventas por día</strong> para alcanzar la meta.`;
+                        msj.style.color = '#e74c3c';
+                    } else {
+                        msj.innerHTML = `🚀 ¡Excelente ritmo! Venís adelantado al objetivo.<br>Tu proyección es de ${proyeccion} ventas. Mantené el paso.`;
+                        msj.style.color = '#a8d5e2';
+                    }
                 }
             } catch (e) { console.error(e); }
         }

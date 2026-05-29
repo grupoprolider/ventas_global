@@ -370,12 +370,12 @@
                     <strong id="totMonto">$0</strong>
                 </div>
                 <div class="metrica-box" style="border-color: #3498db; grid-column: span 1;">
-                    <span style="color: #3498db;">Obj. Equipo</span>
+                    <span style="color: #3498db;">Objetivo Equipo</span>
                     <strong id="totObj" style="color: #3498db;">0</strong>
                 </div>
                 <div class="metrica-box" style="border-color: #9b59b6; grid-column: span 2;">
-                    <span style="color: #9b59b6;">Incidencia vs Empresa</span>
-                    <strong id="totIncidencia" style="color: #9b59b6;">0%</strong>
+                    <span style="color: #9b59b6;">Proyección de Equipo</span>
+                    <strong id="totProyeccion" style="color: #9b59b6;">0</strong>
                 </div>
             </div>
         </div>
@@ -414,6 +414,34 @@
 
         function formatearPlata(num) {
             return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(num || 0);
+        }
+
+        function getDiasHabiles() {
+            const hoy = new Date();
+            let yearInicio = hoy.getFullYear();
+            let monthInicio = hoy.getMonth();
+            
+            if (hoy.getDate() < 16) {
+                monthInicio--; 
+            }
+            
+            let fechaInicio = new Date(yearInicio, monthInicio, 16);
+            let fechaFin = new Date(yearInicio, monthInicio + 1, 15);
+            
+            let totales = 0;
+            let transcurridos = 0;
+            
+            for (let d = new Date(fechaInicio); d <= fechaFin; d.setDate(d.getDate() + 1)) {
+                let diaSemana = d.getDay();
+                if (diaSemana !== 0 && diaSemana !== 6) {
+                    totales++;
+                    if (d <= hoy) {
+                        transcurridos++;
+                    }
+                }
+            }
+            if (transcurridos === 0) transcurridos = 1;
+            return { totales, transcurridos, restantes: Math.max(0, totales - transcurridos) };
         }
 
         function abrirRanking() {
@@ -518,7 +546,8 @@
                 });
 
                 let netasEquipo = totalBrutas - totalBajas;
-                let incidenciaEquipo = globalNetasEmpresa > 0 ? ((netasEquipo / globalNetasEmpresa) * 100).toFixed(1) : 0;
+                const dias = getDiasHabiles();
+                let proyeccionEquipo = Math.round((netasEquipo / dias.transcurridos) * dias.totales);
 
                 // Actualizar contadores del dashboard
                 document.getElementById('totBrutas').textContent = totalBrutas;
@@ -526,23 +555,31 @@
                 document.getElementById('totNetas').textContent = netasEquipo;
                 document.getElementById('totMonto').textContent = formatearPlata(globalMonto);
                 document.getElementById('totObj').textContent = totalObjetivoEquipo;
-                document.getElementById('totIncidencia').textContent = `${incidenciaEquipo}%`;
+                document.getElementById('totProyeccion').textContent = proyeccionEquipo;
 
-                // Renderizar lista de integrantes ordenados por ventas netas
-                let listaFinal = Object.values(mapStats).sort((a,b) => b.netas - a.netas || b.monto - a.monto);
+                // Renderizar lista de integrantes ordenados por atraso (riesgo)
+                let listaFinal = Object.values(mapStats).map(int => {
+                    let objCalc = int.objetivo || 20;
+                    let ritmoIdeal = objCalc / dias.totales;
+                    let esperadasHoy = ritmoIdeal * dias.transcurridos;
+                    int.atraso = esperadasHoy - int.netas;
+                    int.proyeccion = Math.round((int.netas / dias.transcurridos) * dias.totales);
+                    return int;
+                }).sort((a,b) => b.atraso - a.atraso);
                 
                 if (listaFinal.length === 0) {
                     document.getElementById('listaIntegrantes').innerHTML = `<li><div class="empty-state">No hay miembros en el equipo aún.</div></li>`;
                 } else {
                     document.getElementById('listaIntegrantes').innerHTML = listaFinal.map(int => {
-                        let inc = globalNetasEmpresa > 0 ? ((int.netas / globalNetasEmpresa) * 100).toFixed(1) : 0;
+                        let colorRiesgo = int.atraso > 0 ? '#e74c3c' : '#2ecc71';
+                        let badgeRiesgo = int.atraso > 0 ? `<span style="background:#e74c3c; color:white; padding: 2px 6px; border-radius:4px; font-size:10px; font-weight:bold; margin-left:5px;">Atrasado</span>` : `<span style="background:#2ecc71; color:white; padding: 2px 6px; border-radius:4px; font-size:10px; font-weight:bold; margin-left:5px;">A Ritmo</span>`;
                         return `
                         <li class="integrante-item">
                             <div class="integ-info">
-                                <span class="integ-nombre">${int.nombre} ${(int.rol || '').toLowerCase() === 'lider' ? '<i class="fa-solid fa-crown" style="color:var(--gpl-dorado); font-size:11px;" title="Líder"></i>' : ''}</span>
+                                <span class="integ-nombre">${int.nombre} ${(int.rol || '').toLowerCase() === 'lider' ? '<i class="fa-solid fa-crown" style="color:var(--gpl-dorado); font-size:11px;" title="Líder"></i>' : ''} ${badgeRiesgo}</span>
                                 <span class="integ-rol">Brutas: ${int.brutas} | Bajas: ${int.bajas} | Entrevistas: ${int.entrevistas}</span>
                                 <div style="font-size: 11px; color: #666; margin-top: 4px; font-weight: bold;">
-                                    🎯 Obj: <span style="color:var(--gpl-petroleo)">${int.objetivo}</span> &nbsp;|&nbsp; 📊 Incidencia Emp: <span style="color:#9b59b6">${inc}%</span>
+                                    🎯 Obj: <span style="color:var(--gpl-petroleo)">${int.objetivo}</span> &nbsp;|&nbsp; 📊 Proy: <span style="color:${colorRiesgo}">${int.proyeccion}</span>
                                 </div>
                             </div>
                             <div class="integ-stats">

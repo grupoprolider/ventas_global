@@ -384,8 +384,8 @@
                     <strong id="totObj" style="color: #3498db;">0</strong>
                 </div>
                 <div class="metrica-box" style="border-color: #9b59b6; grid-column: span 2;">
-                    <span style="color: #9b59b6;">Incidencia vs Empresa</span>
-                    <strong id="totIncidencia" style="color: #9b59b6;">0%</strong>
+                    <span style="color: #9b59b6;">Proyección de Agencia</span>
+                    <strong id="totProyeccion" style="color: #9b59b6;">0</strong>
                 </div>
 
                 <div class="metrica-box metrica-destacada">
@@ -402,9 +402,19 @@
             </ul>
         </div>
 
+        <div class="card-equipos" style="margin-top: 20px;">
+            <h3 style="background: #fff3f3; color: #e74c3c; border-bottom: 2px solid #fadbd8;"><i class="fa-solid fa-triangle-exclamation"></i> Radar de Alerta: Vendedores</h3>
+            <ul id="listaRadar" class="lista-equipos">
+                <li><div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i> Cargando radar...</div></li>
+            </ul>
+        </div>
+
         <div class="botones-accion">
             <button class="btn-accion btn-ver-ranking" onclick="abrirRanking()">
                 <i class="fa-solid fa-trophy"></i> Ver Ranking Nacional
+            </button>
+            <button class="btn-accion btn-mi-panel" onclick="irAMiPanel()" style="background: var(--gpl-dorado); color: black;">
+                <i class="fa-solid fa-user-gear"></i> Cargar mis propias ventas
             </button>
         </div>
 
@@ -428,6 +438,34 @@
             return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(num || 0);
         }
 
+        function getDiasHabiles() {
+            const hoy = new Date();
+            let yearInicio = hoy.getFullYear();
+            let monthInicio = hoy.getMonth();
+            
+            if (hoy.getDate() < 16) {
+                monthInicio--; 
+            }
+            
+            let fechaInicio = new Date(yearInicio, monthInicio, 16);
+            let fechaFin = new Date(yearInicio, monthInicio + 1, 15);
+            
+            let totales = 0;
+            let transcurridos = 0;
+            
+            for (let d = new Date(fechaInicio); d <= fechaFin; d.setDate(d.getDate() + 1)) {
+                let diaSemana = d.getDay();
+                if (diaSemana !== 0 && diaSemana !== 6) {
+                    totales++;
+                    if (d <= hoy) {
+                        transcurridos++;
+                    }
+                }
+            }
+            if (transcurridos === 0) transcurridos = 1;
+            return { totales, transcurridos, restantes: Math.max(0, totales - transcurridos) };
+        }
+
         function abrirRanking() {
             document.getElementById('iframeRanking').src = 'ranking_vendedores.html';
             document.getElementById('modalRanking').style.display = 'flex';
@@ -436,6 +474,12 @@
         function cerrarRanking() {
             document.getElementById('modalRanking').style.display = 'none';
             document.getElementById('iframeRanking').src = '';
+        }
+
+        function irAMiPanel() {
+            if(idSeguroURL) {
+                window.location.href = `panel_vendedor.html?id=${idSeguroURL}`;
+            }
         }
 
         async function init() {
@@ -593,19 +637,22 @@
             });
 
             let totalAgenciaNetas = totalAgenciaBrutas - totalAgenciaBajas;
-            let incidenciaAgencia = globalNetasEmpresa > 0 ? ((totalAgenciaNetas / globalNetasEmpresa) * 100).toFixed(1) : 0;
+            const dias = getDiasHabiles();
+            let proyeccionAgencia = Math.round((totalAgenciaNetas / dias.transcurridos) * dias.totales);
 
             document.getElementById('totBrutas').textContent = totalAgenciaBrutas;
             document.getElementById('totBajas').textContent = totalAgenciaBajas;
             document.getElementById('totNetas').textContent = totalAgenciaNetas;
             document.getElementById('totMonto').textContent = formatearPlata(totalAgenciaMonto);
             document.getElementById('totObj').textContent = totalAgenciaObjetivo;
-            document.getElementById('totIncidencia').textContent = `${incidenciaAgencia}%`;
+            document.getElementById('totProyeccion').textContent = proyeccionAgencia;
 
-            let listaEquiposFinal = Object.values(mapEquipos).sort((a,b) => b.netas - a.netas || b.monto - a.monto);
+            let listaEquiposFinal = Object.values(mapEquipos).map(eq => {
+                eq.proyeccion = Math.round((eq.netas / dias.transcurridos) * dias.totales);
+                return eq;
+            }).sort((a,b) => b.netas - a.netas || b.monto - a.monto);
             
             document.getElementById('listaEquipos').innerHTML = listaEquiposFinal.map(eq => {
-                let inc = globalNetasEmpresa > 0 ? ((eq.netas / globalNetasEmpresa) * 100).toFixed(1) : 0;
                 return `
                 <li class="equipo-item">
                     <div class="equipo-header">
@@ -622,12 +669,48 @@
                             <strong>${eq.objetivo}</strong>
                         </div>
                         <div class="eq-stat">
-                            <span>Incidencia</span>
-                            <strong style="color:#9b59b6">${inc}%</strong>
+                            <span>Proyección</span>
+                            <strong style="color:#9b59b6">${eq.proyeccion}</strong>
                         </div>
                         <div class="eq-stat">
                             <span>Facturación</span>
                             <strong style="color:#2ecc71; font-family:monospace; font-size:12px;">$${(eq.monto/1000).toFixed(1)}k</strong>
+                        </div>
+                    </div>
+                </li>
+                `;
+            }).join('');
+
+            // Generar radar de vendedores
+            let listaVendedores = integrantesAgencia.map(i => {
+                let vts = 0;
+                ventasAgencia.filter(v => v.vendedor_id === i.id).forEach(v => {
+                    vts += (v.ventas_cerradas || 0) - (v.bajas || 0);
+                });
+                let obj = i.objetivo_campana || 20;
+                let ritmoIdeal = obj / dias.totales;
+                let esperadasHoy = ritmoIdeal * dias.transcurridos;
+                let atraso = esperadasHoy - vts;
+                let proyeccion = Math.round((vts / dias.transcurridos) * dias.totales);
+                
+                let eq = mapEquipos[i.equipo_id]?.nombre || 'Sin Equipo';
+                
+                return { nombre: i.nombre, equipo: eq, netas: vts, objetivo: obj, atraso: atraso, proyeccion: proyeccion };
+            }).sort((a,b) => b.atraso - a.atraso);
+            
+            document.getElementById('listaRadar').innerHTML = listaVendedores.map(v => {
+                let colorRiesgo = v.atraso > 0 ? '#e74c3c' : '#2ecc71';
+                let badge = v.atraso > 0 ? `<span style="background:#e74c3c; color:white; padding: 2px 6px; border-radius:4px; font-size:10px; font-weight:bold; margin-left:5px;">Atrasado</span>` : `<span style="background:#2ecc71; color:white; padding: 2px 6px; border-radius:4px; font-size:10px; font-weight:bold; margin-left:5px;">A Ritmo</span>`;
+                return `
+                <li class="equipo-item" style="padding: 10px 20px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <strong style="font-size:13px; color:#333;">${v.nombre} ${badge}</strong>
+                            <div style="font-size:11px; color:#777; margin-top:2px;">${v.equipo}</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:12px; font-weight:bold; color:var(--gpl-petroleo);">Obj: ${v.objetivo} | Netas: ${v.netas}</div>
+                            <div style="font-size:11px; color:${colorRiesgo}; margin-top:2px; font-weight:bold;">Proy: ${v.proyeccion}</div>
                         </div>
                     </div>
                 </li>
