@@ -451,6 +451,18 @@
                     <canvas id="chartBajas"></canvas>
                 </div>
             </div>
+            <div class="chart-card">
+                <h3>Bancos Vendidos</h3>
+                <div class="chart-wrapper">
+                    <canvas id="chartBancos"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3>Beneficios / Empleos</h3>
+                <div class="chart-wrapper">
+                    <canvas id="chartBeneficios"></canvas>
+                </div>
+            </div>
         </div>
 
         <div class="card-equipos" style="margin-bottom: 25px; background: white; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
@@ -663,6 +675,70 @@
                         maintainAspectRatio: false,
                         plugins: {
                             legend: { position: 'bottom' }
+                    }
+                });
+
+                // Gráficos 3 y 4: Bancos y Beneficios
+                let mapBancos = {};
+                let mapBeneficios = {};
+
+                ventas.forEach(v => {
+                    let netasVenta = (v.ventas_cerradas || 0) - (v.bajas || 0);
+                    if (netasVenta > 0) {
+                        let banco = v.medio_pago || 'Otro';
+                        let beneficio = v.beneficio || 'Otro';
+                        
+                        mapBancos[banco] = (mapBancos[banco] || 0) + netasVenta;
+                        mapBeneficios[beneficio] = (mapBeneficios[beneficio] || 0) + netasVenta;
+                    }
+                });
+
+                const paletaColores = ['#3498db', '#e74c3c', '#f1c40f', '#2ecc71', '#9b59b6', '#e67e22', '#1abc9c', '#34495e', '#006779', '#A42A68', '#f39c12', '#d35400'];
+
+                // Renderizar Gráfico Bancos
+                let labelsBancos = Object.keys(mapBancos);
+                let dataBancos = Object.values(mapBancos);
+                const ctxBancos = document.getElementById('chartBancos').getContext('2d');
+                new Chart(ctxBancos, {
+                    type: 'pie',
+                    data: {
+                        labels: labelsBancos,
+                        datasets: [{
+                            data: dataBancos,
+                            backgroundColor: paletaColores.slice(0, labelsBancos.length),
+                            borderWidth: 2,
+                            borderColor: '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } }
+                        }
+                    }
+                });
+
+                // Renderizar Gráfico Beneficios
+                let labelsBeneficios = Object.keys(mapBeneficios);
+                let dataBeneficios = Object.values(mapBeneficios);
+                const ctxBeneficios = document.getElementById('chartBeneficios').getContext('2d');
+                new Chart(ctxBeneficios, {
+                    type: 'pie',
+                    data: {
+                        labels: labelsBeneficios,
+                        datasets: [{
+                            data: dataBeneficios,
+                            backgroundColor: paletaColores.slice(0, labelsBeneficios.length).reverse(),
+                            borderWidth: 2,
+                            borderColor: '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } }
                         }
                     }
                 });
