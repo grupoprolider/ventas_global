@@ -293,7 +293,8 @@
                         <select id="per_rol">
                             <option value="Vendedor">Vendedor</option>
                             <option value="Líder">Líder</option>
-                            <option value="Admin">Admin</option>
+                            <option value="Coordinador">Coordinador</option>
+                            <option value="Supervisor">Supervisor</option>
                         </select>
                     </div>
                     <div>
@@ -448,7 +449,7 @@
 
         function cargarPersonal(perfiles, equipos) {
             const tbody = document.querySelector('#tabla_personal tbody');
-            tbody.innerHTML = perfiles.map(p => `<tr><td>${p.nombre}</td><td><select onchange="updatePerfil('${p.id}', 'equipo_id', this.value)"><option value="">Sin Equipo</option>${equipos.map(e => `<option value="${e.id}" ${e.id === p.equipo_id ? 'selected' : ''}>${e.nombre}</option>`).join('')}</select></td><td><select onchange="updatePerfil('${p.id}', 'rol', this.value)"><option value="Vendedor" ${p.rol === 'Vendedor' ? 'selected' : ''}>Vendedor</option><option value="Líder" ${p.rol === 'Líder' ? 'selected' : ''}>Líder</option><option value="Admin" ${p.rol === 'Admin' ? 'selected' : ''}>Admin</option></select></td><td><select onchange="updatePerfil('${p.id}', 'categoria', this.value)"><option value="Senior" ${p.categoria === 'Senior' ? 'selected' : ''}>Senior</option><option value="Junior" ${p.categoria === 'Junior' ? 'selected' : ''}>Junior</option></select></td><td><button class="btn-del" onclick="borrar('perfiles', '${p.id}')">BAJA</button></td></tr>`).join('');
+            tbody.innerHTML = perfiles.map(p => `<tr><td>${p.nombre}</td><td><select onchange="updatePerfil('${p.id}', 'equipo_id', this.value)"><option value="">Sin Equipo</option>${equipos.map(e => `<option value="${e.id}" ${e.id === p.equipo_id ? 'selected' : ''}>${e.nombre}</option>`).join('')}</select></td><td><select onchange="updatePerfil('${p.id}', 'rol', this.value)"><option value="Vendedor" ${p.rol === 'Vendedor' ? 'selected' : ''}>Vendedor</option><option value="Líder" ${p.rol === 'Líder' ? 'selected' : ''}>Líder</option><option value="Coordinador" ${p.rol === 'Coordinador' ? 'selected' : ''}>Coordinador</option><option value="Supervisor" ${p.rol === 'Supervisor' ? 'selected' : ''}>Supervisor</option></select></td><td><select onchange="updatePerfil('${p.id}', 'categoria', this.value)"><option value="Senior" ${p.categoria === 'Senior' ? 'selected' : ''}>Senior</option><option value="Junior" ${p.categoria === 'Junior' ? 'selected' : ''}>Junior</option></select></td><td><button class="btn-del" onclick="borrar('perfiles', '${p.id}')">BAJA</button></td></tr>`).join('');
         }
 
         async function crearPersonal() {
