@@ -137,13 +137,16 @@
 
         async function cargarRankings() {
             try {
-                const hoy = new Date();
-                const campana = `Campaña ${["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth()+1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
-                document.getElementById('txtCampana').textContent = campana;
-
-                // VERIFICADOR DE PRIVACIDAD
                 const urlParams = new URLSearchParams(window.location.search);
                 const esGerente = urlParams.get('mode') === 'gerente';
+                
+                let campana = urlParams.get('campana');
+                if (!campana) {
+                    const hoy = new Date();
+                    campana = `Campaña ${["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth()+1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
+                }
+                
+                document.getElementById('txtCampana').textContent = campana;
 
                 if (esGerente) {
                     document.getElementById('btnDescargarExcel').style.display = 'flex';

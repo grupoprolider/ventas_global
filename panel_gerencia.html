@@ -409,7 +409,9 @@
             <br>
             <span class="badge-rol" style="margin-bottom: 5px;"><i class="fa-solid fa-eye"></i> Visión Gerencial</span>
             <h2 style="color: var(--gpl-petroleo); margin: 0; font-size: 20px; text-transform: uppercase; font-weight: 900; padding: 0;">Dashboard Corporativo</h2>
-            <div id="txtCampana" style="background: var(--gpl-dorado); color: black; padding: 4px 15px; border-radius: 20px; font-size: 11px; font-weight: 900; text-transform: uppercase; display: inline-block; margin-top: 8px; letter-spacing: 0.5px;">Cargando campaña...</div>
+            <select id="selectCampana" onchange="cambiarCampana()" style="background: var(--gpl-dorado); color: black; padding: 4px 15px; border-radius: 20px; font-size: 11px; font-weight: 900; text-transform: uppercase; display: inline-block; margin-top: 8px; letter-spacing: 0.5px; border: none; outline: none; cursor: pointer; text-align: center;">
+                <option value="">Cargando campaña...</option>
+            </select>
         </div>
 
         <div class="kpi-grid">
@@ -516,27 +518,25 @@
             return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(num || 0);
         }
 
-        async function getDiasHabiles() {
+        const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+
+        async function getDiasHabiles(campanaStr) {
+            let partes = campanaStr.split(" ");
+            let mesNombre = partes[1];
+            let year = parseInt(partes[2]);
+            let mesIndex = meses.indexOf(mesNombre);
+
+            let fechaInicio = new Date(year, mesIndex - 1, 16);
+            let fechaFin = new Date(year, mesIndex, 15);
+            
             const hoy = new Date();
-            let yearInicio = hoy.getFullYear();
-            let monthInicio = hoy.getMonth();
-            
-            if (hoy.getDate() < 16) {
-                monthInicio--; 
-            }
-            
-            let fechaInicio = new Date(yearInicio, monthInicio, 16);
-            let fechaFin = new Date(yearInicio, monthInicio + 1, 15);
+            let esPasada = (fechaFin < new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()));
 
             let feriadosArr = [];
             try {
                 const { data: fers, error } = await clienteSupabase.from('opciones_feriados').select('*');
-                if (!error && fers) {
-                    feriadosArr = fers.map(f => f.nombre);
-                }
-            } catch (e) {
-                console.error("Feriados table not found", e);
-            }
+                if (!error && fers) { feriadosArr = fers.map(f => f.nombre); }
+            } catch (e) { console.error("Feriados table not found", e); }
             
             let totales = 0;
             let transcurridos = 0;
@@ -547,16 +547,56 @@
                     let dStr = d.toISOString().split('T')[0];
                     if (!feriadosArr.includes(dStr)) {
                         totales++;
-                        if (d <= hoy) transcurridos++;
+                        if (esPasada) {
+                            transcurridos++;
+                        } else {
+                            if (d <= hoy) transcurridos++;
+                        }
                     }
                 }
             }
-            return { totales, transcurridos, restantes: Math.max(0, totales - transcurridos) };
+            if (transcurridos === 0) transcurridos = 1;
+            return { totales, transcurridos, restantes: esPasada ? 0 : Math.max(0, totales - transcurridos) };
+        }
+
+        let campanaGlobal = "";
+
+        function generarListaCampanas() {
+            const hoy = new Date();
+            let lista = [];
+            let mIndex = hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth();
+            let y = hoy.getFullYear();
+            if (mIndex > 11) { mIndex = 0; y++; }
+            if (mIndex < 0) { mIndex = 11; y--; }
+
+            for (let i = 0; i < 6; i++) {
+                let tempM = mIndex - i;
+                let tempY = y;
+                if (tempM < 0) { tempM += 12; tempY--; }
+                lista.push(`Campaña ${meses[tempM]} ${tempY}`);
+            }
+            return lista;
         }
 
         function abrirRanking() {
-            document.getElementById('iframeRanking').src = 'ranking_vendedores.html?mode=gerente';
+            document.getElementById('iframeRanking').src = 'ranking_vendedores.html?mode=gerente&campana=' + encodeURIComponent(campanaGlobal);
             document.getElementById('modalRanking').style.display = 'flex';
+        }
+
+        function cambiarCampana() {
+            campanaGlobal = document.getElementById('selectCampana').value;
+            document.getElementById('loading').style.display = 'flex';
+            document.getElementById('mainContainer').style.display = 'none';
+            inicializarDashboard(campanaGlobal);
+        }
+
+        async function startApp() {
+            let lista = generarListaCampanas();
+            let select = document.getElementById('selectCampana');
+            select.innerHTML = lista.map((c, i) => `<option value="${c}">${c} ${i === 0 ? '(Actual)' : ''}</option>`).join('');
+            
+            campanaGlobal = lista[0];
+            inicializarDashboard(campanaGlobal);
         }
 
         function cerrarRanking() {
@@ -578,11 +618,8 @@
             }
         }
 
-        async function inicializarDashboard() {
+        async function inicializarDashboard(campanaStr) {
             try {
-                const hoy = new Date();
-                const campanaStr = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
-                document.getElementById('txtCampana').textContent = campanaStr;
 
                 // 1. Obtener todos los datos necesarios
                 const [resVentas, resPerfiles, resEquipos, resAgencias] = await Promise.all([
@@ -872,7 +909,7 @@
                 document.getElementById('listaDesgloseAgencias').innerHTML = htmlDesglose;
 
                 // 5. Armar Radar Corporativo
-                const dias = await getDiasHabiles();
+                const dias = await getDiasHabiles(campanaStr);
                 document.getElementById('kpiDias').textContent = dias.restantes;
                 let listaVendedores = perfiles.map(p => {
                     let vts = 0;
@@ -952,7 +989,7 @@
         }
 
         // Iniciar
-        window.onload = inicializarDashboard;
+        window.onload = startApp;
 
     </script>
 </body>
