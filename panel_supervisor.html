@@ -579,7 +579,7 @@
             renderizarAgencia(idAgencia);
         }
 
-        function renderizarAgencia(idAgencia) {
+        async function renderizarAgencia(idAgencia) {
             const agencia = globalAgencias.find(a => a.id === idAgencia);
             if (!agencia) return;
 
