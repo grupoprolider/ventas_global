@@ -171,7 +171,7 @@
 
         .metas-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr;
             gap: 10px;
             background: rgba(0, 0, 0, 0.2);
             padding: 15px;
@@ -402,10 +402,9 @@
                 <div id="barraProgreso" class="progreso-llenado"></div>
             </div>
             <div class="metas-grid">
-                <div class="meta-item"><span>OBJETIVO VENTAS</span><span id="txtMetaVentas" class="meta-valor">0 /
-                        0</span></div>
-                <div class="meta-item"><span>OBJETIVO IMPORTE</span><span id="txtMetaMonto" class="meta-valor">$0 /
-                        $0</span></div>
+                <div class="meta-item"><span>OBJ. VENTAS</span><span id="txtMetaVentas" class="meta-valor">0 / 0</span></div>
+                <div class="meta-item"><span>OBJ. IMPORTE</span><span id="txtMetaMonto" class="meta-valor">$0 / $0</span></div>
+                <div class="meta-item"><span>DÍAS RESTANTES</span><span id="txtDias" class="meta-valor" style="color:#f39c12;">0</span></div>
             </div>
             <div id="txtMensajeMotivador" class="mensaje-motivador">Sincronizando con la base de datos...</div>
         </div>
@@ -471,27 +470,31 @@
             return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(num || 0);
         }
 
-        function getDiasHabiles() {
+        async function getDiasHabiles() {
             const hoy = new Date();
             let yearInicio = hoy.getFullYear();
             let monthInicio = hoy.getMonth();
-            
-            if (hoy.getDate() < 16) {
-                monthInicio--; 
-            }
+            if (hoy.getDate() < 16) { monthInicio--; }
             
             let fechaInicio = new Date(yearInicio, monthInicio, 16);
             let fechaFin = new Date(yearInicio, monthInicio + 1, 15);
+            
+            let feriadosArr = [];
+            try {
+                const { data: fers, error } = await clienteSupabase.from('opciones_feriados').select('*');
+                if (!error && fers) { feriadosArr = fers.map(f => f.nombre); }
+            } catch (e) { console.error(e); }
             
             let totales = 0;
             let transcurridos = 0;
             
             for (let d = new Date(fechaInicio); d <= fechaFin; d.setDate(d.getDate() + 1)) {
-                let diaSemana = d.getDay();
-                if (diaSemana !== 0 && diaSemana !== 6) { // Lunes a Viernes
-                    totales++;
-                    if (d <= hoy) {
-                        transcurridos++;
+                let day = d.getDay();
+                if (day !== 0 && day !== 6) {
+                    let dStr = d.toISOString().split('T')[0];
+                    if (!feriadosArr.includes(dStr)) {
+                        totales++;
+                        if (d <= hoy) transcurridos++;
                     }
                 }
             }
@@ -571,7 +574,7 @@
                 const metaVentas = p.objetivo_campana || 20;
 
                 // CÁLCULO DE PROYECCIÓN
-                const dias = getDiasHabiles();
+                const dias = await getDiasHabiles();
                 const proyeccion = Math.round((totalVts / dias.transcurridos) * dias.totales);
                 const ritmoIdeal = metaVentas / dias.totales;
                 const ventasEsperadasHoy = ritmoIdeal * dias.transcurridos;
@@ -580,6 +583,7 @@
                 document.getElementById('txtComision').textContent = formatearPlata(gananciaReal);
                 document.getElementById('txtMetaVentas').innerHTML = `${totalVts} / ${metaVentas} <span style="display:block; font-size:10px; color:#a8d5e2; margin-top:2px; font-weight:900;">PROY. MES: ${proyeccion}</span>`;
                 document.getElementById('txtMetaMonto').textContent = `${formatearPlata(totalMonto)} / ${formatearPlata(metaMonto)}`;
+                document.getElementById('txtDias').textContent = dias.restantes;
 
                 let porcMonto = (totalMonto / metaMonto) * 100;
                 let barra = document.getElementById('barraProgreso');

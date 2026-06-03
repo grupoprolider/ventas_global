@@ -356,7 +356,7 @@
         </div>
 
         <div id="tab5" class="tab-content">
-            <div class="card-admin" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="card-admin" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
                 <div>
                     <h3>Beneficios / Ocupación</h3>
                     <div class="form-row">
@@ -372,6 +372,14 @@
                         <button class="btn-add" onclick="addOpt('opciones_bancos', 'opt_bnc')">Añadir</button>
                     </div>
                     <ul id="lista_bnc" style="list-style:none; padding:0;"></ul>
+                </div>
+                <div>
+                    <h3>Feriados (Fechas)</h3>
+                    <div class="form-row" style="margin-bottom: 10px;">
+                        <div><input type="date" id="opt_fer"></div>
+                        <button class="btn-add" onclick="addOpt('opciones_feriados', 'opt_fer')">Añadir</button>
+                    </div>
+                    <ul id="lista_fer" style="list-style:none; padding:0;"></ul>
                 </div>
             </div>
         </div>
@@ -560,6 +568,9 @@
 
             const { data: bncs } = await clienteSupabase.from('opciones_bancos').select('*').order('nombre');
             if (bncs) document.getElementById('lista_bnc').innerHTML = bncs.map(b => `<li style="padding:8px; border-bottom:1px solid #333; display:flex; justify-content:space-between;">${b.nombre} <button class="btn-del" onclick="borrarOpt('opciones_bancos', '${b.id}')">X</button></li>`).join('');
+
+            const { data: fers } = await clienteSupabase.from('opciones_feriados').select('*').order('nombre');
+            if (fers) document.getElementById('lista_fer').innerHTML = fers.map(b => `<li style="padding:8px; border-bottom:1px solid #333; display:flex; justify-content:space-between;">${b.nombre} <button class="btn-del" onclick="borrarOpt('opciones_feriados', '${b.id}')">X</button></li>`).join('');
         }
 
         async function addOpt(tabla, inputId) {

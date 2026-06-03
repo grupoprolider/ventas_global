@@ -373,9 +373,13 @@
                     <span style="color: #3498db;">Objetivo Equipo</span>
                     <strong id="totObj" style="color: #3498db;">0</strong>
                 </div>
-                <div class="metrica-box" style="border-color: #9b59b6; grid-column: span 2;">
-                    <span style="color: #9b59b6;">Proyección de Equipo</span>
+                <div class="metrica-box" style="border-color: #9b59b6; grid-column: span 1;">
+                    <span style="color: #9b59b6;">Proy. Mes</span>
                     <strong id="totProyeccion" style="color: #9b59b6;">0</strong>
+                </div>
+                <div class="metrica-box" style="border-color: #f39c12; grid-column: span 1;">
+                    <span style="color: #f39c12;">Días Restantes</span>
+                    <strong id="totDias" style="color: #f39c12;">0</strong>
                 </div>
             </div>
         </div>
@@ -416,27 +420,31 @@
             return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(num || 0);
         }
 
-        function getDiasHabiles() {
+        async function getDiasHabiles() {
             const hoy = new Date();
             let yearInicio = hoy.getFullYear();
             let monthInicio = hoy.getMonth();
-            
-            if (hoy.getDate() < 16) {
-                monthInicio--; 
-            }
+            if (hoy.getDate() < 16) { monthInicio--; }
             
             let fechaInicio = new Date(yearInicio, monthInicio, 16);
             let fechaFin = new Date(yearInicio, monthInicio + 1, 15);
+            
+            let feriadosArr = [];
+            try {
+                const { data: fers, error } = await clienteSupabase.from('opciones_feriados').select('*');
+                if (!error && fers) { feriadosArr = fers.map(f => f.nombre); }
+            } catch (e) { console.error(e); }
             
             let totales = 0;
             let transcurridos = 0;
             
             for (let d = new Date(fechaInicio); d <= fechaFin; d.setDate(d.getDate() + 1)) {
-                let diaSemana = d.getDay();
-                if (diaSemana !== 0 && diaSemana !== 6) {
-                    totales++;
-                    if (d <= hoy) {
-                        transcurridos++;
+                let day = d.getDay();
+                if (day !== 0 && day !== 6) {
+                    let dStr = d.toISOString().split('T')[0];
+                    if (!feriadosArr.includes(dStr)) {
+                        totales++;
+                        if (d <= hoy) transcurridos++;
                     }
                 }
             }
@@ -546,7 +554,8 @@
                 });
 
                 let netasEquipo = totalBrutas - totalBajas;
-                const dias = getDiasHabiles();
+                const dias = await getDiasHabiles();
+                document.getElementById('totDias').textContent = dias.restantes;
                 let proyeccionEquipo = Math.round((netasEquipo / dias.transcurridos) * dias.totales);
 
                 // Actualizar contadores del dashboard
