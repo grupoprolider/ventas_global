@@ -146,7 +146,7 @@
             color: var(--gpl-dorado);
             display: block;
             margin: 5px 0 15px 0;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+            text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff, 2px 2px 5px rgba(0, 0, 0, 0.4);
         }
 
         .progreso-barra {
@@ -600,8 +600,8 @@
                     
                     if (atraso > 0) {
                         let ventasDiariasNecesarias = Math.ceil((metaVentas - totalVts) / (dias.restantes || 1));
-                        msj.innerHTML = `⚠️ Estás atrasado en tu objetivo.<br>¡Acelera! Necesitás un ritmo de <strong>${ventasDiariasNecesarias} ventas por día</strong> para alcanzar la meta.`;
-                        msj.style.color = '#e74c3c';
+                        msj.innerHTML = `⚠️ <span style="color: #ffcccc;">Estás atrasado en tu objetivo.</span><br><span style="color: white;">¡Acelera! Necesitás un ritmo de <strong>${ventasDiariasNecesarias} ventas por día</strong> para alcanzar la meta.</span>`;
+                        msj.style.color = '#fff';
                     } else {
                         msj.innerHTML = `🚀 ¡Excelente ritmo! Venís adelantado al objetivo.<br>Tu proyección es de ${proyeccion} ventas. Mantené el paso.`;
                         msj.style.color = '#a8d5e2';
