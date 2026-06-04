@@ -733,7 +733,9 @@
                 // Gráficos 3 y 4: Bancos y Beneficios
                 // Normalizadores para evitar duplicados por errores de tipeo o encoding
                 function normalizarBeneficio(txt) {
-                    if (!txt || txt.trim() === '') return 'Otro';
+                    if (txt === null || txt === undefined) return 'Otro';
+                    txt = String(txt);
+                    if (txt.trim() === '') return 'Otro';
                     let nb = txt.toUpperCase().trim();
                     nb = nb.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); 
                     nb = nb.replace(/\uFFFD/g, "O");
@@ -751,7 +753,9 @@
                 }
 
                 function normalizarBanco(txt) {
-                    if (!txt || txt.trim() === '') return 'Otro';
+                    if (txt === null || txt === undefined) return 'Otro';
+                    txt = String(txt);
+                    if (txt.trim() === '') return 'Otro';
                     let nb = txt.toUpperCase().trim();
                     nb = nb.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); 
                     nb = nb.replace(/\uFFFD/g, "O");
