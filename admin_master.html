@@ -447,7 +447,18 @@
         function cargarEquipos(listaEqs, listaGente, listaAgs) {
             const tbody = document.querySelector('#tabla_equipos tbody');
             if (!listaEqs.length) return tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No hay equipos creados.</td></tr>';
-            tbody.innerHTML = listaEqs.map(e => `<tr><td>${e.nombre}</td><td>${listaGente.find(p => p.id === e.lider_id)?.nombre || '-'}</td><td>${listaGente.find(p => p.id === e.coordinador_id)?.nombre || '-'}</td><td>${listaAgs.find(a => a.id === e.agencia_id)?.nombre || '-'}</td><td><button class="btn-del" onclick="borrar('equipos', '${e.id}')">Eliminar</button></td></tr>`).join('');
+            
+            const coordinadores = listaGente.filter(p => p.rol === 'Coordinador');
+            
+            tbody.innerHTML = listaEqs.map(e => `
+                <tr>
+                    <td>${e.nombre}</td>
+                    <td><select onchange="updateEquipo('${e.id}', 'lider_id', this.value)"><option value="">Sin Líder</option>${listaGente.map(p => `<option value="${p.id}" ${p.id === e.lider_id ? 'selected' : ''}>${p.nombre}</option>`).join('')}</select></td>
+                    <td><select onchange="updateEquipo('${e.id}', 'coordinador_id', this.value)"><option value="">Sin Coordinador</option>${coordinadores.map(p => `<option value="${p.id}" ${p.id === e.coordinador_id ? 'selected' : ''}>${p.nombre}</option>`).join('')}</select></td>
+                    <td><select onchange="updateEquipo('${e.id}', 'agencia_id', this.value)"><option value="">Sin Agencia</option>${listaAgs.map(a => `<option value="${a.id}" ${a.id === e.agencia_id ? 'selected' : ''}>${a.nombre}</option>`).join('')}</select></td>
+                    <td><button class="btn-del" onclick="borrar('equipos', '${e.id}')">Eliminar</button></td>
+                </tr>
+            `).join('');
         }
 
         async function crearEquipo() {
@@ -458,6 +469,12 @@
             if (!n) return alert("Ingresá un nombre para el equipo");
             const { error } = await clienteSupabase.from('equipos').insert([{ nombre: n, lider_id: l === "" ? null : l, coordinador_id: c === "" ? null : c, agencia_id: a === "" ? null : a }]);
             if (error) alert("Error: " + error.message); else { document.getElementById('eq_nombre').value = ''; refrescarDatos(); }
+        }
+
+        async function updateEquipo(id, campo, valor) {
+            const valFinal = valor === "" ? null : valor;
+            const { error } = await clienteSupabase.from('equipos').update({ [campo]: valFinal }).eq('id', id);
+            if (error) alert("Error: " + error.message); else refrescarDatos();
         }
 
         function cargarPersonal(perfiles, equipos) {
