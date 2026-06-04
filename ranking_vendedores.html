@@ -68,6 +68,9 @@
         <img src="LOGO-gpl.png" alt="GPL">
         <h2>Ranking Nacional de Ventas</h2>
         <div id="txtCampana" class="campana-badge">Cargando...</div>
+        <select id="selectFiltroAgencia" onchange="filtrarRankingPorAgencia()" style="display: none; width: 90%; max-width: 340px; margin: 15px auto 5px auto; padding: 12px; border-radius: 8px; border: 2px solid var(--gpl-dorado); background: var(--fondo-oscuro); color: white; font-weight: bold; font-size: 14px; outline: none; cursor: pointer;">
+            <option value="TODAS">🌟 TODAS LAS AGENCIAS (Nacional)</option>
+        </select>
         <button id="btnDescargarExcel" class="btn-excel" onclick="descargarExcelGerencial()">
             <i class="fa-solid fa-file-excel"></i> Descargar Reporte Excel Gerencial
         </button>
@@ -200,19 +203,13 @@
 
                 nacList.forEach((v, idx) => v.rank = idx); // Almacenamos el ranking original
 
-                window.datosGlobalesReporte = { L_Vtas, L_Perfiles, L_Equipos, L_Agencias, nacList, campana, esGerente };
+                window.datosGlobalesReporte = { L_Vtas, L_Perfiles, L_Equipos, L_Agencias, nacList, campana, esGerente, mAg, mEq };
 
-                document.getElementById('cuerpoNacional').innerHTML = nacList.map((v, i) => `
-                    <tr>
-                        <td class="posicion">${getMedalla(v.rank)}</td>
-                        <td class="info-principal" style="border-left: 4px solid ${v.color}">
-                            <span class="col-nombre">${v.nom}</span><span class="sub-txt">${v.eq} • ${v.ag}</span>
-                        </td>
-                        <td class="entr-col">${v.ent}</td>
-                        <td class="vts-netas-col"><span class="vts-neta">${v.neta}</span></td>
-                        <td class="monto-col">$${v.monto.toLocaleString()}</td>
-                    </tr>
-                `).join('');
+                let selectFiltro = document.getElementById('selectFiltroAgencia');
+                L_Agencias.forEach(a => {
+                    selectFiltro.innerHTML += `<option value="${a.nombre}">${a.nombre}</option>`;
+                });
+                selectFiltro.style.display = 'block';
 
                 let agsFinal = Object.values(mAg).sort((a,b) => b.v - a.v || b.m - a.m);
                 document.getElementById('cuerpoAgencias').innerHTML = agsFinal.map((a, i) => `
@@ -226,21 +223,45 @@
                     </tr>
                 `).join('');
 
-                let eqsFinal = Object.values(mEq).sort((a,b) => b.v - a.v || b.m - a.m);
-                document.getElementById('cuerpoEquipos').innerHTML = eqsFinal.map((e, i) => {
-                    let agNom = mAg[e.a_id]?.n || 'Sin Agencia';
-                    return `
-                    <tr>
-                        <td class="posicion">${getMedalla(i)}</td>
-                        <td class="info-principal">
-                            <span class="col-nombre">${e.n}</span><span class="sub-txt">Líder: ${e.l} • ${agNom}</span>
-                        </td>
-                        <td class="vts-netas-col"><span class="vts-neta">${e.v}</span></td>
-                        ${esGerente ? `<td class="monto-col">$${e.m.toLocaleString()}</td>` : ''}
-                    </tr>
-                `}).join('');
-
+                renderTablas('TODAS');
             } catch (error) { console.error("Error cargando rankings:", error); }
+        }
+
+        function renderTablas(filtroAgencia) {
+            if (!window.datosGlobalesReporte) return;
+            const { mAg, mEq, nacList, esGerente } = window.datosGlobalesReporte;
+            
+            let filtradosNac = nacList.filter(v => filtroAgencia === 'TODAS' || v.ag === filtroAgencia);
+            document.getElementById('cuerpoNacional').innerHTML = filtradosNac.map((v, i) => `
+                <tr>
+                    <td class="posicion">${getMedalla(i)}</td>
+                    <td class="info-principal" style="border-left: 4px solid ${v.color}">
+                        <span class="col-nombre">${v.nom}</span><span class="sub-txt">${v.eq} • ${v.ag}</span>
+                    </td>
+                    <td class="entr-col">${v.ent}</td>
+                    <td class="vts-netas-col"><span class="vts-neta">${v.neta}</span></td>
+                    <td class="monto-col">$${v.monto.toLocaleString()}</td>
+                </tr>
+            `).join('');
+
+            let filtradosEq = Object.values(mEq).filter(e => filtroAgencia === 'TODAS' || mAg[e.a_id]?.n === filtroAgencia).sort((a,b) => b.v - a.v || b.m - a.m);
+            document.getElementById('cuerpoEquipos').innerHTML = filtradosEq.map((e, i) => {
+                let agNom = mAg[e.a_id]?.n || 'Sin Agencia';
+                return `
+                <tr>
+                    <td class="posicion">${getMedalla(i)}</td>
+                    <td class="info-principal">
+                        <span class="col-nombre">${e.n}</span><span class="sub-txt">Líder: ${e.l} • ${agNom}</span>
+                    </td>
+                    <td class="vts-netas-col"><span class="vts-neta">${e.v}</span></td>
+                    ${esGerente ? `<td class="monto-col">$${e.m.toLocaleString()}</td>` : ''}
+                </tr>
+            `}).join('');
+        }
+
+        function filtrarRankingPorAgencia() {
+            let ag = document.getElementById('selectFiltroAgencia').value;
+            renderTablas(ag);
         }
 
         function descargarExcelGerencial() {
@@ -282,17 +303,7 @@
                 }
             });
             
-            document.getElementById('cuerpoNacional').innerHTML = lista.map((v) => `
-                <tr>
-                    <td class="posicion">${getMedalla(v.rank)}</td>
-                    <td class="info-principal" style="border-left: 4px solid ${v.color}">
-                        <span class="col-nombre">${v.nom}</span><span class="sub-txt">${v.eq} • ${v.ag}</span>
-                    </td>
-                    <td class="entr-col">${v.ent}</td>
-                    <td class="vts-netas-col"><span class="vts-neta">${v.neta}</span></td>
-                    <td class="monto-col">$${v.monto.toLocaleString()}</td>
-                </tr>
-            `).join('');
+            filtrarRankingPorAgencia();
         }
 
         cargarRankings();
