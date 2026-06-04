@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Coordinador - Grupo ProLíder</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --gpl-petroleo: #006779;
+            --gpl-dorado: #A42A68;
+            --gpl-borravino: #72224c;
+            --blanco: #ffffff;
+            --fondo-oscuro: #1a252c;
+            --celda-oscura: #23323c;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 15px;
+            color: #333;
+            padding-bottom: 40px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        /* HEADER PERFIL SUPERVISOR */
+        .card-perfil {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            border-left: 8px solid var(--gpl-petroleo);
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .btn-logout {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: #c0392b;
+            text-decoration: none;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            background: rgba(192, 57, 43, 0.1);
+            padding: 5px 10px;
+            border-radius: 8px;
+            transition: 0.2s;
+        }
+
+        .btn-logout:hover {
+            background: rgba(192, 57, 43, 0.2);
+        }
+
+        .badge-rol {
+            background: var(--gpl-petroleo);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+
+        h2 {
+            margin: 0;
+            color: var(--gpl-petroleo);
+            font-size: 22px;
+            text-transform: uppercase;
+            font-weight: 900;
+            padding-right: 80px;
+        }
+
+        p.agencia-txt {
+            margin: 5px 0 0 0;
+            color: #666;
+            font-size: 15px;
+            font-weight: bold;
+        }
+
+        /* DASHBOARD METRICAS AGENCIA */
+        .card-metricas {
+            background: var(--fondo-oscuro);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+            border: 2px solid var(--gpl-dorado);
+        }
+        
+        .card-metricas h3 {
+            margin: 0 0 15px 0;
+            font-size: 14px;
+            color: var(--gpl-dorado);
+            text-transform: uppercase;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.3);
+            padding-bottom: 10px;
+            text-align: center;
+        }
+
+        .metricas-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            text-align: center;
+        }
+
+        .metrica-box {
+            background: var(--celda-oscura);
+            padding: 15px 10px;
+            border-radius: 10px;
+            border: 1px solid #333;
+        }
+
+        .metrica-box span {
+            display: block;
+            font-size: 10px;
+            text-transform: uppercase;
+            color: #aaa;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .metrica-box strong {
+            font-size: 24px;
+            color: white;
+        }
+        
+        .metrica-destacada {
+            grid-column: span 3;
+            background: rgba(197, 160, 89, 0.1);
+            border: 1px solid var(--gpl-dorado);
+        }
+        
+        .metrica-destacada span {
+            color: var(--gpl-dorado);
+            font-size: 12px;
+        }
+        
+        .metrica-destacada strong {
+            font-size: 28px;
+            color: #2ecc71;
+            font-family: monospace;
+        }
+
+        /* TABLA DE EQUIPOS */
+        .card-equipos {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .card-equipos h3 {
+            background: #f8f9fa;
+            margin: 0;
+            padding: 15px 20px;
+            font-size: 13px;
+            color: var(--gpl-petroleo);
+            text-transform: uppercase;
+            border-bottom: 2px solid #eee;
+        }
+
+        .lista-equipos {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .equipo-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .equipo-item:last-child {
+            border-bottom: none;
+        }
+
+        .equipo-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .eq-nombre {
+            font-weight: 900;
+            color: var(--gpl-petroleo);
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .eq-lider {
+            font-size: 11px;
+            color: #666;
+            background: #f0f2f5;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .eq-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            background: #fdfdfd;
+            border: 1px solid #f0f0f0;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .eq-stat {
+            text-align: center;
+        }
+
+        .eq-stat span {
+            display: block;
+            font-size: 9px;
+            text-transform: uppercase;
+            color: #888;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+
+        .eq-stat strong {
+            font-size: 15px;
+            color: #333;
+        }
+
+        /* BOTONES ACCION */
+        .botones-accion {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        .btn-accion {
+            width: 100%;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 900;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-ver-ranking {
+            background: linear-gradient(135deg, var(--gpl-dorado) 0%, #a68444 100%);
+            color: black;
+            box-shadow: 0 4px 15px rgba(197, 160, 89, 0.4);
+        }
+
+        .btn-accion:active {
+            transform: translateY(3px);
+            box-shadow: none;
+        }
+
+        /* MODAL RANKING */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: var(--fondo-oscuro);
+            width: 95%;
+            max-width: 1400px;
+            height: 90vh;
+            border-radius: 15px;
+            border: 2px solid var(--gpl-dorado);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-header {
+            background: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 5px solid var(--gpl-dorado);
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: var(--gpl-petroleo);
+            font-size: 18px;
+            text-transform: uppercase;
+            font-weight: 900;
+        }
+
+        .btn-cerrar {
+            background: #c0392b;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+
+        .iframe-ranking {
+            flex-grow: 1;
+            border: none;
+            width: 100%;
+            height: 100%;
+            background: var(--fondo-oscuro);
+        }
+        
+        .empty-state { text-align: center; padding: 30px 20px; color: #777; font-weight: bold; font-size: 13px; }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <div class="card-perfil" style="text-align: center; border-left: none; border-top: 5px solid var(--gpl-dorado);">
+            <a href="index.html" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Salir</a>
+            <img src="LOGO-gpl.png" alt="GPL" style="max-width: 140px; margin-bottom: 10px;">
+            <br>
+            <span class="badge-rol" style="margin-bottom: 5px;"><i class="fa-solid fa-user-shield"></i> Panel de Coordinador</span>
+            <h2 id="txtNombreSupervisor" style="padding: 0; font-size: 20px;">Cargando...</h2>
+            <div id="txtNombreAgencia" style="background: var(--gpl-dorado); color: black; padding: 4px 15px; border-radius: 20px; font-size: 11px; font-weight: 900; text-transform: uppercase; display: inline-block; margin-top: 8px; letter-spacing: 0.5px;">Sincronizando información...</div>
+        </div>
+
+        <div id="selectorAgenciasContainer" style="display: none; margin-bottom: 20px;">
+            <select id="selectAgencia" onchange="cambiarAgencia()" style="padding: 16px; font-size: 15px; font-weight: 900; color: var(--gpl-petroleo); border: 2px solid var(--gpl-dorado); border-radius: 12px; width: 100%; box-sizing: border-box; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1); outline: none; background: white; text-align: center; text-transform: uppercase;">
+            </select>
+        </div>
+
+        <div class="card-metricas">
+            <h3><i class="fa-solid fa-chart-pie"></i> Rendimiento Global Equipos Asignados - Campaña Actual</h3>
+            <div class="metricas-grid">
+                <div class="metrica-box">
+                    <span>Ventas Brutas</span>
+                    <strong id="totBrutas">0</strong>
+                </div>
+                <div class="metrica-box" style="border-color: rgba(231, 76, 60, 0.3);">
+                    <span style="color: #e74c3c;">Bajas</span>
+                    <strong id="totBajas" style="color: #ff7675;">0</strong>
+                </div>
+                <div class="metrica-box" style="border-color: var(--gpl-dorado);">
+                    <span style="color: var(--gpl-dorado);">Ventas Netas</span>
+                    <strong id="totNetas" style="color: var(--gpl-dorado);">0</strong>
+                </div>
+                
+                <div class="metrica-box" style="border-color: #3498db; grid-column: span 1;">
+                    <span style="color: #3498db;">Objetivo Equipos</span>
+                    <strong id="totObj" style="color: #3498db;">0</strong>
+                </div>
+                <div class="metrica-box" style="border-color: #9b59b6; grid-column: span 1;">
+                    <span style="color: #9b59b6;">Proy. Mes</span>
+                    <strong id="totProyeccion" style="color: #9b59b6;">0</strong>
+                </div>
+                <div class="metrica-box" style="border-color: #f39c12; grid-column: span 1;">
+                    <span style="color: #f39c12;">Días Restantes</span>
+                    <strong id="totDias" style="color: #f39c12;">0</strong>
+                </div>
+
+                <div class="metrica-box metrica-destacada">
+                    <span>Facturación Total Equipos Asignados</span>
+                    <strong id="totMonto">$0</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-equipos">
+            <h3><i class="fa-solid fa-layer-group"></i> Desglose por Equipos</h3>
+            <ul id="listaEquipos" class="lista-equipos">
+                <li><div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i> Cargando equipos...</div></li>
+            </ul>
+        </div>
+
+        <div class="card-equipos" style="margin-top: 20px;">
+            <h3 style="background: #fff3f3; color: #e74c3c; border-bottom: 2px solid #fadbd8;"><i class="fa-solid fa-triangle-exclamation"></i> Radar de Alerta: Vendedores</h3>
+            <ul id="listaRadar" class="lista-equipos">
+                <li><div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i> Cargando radar...</div></li>
+            </ul>
+        </div>
+
+        <div class="botones-accion">
+            <button class="btn-accion btn-ver-ranking" onclick="abrirRanking()">
+                <i class="fa-solid fa-trophy"></i> Ver Ranking Nacional
+            </button>
+            <button class="btn-accion btn-mi-panel" onclick="irAMiPanel()" style="background: var(--gpl-dorado); color: black;">
+                <i class="fa-solid fa-user-gear"></i> Cargar mis propias ventas
+            </button>
+        </div>
+
+    </div>
+
+    <div id="modalRanking" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Rankings GPL - Seguimiento de Metas</h3> <button class="btn-cerrar" onclick="cerrarRanking()">CERRAR ✖</button>
+            </div>
+            <iframe id="iframeRanking" class="iframe-ranking" src=""></iframe>
+        </div>
+    </div>
+
+    <script>
+        const clienteSupabase = supabase.createClient('https://pumpwqyazqaxeeknrhyo.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1bXB3cXlhenFheGVla25yaHlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MjQ4ODEsImV4cCI6MjA5NDIwMDg4MX0.-AQZZYAt-uskDLUpbiafJXbHgW0lErf8bwEnk7eq1DE');
+
+        let idSeguroURL = null;
+
+        function formatearPlata(num) {
+            return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(num || 0);
+        }
+
+        async function getDiasHabiles() {
+            const hoy = new Date();
+            let yearInicio = hoy.getFullYear();
+            let monthInicio = hoy.getMonth();
+            if (hoy.getDate() < 16) { monthInicio--; }
+            
+            let fechaInicio = new Date(yearInicio, monthInicio, 16);
+            let fechaFin = new Date(yearInicio, monthInicio + 1, 15);
+            
+            let feriadosArr = [];
+            try {
+                const { data: fers, error } = await clienteSupabase.from('opciones_feriados').select('*');
+                if (!error && fers) { feriadosArr = fers.map(f => f.nombre); }
+            } catch (e) { console.error(e); }
+            
+            let totales = 0;
+            let transcurridos = 0;
+            
+            for (let d = new Date(fechaInicio); d <= fechaFin; d.setDate(d.getDate() + 1)) {
+                let day = d.getDay();
+                if (day !== 0 && day !== 6) {
+                    let dStr = d.toISOString().split('T')[0];
+                    if (!feriadosArr.includes(dStr)) {
+                        totales++;
+                        if (d <= hoy) transcurridos++;
+                    }
+                }
+            }
+            if (transcurridos === 0) transcurridos = 1;
+            return { totales, transcurridos, restantes: Math.max(0, totales - transcurridos) };
+        }
+
+        function abrirRanking() {
+            document.getElementById('iframeRanking').src = 'ranking_vendedores.html';
+            document.getElementById('modalRanking').style.display = 'flex';
+        }
+
+        function cerrarRanking() {
+            document.getElementById('modalRanking').style.display = 'none';
+            document.getElementById('iframeRanking').src = '';
+        }
+
+        function irAMiPanel() {
+            if(idSeguroURL) {
+                window.location.href = `panel_vendedor.html?id=${idSeguroURL}`;
+            }
+        }
+
+        async function init() {
+            const urlParams = new URLSearchParams(window.location.search);
+            idSeguroURL = urlParams.get('id');
+
+            if (!idSeguroURL) {
+                alert("Acceso denegado. Por favor, ingresá desde el Portal principal.");
+                window.location.href = 'index.html';
+                return;
+            }
+
+            cargarDatosCoordinador(idSeguroURL);
+        }
+
+        let globalEquipos = [];
+        let globalIntegrantes = [];
+        let globalVentas = [];
+
+        async function cargarDatosCoordinador(idCoordinador) {
+            try {
+                // 1. Buscar perfil
+                const { data: perfil, error: errPerfil } = await clienteSupabase.from('perfiles').select('*').eq('id', idCoordinador).single();
+                if (errPerfil || !perfil) throw new Error("Perfil no encontrado");
+                
+                document.getElementById('txtNombreSupervisor').textContent = perfil.nombre;
+
+                // 2. Buscar equipos
+                const { data: equipos, error: errEquipos } = await clienteSupabase.from('equipos').select('*').eq('coordinador_id', idCoordinador);
+                
+                if (errEquipos || !equipos || equipos.length === 0) {
+                    document.getElementById('txtNombreAgencia').textContent = "No tienes equipos asignados a tu cargo.";
+                    document.getElementById('listaEquipos').innerHTML = `<li><div class="empty-state">No hay equipos para mostrar.</div></li>`;
+                    return;
+                }
+                
+                globalEquipos = equipos;
+                document.getElementById('txtNombreAgencia').textContent = `Equipos Asignados: ${equipos.length}`;
+
+                // 3. Obtener perfiles
+                let idsEquipos = globalEquipos.map(e => e.id);
+                const { data: integrantes, error: errIntegrantes } = await clienteSupabase.from('perfiles').select('*').in('equipo_id', idsEquipos);
+                if (errIntegrantes) throw errIntegrantes;
+                globalIntegrantes = integrantes || [];
+
+                // 4. Obtener ventas
+                const hoy = new Date();
+                const campanaStr = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
+                
+                const idsIntegrantes = globalIntegrantes.map(i => i.id);
+                if(idsIntegrantes.length > 0) {
+                    const { data: ventas } = await clienteSupabase.from('registro_ventas')
+                        .select('*')
+                        .eq('campana', campanaStr)
+                        .eq('es_anulada', false)
+                        .in('vendedor_id', idsIntegrantes);
+                    globalVentas = ventas || [];
+                }
+
+                // Renderizar
+                renderizarCoordinacion();
+
+            } catch (error) {
+                console.error("Error al cargar datos:", error);
+                alert("Hubo un problema al sincronizar los datos.");
+            }
+        }
+
+        async function renderizarCoordinacion() {
+            let totalBrutas = 0, totalBajas = 0, totalMonto = 0, totalObjetivo = 0;
+            
+            let mapEquipos = {};
+            globalEquipos.forEach(eq => {
+                let lider = globalIntegrantes.find(i => i.id === eq.lider_id)?.nombre || 'Sin Líder Asignado';
+                mapEquipos[eq.id] = { nombre: eq.nombre, lider: lider, brutas: 0, bajas: 0, netas: 0, monto: 0, objetivo: 0 };
+            });
+
+            globalIntegrantes.forEach(i => {
+                let obj = i.objetivo_campana || 0;
+                totalObjetivo += obj;
+                if(mapEquipos[i.equipo_id]) mapEquipos[i.equipo_id].objetivo += obj;
+            });
+
+            globalVentas.forEach(v => {
+                let vts = v.ventas_cerradas || 0;
+                let baj = v.bajas || 0;
+                let mnt = v.monto || 0;
+                
+                totalBrutas += vts;
+                totalBajas += baj;
+                totalMonto += mnt;
+                
+                let vendedor = globalIntegrantes.find(i => i.id === v.vendedor_id);
+                if (vendedor && mapEquipos[vendedor.equipo_id]) {
+                    mapEquipos[vendedor.equipo_id].brutas += vts;
+                    mapEquipos[vendedor.equipo_id].bajas += baj;
+                    mapEquipos[vendedor.equipo_id].netas += (vts - baj);
+                    mapEquipos[vendedor.equipo_id].monto += mnt;
+                }
+            });
+
+            let totalNetas = totalBrutas - totalBajas;
+            const dias = await getDiasHabiles();
+            document.getElementById('totDias').textContent = dias.restantes;
+            let proyeccionTotal = Math.round((totalNetas / dias.transcurridos) * dias.totales);
+
+            document.getElementById('totBrutas').textContent = totalBrutas;
+            document.getElementById('totBajas').textContent = totalBajas;
+            document.getElementById('totNetas').textContent = totalNetas;
+            document.getElementById('totMonto').textContent = formatearPlata(totalMonto);
+            document.getElementById('totObj').textContent = totalObjetivo;
+            document.getElementById('totProyeccion').textContent = proyeccionTotal;
+
+            let listaEquiposFinal = Object.values(mapEquipos).map(eq => {
+                eq.proyeccion = Math.round((eq.netas / dias.transcurridos) * dias.totales);
+                return eq;
+            }).sort((a,b) => b.netas - a.netas || b.monto - a.monto);
+            
+            document.getElementById('listaEquipos').innerHTML = listaEquiposFinal.map(eq => {
+                return `
+                <li class="equipo-item">
+                    <div class="equipo-header">
+                        <span class="eq-nombre"><i class="fa-solid fa-users" style="color:var(--gpl-dorado);"></i> ${eq.nombre}</span>
+                        <span class="eq-lider"><i class="fa-solid fa-crown" style="color:#f1c40f;"></i> ${eq.lider}</span>
+                    </div>
+                    <div class="eq-stats-grid">
+                        <div class="eq-stat">
+                            <span>Ventas</span>
+                            <strong style="color: #2ecc71;">${eq.netas}</strong>
+                        </div>
+                        <div class="eq-stat">
+                            <span>Objetivo</span>
+                            <strong>${eq.objetivo}</strong>
+                        </div>
+                        <div class="eq-stat">
+                            <span>Proyección</span>
+                            <strong style="color:#9b59b6">${eq.proyeccion}</strong>
+                        </div>
+                        <div class="eq-stat">
+                            <span>Facturación</span>
+                            <strong style="color:#2ecc71; font-family:monospace; font-size:12px;">$${(eq.monto/1000).toFixed(1)}k</strong>
+                        </div>
+                    </div>
+                </li>
+                `;
+            }).join('');
+
+            let listaVendedores = globalIntegrantes.map(i => {
+                let vts = 0;
+                globalVentas.filter(v => v.vendedor_id === i.id).forEach(v => {
+                    vts += (v.ventas_cerradas || 0) - (v.bajas || 0);
+                });
+                let obj = i.objetivo_campana || 20;
+                let ritmoIdeal = obj / dias.totales;
+                let esperadasHoy = ritmoIdeal * dias.transcurridos;
+                let atraso = esperadasHoy - vts;
+                let proyeccion = Math.round((vts / dias.transcurridos) * dias.totales);
+                let eq = mapEquipos[i.equipo_id]?.nombre || 'Sin Equipo';
+                
+                return { nombre: i.nombre, equipo: eq, netas: vts, objetivo: obj, atraso: atraso, proyeccion: proyeccion };
+            }).sort((a,b) => b.atraso - a.atraso);
+            
+            document.getElementById('listaRadar').innerHTML = listaVendedores.map(v => {
+                let colorRiesgo = v.atraso > 0 ? '#e74c3c' : '#2ecc71';
+                let badge = v.atraso > 0 ? `<span style="background:#e74c3c; color:white; padding: 2px 6px; border-radius:4px; font-size:10px; font-weight:bold; margin-left:5px;">Atrasado</span>` : `<span style="background:#2ecc71; color:white; padding: 2px 6px; border-radius:4px; font-size:10px; font-weight:bold; margin-left:5px;">A Ritmo</span>`;
+                return `
+                <li class="equipo-item" style="padding: 10px 20px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <strong style="font-size:13px; color:#333;">${v.nombre} ${badge}</strong>
+                            <div style="font-size:11px; color:#777; margin-top:2px;">${v.equipo}</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:12px; font-weight:bold; color:var(--gpl-petroleo);">Obj: ${v.objetivo} | Ventas: ${v.netas}</div>
+                            <div style="font-size:11px; color:${colorRiesgo}; margin-top:2px; font-weight:bold;">Proy: ${v.proyeccion}</div>
+                        </div>
+                    </div>
+                </li>
+                `;
+            }).join('');
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
