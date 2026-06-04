@@ -736,7 +736,7 @@
                     if (!txt || txt.trim() === '') return 'Otro';
                     let nb = txt.toUpperCase().trim();
                     nb = nb.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); 
-                    nb = nb.replace(//g, "O");
+                    nb = nb.replace(/\uFFFD/g, "O");
                     
                     if(nb.includes("ASIGNACION") && nb.includes("HIJO")) return "Asignación Univ. por Hijo";
                     if(nb.includes("EMPLEADO") || nb.includes("FORMAL") || nb.includes("DEPENDENCIA") || nb.includes("PUBLICO") || nb.includes("PRIVADO")) return "Empleado Formal";
@@ -754,7 +754,7 @@
                     if (!txt || txt.trim() === '') return 'Otro';
                     let nb = txt.toUpperCase().trim();
                     nb = nb.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); 
-                    nb = nb.replace(//g, "O");
+                    nb = nb.replace(/\uFFFD/g, "O");
                     
                     if(nb.includes("NACION") || nb.includes("BNA")) return "Banco Nación";
                     if(nb.includes("PROVINCIA") || nb.includes("BAPRO")) return "Banco Provincia";
