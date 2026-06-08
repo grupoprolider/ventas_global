@@ -442,6 +442,29 @@
             return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(num || 0);
         }
 
+        function formatProyeccion(ventas, obj, diasTranscurridos, diasTotales) {
+            if(diasTranscurridos === 0) diasTranscurridos = 1;
+            let proy = Math.round((ventas / diasTranscurridos) * diasTotales);
+            if(proy >= obj) return `Proy: ${proy}`;
+            
+            let faltan = obj - ventas;
+            let restantes = diasTotales - diasTranscurridos;
+            if(restantes <= 0) return `Faltan: ${faltan} (Último día)`;
+            
+            let base = Math.floor(faltan / restantes);
+            let mod = faltan % restantes;
+            
+            if(base === 0 && mod > 0) return `Faltan ${faltan} en ${restantes}d (Aprox 1/día)`;
+            if(mod === 0) return `Faltan ${faltan} en ${restantes}d (${base}/día)`;
+            
+            let dBase = restantes - mod;
+            let dCeil = mod;
+            let sBase = dBase === 1 ? `1d de ${base}` : `${dBase}d de ${base}`;
+            let sCeil = dCeil === 1 ? `1d de ${base+1}` : `${dCeil}d de ${base+1}`;
+            
+            return `Faltan ${faltan} en ${restantes}d (${sBase} y ${sCeil})`;
+        }
+
         async function getDiasHabiles() {
             const hoy = new Date();
             let yearInicio = hoy.getFullYear();
@@ -701,10 +724,11 @@
                 let esperadasHoy = ritmoIdeal * dias.transcurridos;
                 let atraso = esperadasHoy - vts;
                 let proyeccion = Math.round((vts / dias.transcurridos) * dias.totales);
+                let proyeccionTexto = formatProyeccion(vts, obj, dias.transcurridos, dias.totales);
                 
                 let eq = mapEquipos[i.equipo_id]?.nombre || 'Sin Equipo';
                 
-                return { nombre: i.nombre, equipo: eq, netas: vts, objetivo: obj, atraso: atraso, proyeccion: proyeccion };
+                return { nombre: i.nombre, equipo: eq, netas: vts, objetivo: obj, atraso: atraso, proyeccion: proyeccion, proyeccionTexto: proyeccionTexto };
             }).sort((a,b) => b.atraso - a.atraso);
             
             document.getElementById('listaRadar').innerHTML = listaVendedores.map(v => {
@@ -719,7 +743,7 @@
                         </div>
                         <div style="text-align:right;">
                             <div style="font-size:12px; font-weight:bold; color:var(--gpl-petroleo);">Obj: ${v.objetivo} | Ventas: ${v.netas}</div>
-                            <div style="font-size:11px; color:${colorRiesgo}; margin-top:2px; font-weight:bold;">Proy: ${v.proyeccion}</div>
+                            <div style="font-size:11px; color:${colorRiesgo}; margin-top:2px; font-weight:bold;">${v.proyeccionTexto}</div>
                         </div>
                     </div>
                 </li>
