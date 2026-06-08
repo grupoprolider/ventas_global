@@ -444,6 +444,12 @@
             </div>
         </div>
 
+        <div style="text-align: center; margin-top: 15px;">
+            <select id="selectAgenciaGraficos" onchange="renderizarGraficos()" style="width: 90%; max-width: 340px; padding: 12px; border-radius: 8px; border: 2px solid var(--gpl-dorado); background: var(--fondo-oscuro); color: white; font-weight: bold; font-size: 14px; outline: none; cursor: pointer; margin-bottom: 10px;">
+                <option value="TODAS">🌟 TODAS LAS AGENCIAS (Nacional)</option>
+            </select>
+        </div>
+
         <div class="charts-container">
             <div class="chart-card">
                 <h3>Ventas Netas por Agencia</h3>
@@ -618,6 +624,140 @@
             }
         }
 
+        let chartInstAgencias = null;
+        let chartInstBajas = null;
+        let chartInstBancos = null;
+        let chartInstBeneficios = null;
+
+        function normalizarBeneficio(txt) {
+            if (txt === null || txt === undefined) return 'Otro';
+            txt = String(txt);
+            if (txt.trim() === '') return 'Otro';
+            let nb = txt.toUpperCase().trim();
+            nb = nb.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); 
+            nb = nb.replace(/\uFFFD/g, "O");
+            
+            if(nb.includes("ASIGNACION") && nb.includes("HIJO")) return "Asignación Univ. por Hijo";
+            if(nb.includes("EMPLEADO") || nb.includes("FORMAL") || nb.includes("DEPENDENCIA") || nb.includes("PUBLICO") || nb.includes("PRIVADO")) return "Empleado Formal";
+            if(nb.includes("JUBILACION") && nb.includes("MAYOR")) return "Jubilación Mayor";
+            if(nb.includes("JUBILACION") && nb.includes("MENOR")) return "Jubilación Menor";
+            if(nb.includes("PENSION") && nb.includes("CONTRIBUTIVA")) return "Pensión no Contributiva";
+            if(nb.includes("MONOTRIBUTO") || nb.includes("MONOTRIBUTISTA") || nb.includes("AUTONOMO")) return "Monotributista / Autónomo";
+            if(nb.includes("PLAN SOCIAL") || nb.includes("POTENCIAR")) return "Planes Sociales";
+            if(nb.includes("OTRO")) return "Otros";
+            
+            return txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase();
+        }
+
+        function normalizarBanco(txt) {
+            if (txt === null || txt === undefined) return 'Otro';
+            txt = String(txt);
+            if (txt.trim() === '') return 'Otro';
+            let nb = txt.toUpperCase().trim();
+            nb = nb.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); 
+            nb = nb.replace(/\uFFFD/g, "O");
+            
+            if(nb.includes("NACION") || nb.includes("BNA")) return "Banco Nación";
+            if(nb.includes("PROVINCIA") || nb.includes("BAPRO")) return "Banco Provincia";
+            if(nb.includes("MACRO")) return "Banco Macro";
+            if(nb.includes("SANTANDER")) return "Santander";
+            if(nb.includes("GALICIA")) return "Galicia";
+            if(nb.includes("FRANCES") || nb.includes("BBVA")) return "BBVA";
+            if(nb.includes("PATAGONIA")) return "Banco Patagonia";
+            if(nb.includes("CREDICOOP")) return "Credicoop";
+            if(nb.includes("ICBC")) return "ICBC";
+            if(nb.includes("SUPERVIELLE")) return "Supervielle";
+            if(nb.includes("COLUMBIA")) return "Columbia";
+            if(nb.includes("MERCADO") && nb.includes("PAGO")) return "Mercado Pago";
+            
+            return txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase();
+        }
+
+        function renderizarGraficos() {
+            const agFilter = document.getElementById('selectAgenciaGraficos').value;
+            if (!window.datosGlobalesExcel) return;
+            const { ventas, perfiles, equipos, agencias } = window.datosGlobalesExcel;
+
+            let mapAgencias = {};
+            agencias.forEach(a => mapAgencias[a.id] = { nombre: a.nombre, netas: 0, color: a.color_hex || '#c5a059' });
+
+            let mapBancos = {};
+            let mapBeneficios = {};
+            let tNetas = 0, tBajas = 0, tBrutas = 0;
+
+            ventas.forEach(v => {
+                let vendedor = perfiles.find(p => p.id === v.vendedor_id);
+                if (vendedor) {
+                    let equipo = equipos.find(e => e.id === vendedor.equipo_id);
+                    if (equipo) {
+                        let agenciaId = equipo.agencia_id;
+                        let aName = mapAgencias[agenciaId] ? mapAgencias[agenciaId].nombre : 'Sin Agencia';
+                        
+                        // Si hay filtro activo y no coincide con la agencia de esta venta, la saltamos
+                        if (agFilter !== 'TODAS' && aName !== agFilter) return;
+
+                        let netasVenta = (v.ventas_cerradas || 0) - (v.bajas || 0);
+                        let brutasVenta = v.ventas_cerradas || 0;
+                        let bajasVenta = v.bajas || 0;
+
+                        if (mapAgencias[agenciaId]) {
+                            mapAgencias[agenciaId].netas += netasVenta;
+                        }
+
+                        tBrutas += brutasVenta;
+                        tBajas += bajasVenta;
+                        tNetas += netasVenta;
+
+                        if (netasVenta > 0) {
+                            let banco = normalizarBanco(v.medio_pago);
+                            let beneficio = normalizarBeneficio(v.beneficio);
+                            mapBancos[banco] = (mapBancos[banco] || 0) + netasVenta;
+                            mapBeneficios[beneficio] = (mapBeneficios[beneficio] || 0) + netasVenta;
+                        }
+                    }
+                }
+            });
+
+            // Agencias Doughnut
+            if (chartInstAgencias) chartInstAgencias.destroy();
+            let lAg = [], dAg = [], cAg = [];
+            Object.values(mapAgencias).sort((a,b) => b.netas - a.netas).forEach(ag => {
+                if(ag.netas > 0) { lAg.push(ag.nombre); dAg.push(ag.netas); cAg.push(ag.color); }
+            });
+            chartInstAgencias = new Chart(document.getElementById('chartAgencias').getContext('2d'), {
+                type: 'doughnut',
+                data: { labels: lAg, datasets: [{ data: dAg, backgroundColor: cAg, borderWidth: 2, borderColor: '#ffffff' }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } } } }
+            });
+
+            // Bajas Pie
+            if (chartInstBajas) chartInstBajas.destroy();
+            chartInstBajas = new Chart(document.getElementById('chartBajas').getContext('2d'), {
+                type: 'pie',
+                data: { labels: ['Ventas Netas', 'Bajas'], datasets: [{ data: [tNetas, tBajas], backgroundColor: ['#2ecc71', '#e74c3c'], borderWidth: 2, borderColor: '#ffffff' }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            });
+
+            // Bancos Pie
+            if (chartInstBancos) chartInstBancos.destroy();
+            let lBco = Object.keys(mapBancos), dBco = Object.values(mapBancos);
+            const paletaColores = ['#3498db', '#e74c3c', '#f1c40f', '#2ecc71', '#9b59b6', '#e67e22', '#1abc9c', '#34495e', '#006779', '#A42A68', '#f39c12', '#d35400'];
+            chartInstBancos = new Chart(document.getElementById('chartBancos').getContext('2d'), {
+                type: 'pie',
+                data: { labels: lBco, datasets: [{ data: dBco, backgroundColor: paletaColores.slice(0, lBco.length), borderWidth: 2, borderColor: '#ffffff' }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } } }
+            });
+
+            // Beneficios Pie
+            if (chartInstBeneficios) chartInstBeneficios.destroy();
+            let lBen = Object.keys(mapBeneficios), dBen = Object.values(mapBeneficios);
+            chartInstBeneficios = new Chart(document.getElementById('chartBeneficios').getContext('2d'), {
+                type: 'pie',
+                data: { labels: lBen, datasets: [{ data: dBen, backgroundColor: paletaColores.slice(0, lBen.length).reverse(), borderWidth: 2, borderColor: '#ffffff' }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } } }
+            });
+        }
+
         async function inicializarDashboard(campanaStr) {
             try {
 
@@ -657,188 +797,12 @@
                 document.getElementById('kpiMonto').textContent = formatearPlata(totalMonto);
                 document.getElementById('kpiObj').textContent = totalObjetivo;
 
-                // 3. Procesar datos para gráficos
-                // Gráfico 1: Agencias
-                let mapAgencias = {};
-                agencias.forEach(a => {
-                    mapAgencias[a.id] = { nombre: a.nombre, netas: 0, color: a.color_hex || '#c5a059' };
-                });
+                // 3. Renderizar gráficos con la lógica extraída
+                let selGraficos = document.getElementById('selectAgenciaGraficos');
+                selGraficos.innerHTML = '<option value="TODAS">🌟 TODAS LAS AGENCIAS (Nacional)</option>';
+                agencias.forEach(a => selGraficos.innerHTML += `<option value="${a.nombre}">${a.nombre}</option>`);
 
-                ventas.forEach(v => {
-                    let vendedor = perfiles.find(p => p.id === v.vendedor_id);
-                    if (vendedor) {
-                        let equipo = equipos.find(e => e.id === vendedor.equipo_id);
-                        if (equipo && mapAgencias[equipo.agencia_id]) {
-                            mapAgencias[equipo.agencia_id].netas += ((v.ventas_cerradas || 0) - (v.bajas || 0));
-                        }
-                    }
-                });
-
-                let labelsAgencias = [];
-                let dataAgencias = [];
-                let colorsAgencias = [];
-
-                Object.values(mapAgencias).sort((a,b) => b.netas - a.netas).forEach(ag => {
-                    if(ag.netas > 0) {
-                        labelsAgencias.push(ag.nombre);
-                        dataAgencias.push(ag.netas);
-                        colorsAgencias.push(ag.color);
-                    }
-                });
-
-                // Renderizar Gráfico de Agencias (Doughnut)
-                const ctxAgencias = document.getElementById('chartAgencias').getContext('2d');
-                new Chart(ctxAgencias, {
-                    type: 'doughnut',
-                    data: {
-                        labels: labelsAgencias,
-                        datasets: [{
-                            data: dataAgencias,
-                            backgroundColor: colorsAgencias,
-                            borderWidth: 2,
-                            borderColor: '#ffffff'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } }
-                        }
-                    }
-                });
-
-                // Renderizar Gráfico Brutas vs Bajas (Pie)
-                const ctxBajas = document.getElementById('chartBajas').getContext('2d');
-                new Chart(ctxBajas, {
-                    type: 'pie',
-                    data: {
-                        labels: ['Ventas Netas', 'Bajas'],
-                        datasets: [{
-                            data: [totalNetas, totalBajas],
-                            backgroundColor: ['#2ecc71', '#e74c3c'],
-                            borderWidth: 2,
-                            borderColor: '#ffffff'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { position: 'bottom' }
-                        }
-                    }
-                });
-
-                // Gráficos 3 y 4: Bancos y Beneficios
-                // Normalizadores para evitar duplicados por errores de tipeo o encoding
-                function normalizarBeneficio(txt) {
-                    if (txt === null || txt === undefined) return 'Otro';
-                    txt = String(txt);
-                    if (txt.trim() === '') return 'Otro';
-                    let nb = txt.toUpperCase().trim();
-                    nb = nb.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); 
-                    nb = nb.replace(/\uFFFD/g, "O");
-                    
-                    if(nb.includes("ASIGNACION") && nb.includes("HIJO")) return "Asignación Univ. por Hijo";
-                    if(nb.includes("EMPLEADO") || nb.includes("FORMAL") || nb.includes("DEPENDENCIA") || nb.includes("PUBLICO") || nb.includes("PRIVADO")) return "Empleado Formal";
-                    if(nb.includes("JUBILACION") && nb.includes("MAYOR")) return "Jubilación Mayor";
-                    if(nb.includes("JUBILACION") && nb.includes("MENOR")) return "Jubilación Menor";
-                    if(nb.includes("PENSION") && nb.includes("CONTRIBUTIVA")) return "Pensión no Contributiva";
-                    if(nb.includes("MONOTRIBUTO") || nb.includes("MONOTRIBUTISTA") || nb.includes("AUTONOMO")) return "Monotributista / Autónomo";
-                    if(nb.includes("PLAN SOCIAL") || nb.includes("POTENCIAR")) return "Planes Sociales";
-                    if(nb.includes("OTRO")) return "Otros";
-                    
-                    return txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase();
-                }
-
-                function normalizarBanco(txt) {
-                    if (txt === null || txt === undefined) return 'Otro';
-                    txt = String(txt);
-                    if (txt.trim() === '') return 'Otro';
-                    let nb = txt.toUpperCase().trim();
-                    nb = nb.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); 
-                    nb = nb.replace(/\uFFFD/g, "O");
-                    
-                    if(nb.includes("NACION") || nb.includes("BNA")) return "Banco Nación";
-                    if(nb.includes("PROVINCIA") || nb.includes("BAPRO")) return "Banco Provincia";
-                    if(nb.includes("MACRO")) return "Banco Macro";
-                    if(nb.includes("SANTANDER")) return "Santander";
-                    if(nb.includes("GALICIA")) return "Galicia";
-                    if(nb.includes("FRANCES") || nb.includes("BBVA")) return "BBVA";
-                    if(nb.includes("PATAGONIA")) return "Banco Patagonia";
-                    if(nb.includes("CREDICOOP")) return "Credicoop";
-                    if(nb.includes("ICBC")) return "ICBC";
-                    if(nb.includes("SUPERVIELLE")) return "Supervielle";
-                    if(nb.includes("COLUMBIA")) return "Columbia";
-                    if(nb.includes("MERCADO") && nb.includes("PAGO")) return "Mercado Pago";
-                    
-                    return txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase();
-                }
-
-                let mapBancos = {};
-                let mapBeneficios = {};
-
-                ventas.forEach(v => {
-                    let netasVenta = (v.ventas_cerradas || 0) - (v.bajas || 0);
-                    if (netasVenta > 0) {
-                        let banco = normalizarBanco(v.medio_pago);
-                        let beneficio = normalizarBeneficio(v.beneficio);
-                        
-                        mapBancos[banco] = (mapBancos[banco] || 0) + netasVenta;
-                        mapBeneficios[beneficio] = (mapBeneficios[beneficio] || 0) + netasVenta;
-                    }
-                });
-
-                const paletaColores = ['#3498db', '#e74c3c', '#f1c40f', '#2ecc71', '#9b59b6', '#e67e22', '#1abc9c', '#34495e', '#006779', '#A42A68', '#f39c12', '#d35400'];
-
-                // Renderizar Gráfico Bancos
-                let labelsBancos = Object.keys(mapBancos);
-                let dataBancos = Object.values(mapBancos);
-                const ctxBancos = document.getElementById('chartBancos').getContext('2d');
-                new Chart(ctxBancos, {
-                    type: 'pie',
-                    data: {
-                        labels: labelsBancos,
-                        datasets: [{
-                            data: dataBancos,
-                            backgroundColor: paletaColores.slice(0, labelsBancos.length),
-                            borderWidth: 2,
-                            borderColor: '#ffffff'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } }
-                        }
-                    }
-                });
-
-                // Renderizar Gráfico Beneficios
-                let labelsBeneficios = Object.keys(mapBeneficios);
-                let dataBeneficios = Object.values(mapBeneficios);
-                const ctxBeneficios = document.getElementById('chartBeneficios').getContext('2d');
-                new Chart(ctxBeneficios, {
-                    type: 'pie',
-                    data: {
-                        labels: labelsBeneficios,
-                        datasets: [{
-                            data: dataBeneficios,
-                            backgroundColor: paletaColores.slice(0, labelsBeneficios.length).reverse(),
-                            borderWidth: 2,
-                            borderColor: '#ffffff'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } }
-                        }
-                    }
-                });
+                renderizarGraficos();
 
                 // 4. Armar el Desglose de Agencias y Equipos
                 let mapAgenciasData = {};
