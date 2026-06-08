@@ -204,7 +204,7 @@
         .btn-ver-ranking {
             width: 100%;
             background: linear-gradient(135deg, var(--gpl-dorado) 0%, #a68444 100%);
-            color: black;
+            color: white;
             border: none;
             padding: 18px;
             border-radius: 15px;
@@ -372,7 +372,7 @@
             <a href="index.html" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Salir</a>
             <img src="LOGO-gpl.png" alt="GPL" style="max-width: 140px; margin-bottom: 10px;">
             <h2 id="txtNombre" style="padding: 0; font-size: 20px;">Cargando...</h2>
-            <div id="txtEquipo" style="background: var(--gpl-dorado); color: black; padding: 4px 15px; border-radius: 20px; font-size: 11px; font-weight: 900; text-transform: uppercase; display: inline-block; margin-top: 8px; letter-spacing: 0.5px;">Sincronizando información...</div>
+            <div id="txtEquipo" style="background: var(--gpl-dorado); color: white; padding: 4px 15px; border-radius: 20px; font-size: 11px; font-weight: 900; text-transform: uppercase; display: inline-block; margin-top: 8px; letter-spacing: 0.5px;">Sincronizando información...</div>
         </div>
 
         <div class="card-seguridad">
@@ -390,7 +390,7 @@
                 <input type="number" id="inputMiMetaVentas" placeholder="Cant. Ventas (ej: 30)" style="border: 1px solid #ccc; border-radius: 6px;">
                 <input type="number" id="inputMiMetaMonto" placeholder="Monto $ (ej: 2500000)" style="border: 1px solid #ccc; border-radius: 6px;">
             </div>
-            <button type="button" class="btn-pin" style="width: 100%; background: var(--gpl-dorado); color: black;" onclick="guardarMisMetas()">Comprometerme con mi Meta</button>
+            <button type="button" class="btn-pin" style="width: 100%; background: var(--gpl-dorado); color: white;" onclick="guardarMisMetas()">Comprometerme con mi Meta</button>
         </div>
 
         <div class="card-comision">
@@ -411,11 +411,11 @@
         <button class="btn-ver-ranking" onclick="abrirRanking()">🏆 VER RANKING EN VIVO</button>
 
         <div class="card-carga">
-            <h3>Cargar Producción</h3>
+            <h3>Cargar Venta</h3>
             <form id="formVenta">
                 <div class="form-group" style="margin-bottom: 15px;">
                     <label>Semana de Campaña</label>
-                    <select id="inputSemana">
+                    <select id="inputSemana" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px;">
                         <option value="1">Semana 1</option>
                         <option value="2">Semana 2</option>
                         <option value="3">Semana 3</option>
@@ -423,28 +423,31 @@
                         <option value="5">Semana 5</option>
                     </select>
                 </div>
-                <p style="font-size: 11px; color: var(--gpl-dorado); font-weight: bold; margin-bottom: 15px; text-transform: uppercase;">* Las ventas se cargan individualmente (1 por vez) para asociar el banco y beneficio correcto.</p>
-                <div class="grid-carga">
-                    <div style="display: none;"><label>Ventas Cerradas</label><input type="number" id="inputVentas" value="1" min="1"></div>
-                    <div><label>Cantidad de Entrevistas</label><input type="number" id="inputEntrevistas" value="0" min="0"></div>
+                <div style="margin-bottom: 15px;">
+                    <label>Cantidad de Entrevistas (Total de la jornada)</label>
+                    <input type="number" id="inputEntrevistas" placeholder="Ej: 5" min="0" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px; box-sizing: border-box;">
                 </div>
-                <div style="margin-top: 15px;">
-                    <label>Beneficio / Ocupación</label>
-                    <select id="inputBeneficio">
-                        <option value="">-- Seleccionar --</option>
-                    </select>
+
+                <div id="contenedorVentas">
+                    <div class="venta-item" style="background: #f9f9f9; padding: 15px; border-radius: 10px; border: 1px solid #eee; margin-bottom: 15px; position: relative;">
+                        <div style="margin-bottom: 10px;">
+                            <label>Beneficio / Ocupación</label>
+                            <select class="inputBeneficio" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px;"></select>
+                        </div>
+                        <div style="margin-bottom: 10px;">
+                            <label>Banco / Tarjeta</label>
+                            <select class="inputBanco" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px;"></select>
+                        </div>
+                        <div>
+                            <label>Importe Vendido ($)</label>
+                            <input type="number" class="inputMonto" placeholder="Ej: 89000" min="0" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px; box-sizing: border-box;">
+                        </div>
+                    </div>
                 </div>
-                <div style="margin-top: 15px;">
-                    <label>Banco / Tarjeta</label>
-                    <select id="inputBanco">
-                        <option value="">-- Seleccionar --</option>
-                    </select>
-                </div>
-                <div style="margin-top: 15px;">
-                    <label>Importe Total Vendido ($)</label>
-                    <input type="number" id="inputMonto" placeholder="Ej: 89000" min="0">
-                </div>
-                <button type="button" class="btn-enviar" onclick="enviarProduccion()">Subir Mis Números</button>
+
+                <button type="button" onclick="agregarVenta()" style="background: #eee; color: #333; border: 1px dashed #ccc; padding: 10px; width: 100%; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 15px;">+ Agregar otra venta</button>
+
+                <button type="button" class="btn-enviar" onclick="enviarProduccion()" style="width: 100%;">Subir Mis Números</button>
             </form>
         </div>
     </div>
@@ -502,7 +505,7 @@
         }
 
         function abrirRanking() {
-            document.getElementById('iframeRanking').src = 'ranking_vendedores.html';
+            document.getElementById('iframeRanking').src = 'ranking_vendedores.html?rol=vendedor';
             document.getElementById('modalRanking').style.display = 'flex';
         }
 
@@ -510,6 +513,9 @@
             document.getElementById('modalRanking').style.display = 'none';
             document.getElementById('iframeRanking').src = '';
         }
+
+        let opcionesBeneficiosHTML = '<option value="">-- Seleccionar --</option>';
+        let opcionesBancosHTML = '<option value="">-- Seleccionar --</option>';
 
         async function init() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -522,14 +528,37 @@
             }
 
             const { data: benfs } = await clienteSupabase.from('opciones_beneficios').select('*').order('nombre');
-            const selBen = document.getElementById('inputBeneficio');
-            if (benfs) benfs.forEach(b => selBen.innerHTML += `<option value="${b.nombre}">${b.nombre}</option>`);
+            if (benfs) opcionesBeneficiosHTML += benfs.map(b => `<option value="${b.nombre}">${b.nombre}</option>`).join('');
 
             const { data: bncs } = await clienteSupabase.from('opciones_bancos').select('*').order('nombre');
-            const selBnc = document.getElementById('inputBanco');
-            if (bncs) bncs.forEach(b => selBnc.innerHTML += `<option value="${b.nombre}">${b.nombre}</option>`);
+            if (bncs) opcionesBancosHTML += bncs.map(b => `<option value="${b.nombre}">${b.nombre}</option>`).join('');
+            
+            document.querySelector('.inputBeneficio').innerHTML = opcionesBeneficiosHTML;
+            document.querySelector('.inputBanco').innerHTML = opcionesBancosHTML;
 
             cargarDatosVendedor(idSeguroURL);
+        }
+
+        function agregarVenta() {
+            const div = document.createElement('div');
+            div.className = 'venta-item';
+            div.style.cssText = 'background: #f9f9f9; padding: 15px; border-radius: 10px; border: 1px solid #eee; margin-bottom: 15px; position: relative;';
+            div.innerHTML = `
+                <button type="button" onclick="this.parentElement.remove()" style="position: absolute; right: 10px; top: 10px; background: none; border: none; color: #c0392b; cursor: pointer; font-weight: bold; font-size: 16px;">✖</button>
+                <div style="margin-bottom: 10px;">
+                    <label>Beneficio / Ocupación</label>
+                    <select class="inputBeneficio" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px;">${opcionesBeneficiosHTML}</select>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <label>Banco / Tarjeta</label>
+                    <select class="inputBanco" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px;">${opcionesBancosHTML}</select>
+                </div>
+                <div>
+                    <label>Importe Vendido ($)</label>
+                    <input type="number" class="inputMonto" placeholder="Ej: 89000" min="0" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px; box-sizing: border-box;">
+                </div>
+            `;
+            document.getElementById('contenedorVentas').appendChild(div);
         }
 
         async function cargarDatosVendedor(id) {
@@ -649,36 +678,68 @@
         }
 
         async function enviarProduccion() {
-            const vts = parseInt(document.getElementById('inputVentas').value);
-            const ent = parseInt(document.getElementById('inputEntrevistas').value);
-            const monto = parseFloat(document.getElementById('inputMonto').value) || 0;
+            const ent = parseInt(document.getElementById('inputEntrevistas').value) || 0;
             const sem = document.getElementById('inputSemana').value;
-            const beneficio = document.getElementById('inputBeneficio').value;
-            const banco = document.getElementById('inputBanco').value;
-
-            if (vts > 0 && (beneficio === "" || banco === "")) {
-                alert("Para el reporte comercial, seleccioná el Beneficio y el Banco del cliente.");
-                return;
+            
+            const ventasElements = document.querySelectorAll('.venta-item');
+            let arrayVentas = [];
+            
+            for(let v of ventasElements) {
+                let beneficio = v.querySelector('.inputBeneficio').value;
+                let banco = v.querySelector('.inputBanco').value;
+                let monto = parseFloat(v.querySelector('.inputMonto').value) || 0;
+                
+                if (beneficio === "" || banco === "") {
+                    alert("Por favor, seleccioná Beneficio y Banco en todas las ventas agregadas.");
+                    return;
+                }
+                
+                const hoy = new Date();
+                const campanaStr = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
+                
+                arrayVentas.push({
+                    vendedor_id: vendedorActual.id,
+                    ventas_cerradas: 1,
+                    entrevistas: arrayVentas.length === 0 ? ent : 0,
+                    monto: monto,
+                    semana: sem,
+                    campana: campanaStr,
+                    beneficio: beneficio,
+                    medio_pago: banco
+                });
             }
+            
+            if(arrayVentas.length === 0) return alert("Agregá al menos una venta.");
 
             const btn = document.querySelector('.btn-enviar');
             btn.textContent = "SUBIENDO..."; btn.disabled = true;
 
-            const hoy = new Date();
-            const campanaStr = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
-
-            // AQUÍ ESTABA EL ERROR. Cambiado a "entrevistas" en lugar de "interviews"
-            const { error } = await clienteSupabase.from('registro_ventas').insert([{
-                vendedor_id: vendedorActual.id, ventas_cerradas: vts, entrevistas: ent, monto: monto, semana: sem, campana: campanaStr, beneficio: beneficio, medio_pago: banco
-            }]);
+            const { error } = await clienteSupabase.from('registro_ventas').insert(arrayVentas);
 
             btn.textContent = "SUBIR MIS NÚMEROS"; btn.disabled = false;
 
             if (error) {
                 alert("Error: " + error.message);
             } else {
+                alert("Producción cargada con éxito.");
+                document.getElementById('contenedorVentas').innerHTML = `
+                    <div class="venta-item" style="background: #f9f9f9; padding: 15px; border-radius: 10px; border: 1px solid #eee; margin-bottom: 15px; position: relative;">
+                        <div style="margin-bottom: 10px;">
+                            <label>Beneficio / Ocupación</label>
+                            <select class="inputBeneficio" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px;">${opcionesBeneficiosHTML}</select>
+                        </div>
+                        <div style="margin-bottom: 10px;">
+                            <label>Banco / Tarjeta</label>
+                            <select class="inputBanco" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px;">${opcionesBancosHTML}</select>
+                        </div>
+                        <div>
+                            <label>Importe Vendido ($)</label>
+                            <input type="number" class="inputMonto" placeholder="Ej: 89000" min="0" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px; box-sizing: border-box;">
+                        </div>
+                    </div>
+                `;
+                document.getElementById('inputEntrevistas').value = '';
                 cargarDatosVendedor(idSeguroURL);
-                document.getElementById('formVenta').reset();
                 if (confirm("¡Carga exitosa! Tus números se actualizaron. ¿Querés ver cómo quedaste en el Ranking ahora mismo?")) {
                     abrirRanking();
                 }

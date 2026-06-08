@@ -267,7 +267,7 @@
 
         .btn-ver-ranking {
             background: linear-gradient(135deg, var(--gpl-dorado) 0%, #a68444 100%);
-            color: black;
+            color: white;
             box-shadow: 0 4px 15px rgba(197, 160, 89, 0.4);
         }
 
@@ -355,7 +355,7 @@
             <br>
             <span class="badge-rol" style="margin-bottom: 5px;"><i class="fa-solid fa-user-shield"></i> Panel de Coordinador</span>
             <h2 id="txtNombreSupervisor" style="padding: 0; font-size: 20px;">Cargando...</h2>
-            <div id="txtNombreAgencia" style="background: var(--gpl-dorado); color: black; padding: 4px 15px; border-radius: 20px; font-size: 11px; font-weight: 900; text-transform: uppercase; display: inline-block; margin-top: 8px; letter-spacing: 0.5px;">Sincronizando información...</div>
+            <div id="txtNombreAgencia" style="background: var(--gpl-dorado); color: white; padding: 4px 15px; border-radius: 20px; font-size: 11px; font-weight: 900; text-transform: uppercase; display: inline-block; margin-top: 8px; letter-spacing: 0.5px;">Sincronizando información...</div>
         </div>
 
         <div id="selectorAgenciasContainer" style="display: none; margin-bottom: 20px;">
@@ -392,7 +392,7 @@
                     <strong id="totDias" style="color: #f39c12;">0</strong>
                 </div>
 
-                <div class="metrica-box metrica-destacada">
+                <div class="metrica-box metrica-destacada" style="display: none;">
                     <span>Facturación Total Equipos Asignados</span>
                     <strong id="totMonto">$0</strong>
                 </div>
@@ -417,7 +417,7 @@
             <button class="btn-accion btn-ver-ranking" onclick="abrirRanking()">
                 <i class="fa-solid fa-trophy"></i> Ver Ranking Nacional
             </button>
-            <button class="btn-accion btn-mi-panel" onclick="irAMiPanel()" style="background: var(--gpl-dorado); color: black;">
+            <button class="btn-accion btn-mi-panel" onclick="irAMiPanel()" style="background: var(--gpl-dorado); color: white;">
                 <i class="fa-solid fa-user-gear"></i> Cargar mis propias ventas
             </button>
         </div>
@@ -615,8 +615,8 @@
                     </div>
                     <div class="eq-stats-grid">
                         <div class="eq-stat">
-                            <span>Ventas</span>
-                            <strong style="color: #2ecc71;">${eq.netas}</strong>
+                            <span>Ventas del Área</span>
+                            <strong style="color: var(--gpl-petroleo);">${eq.netas}</strong>
                         </div>
                         <div class="eq-stat">
                             <span>Objetivo</span>
@@ -626,7 +626,7 @@
                             <span>Proyección</span>
                             <strong style="color:#9b59b6">${eq.proyeccion}</strong>
                         </div>
-                        <div class="eq-stat">
+                        <div class="eq-stat" style="display:none;">
                             <span>Facturación</span>
                             <strong style="color:#2ecc71; font-family:monospace; font-size:12px;">$${(eq.monto/1000).toFixed(1)}k</strong>
                         </div>
