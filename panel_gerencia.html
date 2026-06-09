@@ -444,9 +444,15 @@
             </div>
         </div>
 
-        <div style="text-align: center; margin-top: 15px;">
-            <select id="selectAgenciaGraficos" onchange="renderizarGraficos()" style="width: 90%; max-width: 340px; padding: 12px; border-radius: 8px; border: 2px solid var(--gpl-dorado); background: var(--fondo-oscuro); color: white; font-weight: bold; font-size: 14px; outline: none; cursor: pointer; margin-bottom: 10px;">
-                <option value="TODAS">🌟 TODAS LAS AGENCIAS (Nacional)</option>
+        <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 15px; margin-bottom: 10px;">
+            <select id="selectAgenciaGraficos" onchange="renderizarGraficos()" style="flex: 1; min-width: 200px; max-width: 300px; padding: 12px; border-radius: 8px; border: 2px solid var(--gpl-dorado); background: var(--fondo-oscuro); color: white; font-weight: bold; font-size: 14px; outline: none; cursor: pointer;">
+                <option value="TODAS">🌟 TODAS LAS AGENCIAS</option>
+            </select>
+            <select id="selectBancoGraficos" onchange="renderizarGraficos()" style="flex: 1; min-width: 200px; max-width: 300px; padding: 12px; border-radius: 8px; border: 2px solid var(--gpl-dorado); background: var(--fondo-oscuro); color: white; font-weight: bold; font-size: 14px; outline: none; cursor: pointer;">
+                <option value="TODOS">🏦 TODOS LOS BANCOS</option>
+            </select>
+            <select id="selectBeneficioGraficos" onchange="renderizarGraficos()" style="flex: 1; min-width: 200px; max-width: 300px; padding: 12px; border-radius: 8px; border: 2px solid var(--gpl-dorado); background: var(--fondo-oscuro); color: white; font-weight: bold; font-size: 14px; outline: none; cursor: pointer;">
+                <option value="TODOS">🎁 TODOS LOS BENEFICIOS</option>
             </select>
         </div>
 
@@ -698,6 +704,8 @@
 
         function renderizarGraficos() {
             const agFilter = document.getElementById('selectAgenciaGraficos').value;
+            const bcoFilter = document.getElementById('selectBancoGraficos').value;
+            const benFilter = document.getElementById('selectBeneficioGraficos').value;
             if (!window.datosGlobalesExcel) return;
             const { ventas, perfiles, equipos, agencias } = window.datosGlobalesExcel;
 
@@ -715,9 +723,13 @@
                     if (equipo) {
                         let agenciaId = equipo.agencia_id;
                         let aName = mapAgencias[agenciaId] ? mapAgencias[agenciaId].nombre : 'Sin Agencia';
+                        let bco = normalizarBanco(v.medio_pago);
+                        let ben = normalizarBeneficio(v.beneficio);
                         
-                        // Si hay filtro activo y no coincide con la agencia de esta venta, la saltamos
+                        // Aplicar filtros
                         if (agFilter !== 'TODAS' && aName !== agFilter) return;
+                        if (bcoFilter !== 'TODOS' && bco !== bcoFilter) return;
+                        if (benFilter !== 'TODOS' && ben !== benFilter) return;
 
                         let netasVenta = (v.ventas_cerradas || 0) - (v.bajas || 0);
                         let brutasVenta = v.ventas_cerradas || 0;
@@ -732,10 +744,8 @@
                         tNetas += netasVenta;
 
                         if (netasVenta > 0) {
-                            let banco = normalizarBanco(v.medio_pago);
-                            let beneficio = normalizarBeneficio(v.beneficio);
-                            mapBancos[banco] = (mapBancos[banco] || 0) + netasVenta;
-                            mapBeneficios[beneficio] = (mapBeneficios[beneficio] || 0) + netasVenta;
+                            mapBancos[bco] = (mapBancos[bco] || 0) + netasVenta;
+                            mapBeneficios[ben] = (mapBeneficios[ben] || 0) + netasVenta;
                         }
                     }
                 }
@@ -822,8 +832,27 @@
 
                 // 3. Renderizar gráficos con la lógica extraída
                 let selGraficos = document.getElementById('selectAgenciaGraficos');
-                selGraficos.innerHTML = '<option value="TODAS">🌟 TODAS LAS AGENCIAS (Nacional)</option>';
+                selGraficos.innerHTML = '<option value="TODAS">🌟 TODAS LAS AGENCIAS</option>';
                 agencias.forEach(a => selGraficos.innerHTML += `<option value="${a.nombre}">${a.nombre}</option>`);
+
+                // Poblar dropdowns de bancos y beneficios
+                let setBancos = new Set();
+                let setBeneficios = new Set();
+                ventas.forEach(v => {
+                    let netasVenta = (v.ventas_cerradas || 0) - (v.bajas || 0);
+                    if (netasVenta > 0) {
+                        setBancos.add(normalizarBanco(v.medio_pago));
+                        setBeneficios.add(normalizarBeneficio(v.beneficio));
+                    }
+                });
+                
+                let selBanco = document.getElementById('selectBancoGraficos');
+                selBanco.innerHTML = '<option value="TODOS">🏦 TODOS LOS BANCOS</option>';
+                Array.from(setBancos).sort().forEach(b => selBanco.innerHTML += `<option value="${b}">${b}</option>`);
+
+                let selBen = document.getElementById('selectBeneficioGraficos');
+                selBen.innerHTML = '<option value="TODOS">🎁 TODOS LOS BENEFICIOS</option>';
+                Array.from(setBeneficios).sort().forEach(b => selBen.innerHTML += `<option value="${b}">${b}</option>`);
 
                 renderizarGraficos();
 
