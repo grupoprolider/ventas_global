@@ -531,7 +531,12 @@
 
         async function updatePerfil(id, campo, valor) {
             const val = valor === "" ? null : valor;
-            await clienteSupabase.from('perfiles').update({ [campo]: val }).eq('id', id);
+            const { error } = await clienteSupabase.from('perfiles').update({ [campo]: val }).eq('id', id);
+            if (error) {
+                alert("Error al actualizar: " + error.message);
+            } else {
+                refrescarDatos();
+            }
         }
 
         async function guardarMetas() {
