@@ -622,8 +622,16 @@
         // Mantenemos la función original para las opciones
         async function borrar(tabla, id) {
             if (confirm("¿Estás seguro? Esta acción no se puede deshacer.")) {
-                await clienteSupabase.from(tabla).delete().eq('id', id);
-                refrescarDatos();
+                const { error } = await clienteSupabase.from(tabla).delete().eq('id', id);
+                if (error) {
+                    if (error.message.includes("foreign key") || error.code === '23503') {
+                        alert("No se pudo eliminar a esta persona porque ya tiene ventas registradas en el sistema. \n\nPara darlo de baja, simplemente cámbiale el equipo a 'Sin Equipo' para que no aparezca en los radares de la nueva campaña.");
+                    } else {
+                        alert("Error al eliminar: " + error.message);
+                    }
+                } else {
+                    refrescarDatos();
+                }
             }
         }
 
