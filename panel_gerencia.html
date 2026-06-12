@@ -977,6 +977,10 @@
                     ventas.filter(v => v.vendedor_id === p.id).forEach(v => {
                         vts += (v.ventas_cerradas || 0) - (v.bajas || 0);
                     });
+                    return { p, vts };
+                }).filter(data => data.p.equipo_id !== null || data.vts > 0).map(data => {
+                    let p = data.p;
+                    let vts = data.vts;
                     
                     let obj = p.objetivo_campana || 20;
                     let ritmoIdeal = obj / dias.totales;
