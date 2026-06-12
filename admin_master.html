@@ -312,6 +312,14 @@
 
             <div class="card-admin">
                 <h3>Gestión y Asignación de Equipos</h3>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <select id="filtro_agencia_personal" onchange="aplicarFiltrosPersonal()" style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Poppins', sans-serif; font-weight: bold;">
+                        <option value="TODAS">Todas las Agencias</option>
+                    </select>
+                    <select id="filtro_equipo_personal" onchange="aplicarFiltrosPersonal()" style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Poppins', sans-serif; font-weight: bold;">
+                        <option value="TODOS">Todos los Equipos</option>
+                    </select>
+                </div>
                 <table id="tabla_personal">
                     <thead>
                         <tr>
@@ -409,6 +417,8 @@
                 const listaAgs = ags || [];
                 const listaEqs = eqs || [];
 
+                window.datosGlobalesMaster = { perfiles: listaGente, agencias: listaAgs, equipos: listaEqs };
+
                 const optionVacia = '<option value="">-- Seleccionar --</option>';
                 const comboGente = optionVacia + listaGente.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
                 const comboCoordinadores = optionVacia + listaGente.filter(p => p.rol === 'Coordinador').map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
@@ -419,9 +429,13 @@
                 document.getElementById('obj_vendedor').innerHTML = comboGente;
                 document.getElementById('eq_agencia').innerHTML = optionVacia + listaAgs.map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
 
+                // Poblar filtros de personal
+                document.getElementById('filtro_agencia_personal').innerHTML = '<option value="TODAS">Todas las Agencias</option>' + listaAgs.map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
+                document.getElementById('filtro_equipo_personal').innerHTML = '<option value="TODOS">Todos los Equipos</option>' + listaEqs.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('');
+
                 cargarAgencias(listaAgs, listaGente);
                 cargarEquipos(listaEqs, listaGente, listaAgs);
-                cargarPersonal(listaGente, listaEqs);
+                aplicarFiltrosPersonal();
                 cargarAuditoria(listaGente);
                 cargarOpciones();
             } catch (error) {
@@ -475,6 +489,30 @@
             const valFinal = valor === "" ? null : valor;
             const { error } = await clienteSupabase.from('equipos').update({ [campo]: valFinal }).eq('id', id);
             if (error) alert("Error: " + error.message); else refrescarDatos();
+        }
+
+        function aplicarFiltrosPersonal() {
+            if (!window.datosGlobalesMaster) return;
+            const agFilter = document.getElementById('filtro_agencia_personal').value;
+            const eqFilter = document.getElementById('filtro_equipo_personal').value;
+            
+            const { perfiles, agencias, equipos } = window.datosGlobalesMaster;
+            
+            let filtrados = perfiles.filter(p => {
+                let pEqId = p.equipo_id;
+                let pAgId = null;
+                if (pEqId) {
+                    let equipoObj = equipos.find(e => e.id === pEqId);
+                    if (equipoObj) pAgId = equipoObj.agencia_id;
+                }
+                
+                if (agFilter !== 'TODAS' && pAgId !== agFilter) return false;
+                if (eqFilter !== 'TODOS' && pEqId !== eqFilter) return false;
+                
+                return true;
+            });
+            
+            cargarPersonal(filtrados, equipos);
         }
 
         function cargarPersonal(perfiles, equipos) {
