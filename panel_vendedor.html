@@ -693,6 +693,11 @@
                 let banco = v.querySelector('.inputBanco').value;
                 let monto = parseFloat(v.querySelector('.inputMonto').value) || 0;
                 
+                // Si es la única cajita y está vacía, la ignoramos (asumimos que solo carga entrevistas)
+                if (ventasElements.length === 1 && beneficio === "" && banco === "" && monto === 0) {
+                    continue;
+                }
+                
                 if (beneficio === "" || banco === "") {
                     alert("Por favor, seleccioná Beneficio y Banco en todas las ventas agregadas.");
                     return;
@@ -713,7 +718,24 @@
                 });
             }
             
-            if(arrayVentas.length === 0) return alert("Agregá al menos una venta.");
+            if (arrayVentas.length === 0) {
+                if (ent > 0) {
+                    const hoy = new Date();
+                    const campanaStr = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
+                    arrayVentas.push({
+                        vendedor_id: vendedorActual.id,
+                        ventas_cerradas: 0,
+                        entrevistas: ent,
+                        monto: 0,
+                        semana: sem,
+                        campana: campanaStr,
+                        beneficio: 'Ninguno (Solo Entrevistas)',
+                        medio_pago: 'No Aplica'
+                    });
+                } else {
+                    return alert("Debe cargar al menos una venta o registrar sus entrevistas diarias.");
+                }
+            }
 
             const btn = document.querySelector('.btn-enviar');
             btn.textContent = "SUBIENDO..."; btn.disabled = true;
