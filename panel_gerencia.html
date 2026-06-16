@@ -982,8 +982,8 @@
                     let p = data.p;
                     let vts = data.vts;
                     
-                    let obj = p.objetivo_campana || 20;
-                    let ritmoIdeal = obj / dias.totales;
+                    let obj = p.objetivo_campana || 0;
+                    let ritmoIdeal = obj > 0 ? obj / dias.totales : 0;
                     let esperadasHoy = ritmoIdeal * dias.transcurridos;
                     let atraso = esperadasHoy - vts;
                     let proyeccion = Math.round((vts / dias.transcurridos) * dias.totales);

@@ -571,7 +571,7 @@
 
                 vendedorActual = p;
 
-                if (localStorage.getItem('metaFijada_' + id)) {
+                if (p.objetivo_campana > 0) {
                     const blockMeta = document.getElementById('blockMisMetas');
                     if (blockMeta) {
                         blockMeta.innerHTML = `<div style="text-align:center; padding:10px; color:#27ae60; font-weight:bold;"><i class="fa-solid fa-check-circle"></i> Meta de la campaña fijada con éxito. ¡Éxitos!</div>`;
@@ -598,12 +598,12 @@
 
                 const gananciaReal = totalMonto * (porcentaje / 100);
                 const metaMonto = p.objetivo_monto || 1;
-                const metaVentas = p.objetivo_campana || 20;
+                const metaVentas = p.objetivo_campana || 0;
 
                 // CÁLCULO DE PROYECCIÓN
                 const dias = await getDiasHabiles();
-                const proyeccion = Math.round((totalVts / dias.transcurridos) * dias.totales);
-                const ritmoIdeal = metaVentas / dias.totales;
+                const proyeccion = Math.round((totalVts / dias.transcurridos) * dias.totales) || 0;
+                const ritmoIdeal = metaVentas > 0 ? metaVentas / dias.totales : 0;
                 const ventasEsperadasHoy = ritmoIdeal * dias.transcurridos;
                 const atraso = ventasEsperadasHoy - totalVts;
 
@@ -616,7 +616,12 @@
                 let barra = document.getElementById('barraProgreso');
                 let msj = document.getElementById('txtMensajeMotivador');
 
-                if (totalVts >= metaVentas) {
+                if (metaVentas === 0) {
+                    barra.style.width = '0%';
+                    barra.classList.remove('progreso-superado');
+                    msj.innerHTML = `⚠️ <span style="color: #ffcccc;">Debés fijar tu meta de ventas para este mes en el recuadro inferior para habilitar los radares.</span>`;
+                    msj.style.color = '#fff';
+                } else if (totalVts >= metaVentas) {
                     barra.style.width = '100%';
                     barra.classList.add('progreso-superado');
                     msj.innerHTML = `🔥 ¡OBJETIVO SUPERADO! Tu proyección apunta a ${proyeccion} ventas. ¡No aflojes!`;

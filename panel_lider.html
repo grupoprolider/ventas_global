@@ -591,8 +591,8 @@
 
                 // Renderizar lista de integrantes ordenados por atraso (riesgo)
                 let listaFinal = Object.values(mapStats).map(int => {
-                    let objCalc = int.objetivo || 20;
-                    let ritmoIdeal = objCalc / dias.totales;
+                    let objCalc = int.objetivo || 0;
+                    let ritmoIdeal = objCalc > 0 ? objCalc / dias.totales : 0;
                     let esperadasHoy = ritmoIdeal * dias.transcurridos;
                     int.atraso = esperadasHoy - int.netas;
                     int.proyeccion = Math.round((int.netas / dias.transcurridos) * dias.totales);

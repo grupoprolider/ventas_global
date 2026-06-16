@@ -719,11 +719,11 @@
                 ventasAgencia.filter(v => v.vendedor_id === i.id).forEach(v => {
                     vts += (v.ventas_cerradas || 0) - (v.bajas || 0);
                 });
-                let obj = i.objetivo_campana || 20;
-                let ritmoIdeal = obj / dias.totales;
+                let obj = i.objetivo_campana || 0;
+                let ritmoIdeal = obj > 0 ? obj / dias.totales : 0;
                 let esperadasHoy = ritmoIdeal * dias.transcurridos;
                 let atraso = esperadasHoy - vts;
-                let proyeccion = Math.round((vts / dias.transcurridos) * dias.totales);
+                let proyeccion = dias.transcurridos > 0 ? Math.round((vts / dias.transcurridos) * dias.totales) : 0;
                 let proyeccionTexto = formatProyeccion(vts, obj, dias.transcurridos, dias.totales);
                 
                 let eq = mapEquipos[i.equipo_id]?.nombre || 'Sin Equipo';
