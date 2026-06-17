@@ -391,6 +391,43 @@
             align-items: center;
             color: var(--gpl-dorado);
         }
+        @media (max-width: 600px) {
+            .agencia-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            .ag-stats-row {
+                flex-wrap: wrap;
+                justify-content: flex-start;
+            }
+            .kpi-destacado {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                padding: 15px;
+            }
+            .kpi-destacado div {
+                text-align: center;
+                margin-bottom: 5px;
+            }
+            .kpi-destacado strong {
+                font-size: 26px;
+            }
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+            .eq-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            .eq-metrics {
+                flex-wrap: wrap;
+                justify-content: flex-start;
+                gap: 10px;
+            }
+        }
     </style>
 </head>
 
