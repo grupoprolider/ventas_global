@@ -653,6 +653,20 @@
             }
         }
 
+        function toggleEquipo(id) {
+            const body = document.getElementById(`body_eq_${id}`);
+            const icon = document.getElementById(`icon_eq_${id}`);
+            if (body.style.display === 'block') {
+                body.style.display = 'none';
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-right');
+            } else {
+                body.style.display = 'block';
+                icon.classList.remove('fa-chevron-right');
+                icon.classList.add('fa-chevron-down');
+            }
+        }
+
         let chartInstAgencias = null;
         let chartInstBajas = null;
         let chartInstBancos = null;
@@ -882,8 +896,25 @@
                             netas: 0,
                             objetivo: 0,
                             entrevistas: 0,
-                            monto: 0
+                            monto: 0,
+                            vendedores: {}
                         };
+                    }
+                });
+
+                // Inicializar Vendedores
+                perfiles.forEach(p => {
+                    if (p.rol === 'Vendedor' && p.equipo_id) {
+                        let eq = equipos.find(e => e.id === p.equipo_id);
+                        if (eq && mapAgenciasData[eq.agencia_id]) {
+                            mapAgenciasData[eq.agencia_id].equipos[eq.id].vendedores[p.id] = {
+                                nombre: p.nombre,
+                                netas: 0,
+                                objetivo: p.objetivo_campana || 0,
+                                entrevistas: 0,
+                                monto: 0
+                            };
+                        }
                     }
                 });
 
@@ -919,6 +950,12 @@
                                 mapAgenciasData[eq.agencia_id].equipos[eq.id].netas += netas;
                                 mapAgenciasData[eq.agencia_id].equipos[eq.id].monto += monto;
                                 mapAgenciasData[eq.agencia_id].equipos[eq.id].entrevistas += entrevistas;
+                                
+                                if(mapAgenciasData[eq.agencia_id].equipos[eq.id].vendedores[vendedor.id]) {
+                                    mapAgenciasData[eq.agencia_id].equipos[eq.id].vendedores[vendedor.id].netas += netas;
+                                    mapAgenciasData[eq.agencia_id].equipos[eq.id].vendedores[vendedor.id].monto += monto;
+                                    mapAgenciasData[eq.agencia_id].equipos[eq.id].vendedores[vendedor.id].entrevistas += entrevistas;
+                                }
                             }
                         }
                     }
@@ -932,20 +969,39 @@
                     if (ag.objetivo === 0 && ag.netas === 0 && ag.entrevistas === 0) return; // Omitir sin actividad
                     
                     let eqArray = Object.values(ag.equipos).sort((a,b) => b.netas - a.netas);
-                    let htmlEquipos = eqArray.map(eq => `
-                        <div class="eq-row">
-                            <div>
-                                <span class="eq-name">${eq.nombre}</span><br>
-                                <span class="eq-lider"><i class="fa-solid fa-crown" style="color:#f1c40f;"></i> ${eq.lider}</span>
+                    let htmlEquipos = eqArray.map(eq => {
+                        let vendArray = Object.values(eq.vendedores).sort((a,b) => b.netas - a.netas);
+                        let htmlVendedores = vendArray.map(v => `
+                            <div style="display: flex; justify-content: space-between; padding: 5px 10px; border-bottom: 1px solid #f1f1f1; font-size: 11px;">
+                                <div style="width: 40%;">👤 ${v.nombre}</div>
+                                <div style="width: 15%; text-align: center;">Obj: <b>${v.objetivo}</b></div>
+                                <div style="width: 15%; text-align: center;">Vts: <b style="color:#2ecc71;">${v.netas}</b></div>
+                                <div style="width: 15%; text-align: center;">Ent: <b>${v.entrevistas}</b></div>
+                                <div style="width: 15%; text-align: right; color:var(--gpl-petroleo);"><b>$${(v.monto/1000).toFixed(1)}k</b></div>
                             </div>
-                            <div class="eq-metrics">
-                                <div><span style="color:#888; font-size:9px;">Obj</span><strong>${eq.objetivo}</strong></div>
-                                <div><span style="color:#888; font-size:9px;">Ventas</span><strong style="color:#2ecc71;">${eq.netas}</strong></div>
-                                <div><span style="color:#888; font-size:9px;">Entrev.</span><strong>${eq.entrevistas}</strong></div>
-                                <div><span style="color:#888; font-size:9px;">Factur.</span><strong style="color:var(--gpl-petroleo); font-family:monospace;">$${(eq.monto/1000).toFixed(1)}k</strong></div>
+                        `).join('');
+
+                        return `
+                        <div>
+                            <div class="eq-row" onclick="toggleEquipo('${eq.id}')" style="cursor: pointer;">
+                                <div>
+                                    <i id="icon_eq_${eq.id}" class="fa-solid fa-chevron-right" style="color: #ccc; font-size: 10px; margin-right: 5px;"></i>
+                                    <span class="eq-name">${eq.nombre}</span><br>
+                                    <span class="eq-lider"><i class="fa-solid fa-crown" style="color:#f1c40f;"></i> ${eq.lider}</span>
+                                </div>
+                                <div class="eq-metrics">
+                                    <div><span style="color:#888; font-size:9px;">Obj</span><strong>${eq.objetivo}</strong></div>
+                                    <div><span style="color:#888; font-size:9px;">Ventas</span><strong style="color:#2ecc71;">${eq.netas}</strong></div>
+                                    <div><span style="color:#888; font-size:9px;">Entrev.</span><strong>${eq.entrevistas}</strong></div>
+                                    <div><span style="color:#888; font-size:9px;">Factur.</span><strong style="color:var(--gpl-petroleo); font-family:monospace;">$${(eq.monto/1000).toFixed(1)}k</strong></div>
+                                </div>
+                            </div>
+                            <div id="body_eq_${eq.id}" style="display: none; background: #fafafa; padding: 5px 10px 5px 30px; border-left: 2px solid #eee; margin-bottom: 5px;">
+                                ${htmlVendedores || '<div style="font-size:11px; color:#999;">Sin vendedores con actividad</div>'}
                             </div>
                         </div>
-                    `).join('');
+                        `;
+                    }).join('');
 
                     htmlDesglose += `
                     <li class="agencia-item">
