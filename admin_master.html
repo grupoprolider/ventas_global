@@ -577,6 +577,10 @@
                     // Esta es una venta normal viva y coleando (Botón disponible)
                     btnAccion = `<button class="btn-baja" onclick="darDeBajaVenta('${v.id}')"><i class="fa-solid fa-arrow-trend-down"></i> DAR DE BAJA</button>`;
                 }
+                
+                // Botón de eliminar físico de la base de datos para todas las filas
+                btnAccion += `<button style="background:#c0392b; color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer; margin-left: 10px;" onclick="eliminarVentaDB('${v.id}')" title="Eliminar definitivamente de la DB"><i class="fa-solid fa-trash"></i></button>`;
+
 
                 return `
                     <tr style="${estiloFila}">
@@ -616,6 +620,14 @@
             await clienteSupabase.from('registro_ventas').update({ es_anulada: true }).eq('id', idVentaOriginal);
 
             alert("¡Baja impactada correctamente en los rankings!");
+            refrescarDatos();
+        }
+
+        async function eliminarVentaDB(idRegistro) {
+            if (!confirm("⚠️ ADVERTENCIA: Esta acción ELIMINARÁ FÍSICAMENTE el registro de la base de datos, como si nunca se hubiera cargado. No se descontará como baja. ¿Deseas borrarlo permanentemente?")) return;
+            const { error } = await clienteSupabase.from('registro_ventas').delete().eq('id', idRegistro);
+            if (error) return alert("Error al eliminar de la DB: " + error.message);
+            alert("Registro eliminado definitivamente.");
             refrescarDatos();
         }
 
