@@ -489,6 +489,14 @@
                 </div>
                 <strong id="kpiMonto">$0</strong>
             </div>
+
+            <div class="kpi-box" style="grid-column: 1 / -1; border-color: #9b59b6; display: flex; justify-content: space-between; align-items: center; padding: 15px 30px; background: linear-gradient(135deg, rgba(155, 89, 182, 0.1) 0%, rgba(142, 68, 173, 0.2) 100%);">
+                <div style="display: flex; flex-direction: column; align-items: flex-start; text-align: left;">
+                    <span style="color:#9b59b6; font-size: 13px; font-weight: bold;"><i class="fa-solid fa-calendar-day"></i> Ventas Netas por Día Específico</span>
+                    <input type="date" id="inputFechaFiltro" onchange="filtrarVentasPorDia()" style="margin-top: 8px; padding: 6px 10px; border-radius: 6px; border: 1px solid #9b59b6; background: rgba(255,255,255,0.8); color: #333; font-family: inherit; font-size: 14px; outline: none; font-weight: bold;">
+                </div>
+                <strong id="kpiVentasDia" style="color:#9b59b6; font-size: 36px; font-family: monospace;">-</strong>
+            </div>
         </div>
 
         <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 15px; margin-bottom: 10px;">
@@ -642,6 +650,22 @@
         }
 
         let campanaGlobal = "";
+        let globalVentasGerencia = [];
+
+        function filtrarVentasPorDia() {
+            let fechaSel = document.getElementById('inputFechaFiltro').value;
+            if (!fechaSel) {
+                document.getElementById('kpiVentasDia').textContent = "-";
+                return;
+            }
+            let total = 0;
+            globalVentasGerencia.forEach(v => {
+                if (v.created_at && v.created_at.startsWith(fechaSel)) {
+                    total += (v.ventas_cerradas || 0) - (v.bajas || 0);
+                }
+            });
+            document.getElementById('kpiVentasDia').textContent = total;
+        }
 
         function generarListaCampanas() {
             const hoy = new Date();
@@ -864,9 +888,15 @@
                 ]);
 
                 const ventas = resVentas.data || [];
+                globalVentasGerencia = ventas;
                 const perfiles = resPerfiles.data || [];
                 const equipos = resEquipos.data || [];
                 const agencias = resAgencias.data || [];
+
+                // Autocompletar la fecha de hoy en el filtro y calcular
+                let hoyIso = new Date().toISOString().split('T')[0];
+                document.getElementById('inputFechaFiltro').value = hoyIso;
+                filtrarVentasPorDia();
 
                 window.datosGlobalesExcel = { ventas, perfiles, equipos, agencias, campanaStr };
 
@@ -1087,7 +1117,7 @@
                     
                     let obj = p.objetivo_campana || 0;
                     let ritmoIdeal = obj > 0 ? obj / dias.totales : 0;
-                    let esperadasHoy = ritmoIdeal * dias.transcurridos;
+                    let esperadasHoy = Math.round(ritmoIdeal * dias.transcurridos);
                     let atraso = esperadasHoy - vts;
                     let proyeccion = Math.round((vts / dias.transcurridos) * dias.totales);
                     let proyeccionTexto = formatProyeccion(vts, obj, dias.transcurridos, dias.totales);
