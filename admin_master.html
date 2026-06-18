@@ -359,16 +359,32 @@
 
         <div id="tab4" class="tab-content">
             <div class="card-admin">
-                <h3>Auditoría de Ventas</h3>
-                <table id="tabla_auditoria">
-                    <thead>
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Vendedor</th>
-                            <th>Vts / Bajas</th>
-                            <th>Importe</th>
-                            <th>Estado / Acción</th>
-                        </tr>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                    <h3 style="margin: 0;">Auditoría de Ventas</h3>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <input type="date" id="filtro_fecha_audit" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc;">
+                        <select id="filtro_vendedor_audit" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc; max-width: 200px;">
+                            <option value="">Todos los vendedores</option>
+                        </select>
+                        <button onclick="cargarAuditoria()" style="padding: 5px 15px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;"><i class="fa-solid fa-search"></i> Filtrar</button>
+                    </div>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table id="tabla_auditoria">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Vendedor</th>
+                                <th>Vts / Bajas</th>
+                                <th>Entrevistas</th>
+                                <th>Importe</th>
+                                <th>Estado / Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
                     </thead>
                     <tbody></tbody>
                 </table>
@@ -446,7 +462,16 @@
                 cargarAgencias(listaAgs, listaGente);
                 cargarEquipos(listaEqs, listaGente, listaAgs);
                 aplicarFiltrosPersonal();
-                cargarAuditoria(listaGente);
+
+                globalGenteAudit = listaGente;
+                
+                // Poblar filtro de vendedores en auditoría
+                let selectVendedor = document.getElementById('filtro_vendedor_audit');
+                let vendedorSel = selectVendedor.value;
+                selectVendedor.innerHTML = '<option value="">Todos los vendedores</option>' + listaGente.filter(p => p.rol === 'Vendedor').map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+                selectVendedor.value = vendedorSel;
+
+                cargarAuditoria();
                 cargarOpciones();
             } catch (error) {
                 console.error("Error general al refrescar:", error);
@@ -558,16 +583,30 @@
             if (error) alert("Error: " + error.message); else alert("¡Metas guardadas!");
         }
 
+        let globalGenteAudit = [];
+
         // --- SISTEMA DE AUDITORÍA Y ASIENTOS DE REVERSIÓN ---
-        async function cargarAuditoria(listaGente) {
-            const { data: vtas, error } = await clienteSupabase.from('registro_ventas').select('*').order('created_at', { ascending: false }).limit(100);
+        async function cargarAuditoria() {
+            let fecha = document.getElementById('filtro_fecha_audit').value;
+            let vendedorId = document.getElementById('filtro_vendedor_audit').value;
+
+            let query = clienteSupabase.from('registro_ventas').select('*').order('created_at', { ascending: false });
+
+            if (vendedorId) query = query.eq('vendedor_id', vendedorId);
+            if (fecha) {
+                query = query.gte('created_at', fecha + "T00:00:00").lte('created_at', fecha + "T23:59:59");
+            } else {
+                query = query.limit(100);
+            }
+
+            const { data: vtas, error } = await query;
             const tbody = document.querySelector('#tabla_auditoria tbody');
 
-            if (error) return tbody.innerHTML = `<tr><td colspan="5" class="empty-state">Error cargando ventas.</td></tr>`;
-            if (!vtas || vtas.length === 0) return tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Aún no hay ventas.</td></tr>';
+            if (error) return tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Error cargando ventas.</td></tr>`;
+            if (!vtas || vtas.length === 0) return tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Aún no hay ventas.</td></tr>';
 
             tbody.innerHTML = vtas.map(v => {
-                const nombreVendedor = listaGente.find(p => p.id === v.vendedor_id)?.nombre || 'Desconocido';
+                const nombreVendedor = globalGenteAudit.find(p => p.id === v.vendedor_id)?.nombre || 'Desconocido';
 
                 const esReversion = (v.monto < 0);
                 const fueAnulada = (v.es_anulada === true);
@@ -597,6 +636,7 @@
                         <td>${v.created_at ? new Date(v.created_at).toLocaleDateString() : '-'}</td>
                         <td>${nombreVendedor}</td>
                         <td>${esReversion ? '-' + v.bajas : (v.ventas_cerradas || 0)}</td>
+                        <td><span style="background: #e1f5fe; color: #0288d1; padding: 2px 6px; border-radius: 10px; font-weight: bold;">${v.entrevistas || 0}</span></td>
                         <td>$${(v.monto || 0).toLocaleString()}</td>
                         <td>${btnAccion}</td>
                     </tr>
