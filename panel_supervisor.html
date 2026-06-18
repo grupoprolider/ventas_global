@@ -343,6 +343,16 @@
         
         .empty-state { text-align: center; padding: 30px 20px; color: #777; font-weight: bold; font-size: 13px; }
     </style>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#A42A68">
+    <link rel="apple-touch-icon" href="LOGO-gpl.png">
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js');
+            });
+        }
+    </script>
 </head>
 
 <body>

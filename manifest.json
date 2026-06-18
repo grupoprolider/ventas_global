@@ -1,0 +1,18 @@
+{
+  "name": "Suite GPL",
+  "short_name": "GPL App",
+  "description": "Sistema de Gestión y Seguimiento Comercial Grupo ProLíder",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#1a252c",
+  "theme_color": "#A42A68",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "LOGO-gpl.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

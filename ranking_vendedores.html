@@ -62,6 +62,16 @@
         .resumen-item strong { font-size: 16px; color: white; }
         .empty-state { text-align: center; padding: 40px 20px; color: #777; font-weight: bold; font-size: 14px; background: var(--celda-oscura); border-radius: 8px;}
     </style>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#A42A68">
+    <link rel="apple-touch-icon" href="LOGO-gpl.png">
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js');
+            });
+        }
+    </script>
 </head>
 <body>
 
