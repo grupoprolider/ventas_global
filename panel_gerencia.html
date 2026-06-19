@@ -491,9 +491,17 @@
             </div>
 
             <div class="kpi-box" style="grid-column: 1 / -1; border-color: #9b59b6; display: flex; justify-content: space-between; align-items: center; padding: 15px 30px; background: linear-gradient(135deg, rgba(155, 89, 182, 0.1) 0%, rgba(142, 68, 173, 0.2) 100%);">
-                <div style="display: flex; flex-direction: column; align-items: flex-start; text-align: left;">
+                <div style="display: flex; flex-direction: column; align-items: flex-start; text-align: left; gap: 8px;">
                     <span style="color:#9b59b6; font-size: 13px; font-weight: bold;"><i class="fa-solid fa-calendar-day"></i> Ventas Netas por Día Específico</span>
-                    <input type="date" id="inputFechaFiltro" onchange="filtrarVentasPorDia()" style="margin-top: 8px; padding: 6px 10px; border-radius: 6px; border: 1px solid #9b59b6; background: rgba(255,255,255,0.8); color: #333; font-family: inherit; font-size: 14px; outline: none; font-weight: bold;">
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <input type="date" id="inputFechaFiltro" onchange="filtrarVentasPorDia()" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #9b59b6; background: rgba(255,255,255,0.8); color: #333; font-family: inherit; font-size: 13px; outline: none; font-weight: bold;">
+                        <select id="filtroSucursalDia" onchange="actualizarEquiposDia()" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #9b59b6; background: rgba(255,255,255,0.8); color: #333; font-family: inherit; font-size: 13px; outline: none; font-weight: bold; max-width: 150px;">
+                            <option value="TODAS">Todas las Sucursales</option>
+                        </select>
+                        <select id="filtroEquipoDia" onchange="filtrarVentasPorDia()" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #9b59b6; background: rgba(255,255,255,0.8); color: #333; font-family: inherit; font-size: 13px; outline: none; font-weight: bold; max-width: 150px;">
+                            <option value="TODOS">Todos los Equipos</option>
+                        </select>
+                    </div>
                 </div>
                 <strong id="kpiVentasDia" style="color:#9b59b6; font-size: 36px; font-family: monospace;">-</strong>
             </div>
@@ -651,9 +659,26 @@
 
         let campanaGlobal = "";
         let globalVentasGerencia = [];
+        let globalPerfilesGerencia = [];
+        let globalEquiposGerencia = [];
+
+        function actualizarEquiposDia() {
+            let sucursalId = document.getElementById('filtroSucursalDia').value;
+            let selEq = document.getElementById('filtroEquipoDia');
+            selEq.innerHTML = '<option value="TODOS">Todos los Equipos</option>';
+            if (sucursalId !== 'TODAS') {
+                globalEquiposGerencia.filter(e => e.agencia_id === sucursalId).forEach(e => {
+                    selEq.innerHTML += `<option value="${e.id}">${e.nombre}</option>`;
+                });
+            }
+            filtrarVentasPorDia();
+        }
 
         function filtrarVentasPorDia() {
             let fechaSel = document.getElementById('inputFechaFiltro').value;
+            let sucursalId = document.getElementById('filtroSucursalDia')?.value || 'TODAS';
+            let equipoId = document.getElementById('filtroEquipoDia')?.value || 'TODOS';
+
             if (!fechaSel) {
                 document.getElementById('kpiVentasDia').textContent = "-";
                 return;
@@ -661,7 +686,24 @@
             let total = 0;
             globalVentasGerencia.forEach(v => {
                 if (v.created_at && v.created_at.startsWith(fechaSel)) {
-                    total += (v.ventas_cerradas || 0) - (v.bajas || 0);
+                    let match = true;
+                    if (sucursalId !== 'TODAS' || equipoId !== 'TODOS') {
+                        let vendedor = globalPerfilesGerencia.find(p => p.id === v.vendedor_id);
+                        if (vendedor) {
+                            let eq = globalEquiposGerencia.find(e => e.id === vendedor.equipo_id);
+                            if (eq) {
+                                if (sucursalId !== 'TODAS' && eq.agencia_id !== sucursalId) match = false;
+                                if (equipoId !== 'TODOS' && eq.id !== equipoId) match = false;
+                            } else {
+                                match = false; // Sin equipo no hace match si filtramos
+                            }
+                        } else {
+                            match = false;
+                        }
+                    }
+                    if (match) {
+                        total += (v.ventas_cerradas || 0) - (v.bajas || 0);
+                    }
                 }
             });
             document.getElementById('kpiVentasDia').textContent = total;
@@ -892,6 +934,14 @@
                 const perfiles = resPerfiles.data || [];
                 const equipos = resEquipos.data || [];
                 const agencias = resAgencias.data || [];
+
+                globalPerfilesGerencia = perfiles;
+                globalEquiposGerencia = equipos;
+
+                let selectSucDia = document.getElementById('filtroSucursalDia');
+                if (selectSucDia) {
+                    selectSucDia.innerHTML = '<option value="TODAS">Todas las Sucursales</option>' + agencias.map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
+                }
 
                 // Autocompletar la fecha de hoy en el filtro y calcular
                 let hoyIso = new Date().toISOString().split('T')[0];

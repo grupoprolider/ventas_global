@@ -416,6 +416,17 @@
                 <div class="meta-item"><span>DÍAS RESTANTES</span><span id="txtDias" class="meta-valor" style="color:#f39c12;">0</span></div>
             </div>
             <div id="txtMensajeMotivador" class="mensaje-motivador">Sincronizando con la base de datos...</div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 15px; text-align: left;">
+                <div style="flex: 1; background: rgba(255,255,255,0.1); padding: 10px; border-radius: 6px;">
+                    <div style="font-size: 10px; text-transform: uppercase; color: #f39c12; margin-bottom: 5px; font-weight: bold;"><i class="fa-solid fa-star"></i> Beneficios Vendidos</div>
+                    <div id="listaBeneficiosVendedor" style="font-size: 12px; color: white;">-</div>
+                </div>
+                <div style="flex: 1; background: rgba(255,255,255,0.1); padding: 10px; border-radius: 6px;">
+                    <div style="font-size: 10px; text-transform: uppercase; color: #3498db; margin-bottom: 5px; font-weight: bold;"><i class="fa-solid fa-building-columns"></i> Bancos Vendidos</div>
+                    <div id="listaBancosVendedor" style="font-size: 12px; color: white;">-</div>
+                </div>
+            </div>
         </div>
 
         <button class="btn-ver-ranking" onclick="abrirRanking()">🏆 VER RANKING EN VIVO</button>
@@ -598,13 +609,30 @@
                 const hoy = new Date();
                 const campanaStr = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
 
-                const { data: vtas } = await clienteSupabase.from('registro_ventas').select('monto, ventas_cerradas, bajas').eq('vendedor_id', id).eq('campana', campanaStr);
+                const { data: vtas } = await clienteSupabase.from('registro_ventas').select('monto, ventas_cerradas, bajas, beneficio, medio_pago').eq('vendedor_id', id).eq('campana', campanaStr);
 
                 let totalMonto = 0, totalVts = 0;
+                let conteoBeneficios = {};
+                let conteoBancos = {};
+
                 vtas?.forEach(v => {
                     totalMonto += (v.monto || 0);
-                    totalVts += ((v.ventas_cerradas || 0) - (v.bajas || 0));
+                    let netas = ((v.ventas_cerradas || 0) - (v.bajas || 0));
+                    totalVts += netas;
+                    
+                    if (netas > 0) {
+                        let ben = v.beneficio || 'No esp.';
+                        let ban = v.medio_pago || 'No esp.';
+                        conteoBeneficios[ben] = (conteoBeneficios[ben] || 0) + netas;
+                        conteoBancos[ban] = (conteoBancos[ban] || 0) + netas;
+                    }
                 });
+
+                let htmlBen = Object.keys(conteoBeneficios).map(k => `<div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.1); padding:2px 0;"><span>${k}</span> <strong>${conteoBeneficios[k]}</strong></div>`).join('');
+                let htmlBan = Object.keys(conteoBancos).map(k => `<div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.1); padding:2px 0;"><span>${k}</span> <strong>${conteoBancos[k]}</strong></div>`).join('');
+                
+                document.getElementById('listaBeneficiosVendedor').innerHTML = htmlBen || '<div style="opacity:0.5; text-align:center;">Sin datos</div>';
+                document.getElementById('listaBancosVendedor').innerHTML = htmlBan || '<div style="opacity:0.5; text-align:center;">Sin datos</div>';
 
                 const gananciaReal = totalMonto * (porcentaje / 100);
                 const metaMonto = p.objetivo_monto || 1;
