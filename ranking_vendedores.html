@@ -98,7 +98,7 @@
         <div id="rank0" class="tab-ranking active">
             <table>
                 <thead>
-                    <tr><th>Pos</th><th onclick="ordenarVendedores('nom')" style="cursor:pointer;" title="Ordenar A-Z">Vendedor/a / Equipo <i class="fa-solid fa-sort" style="color:#777; margin-left:3px;"></i></th><th class="vts-netas-col" onclick="ordenarVendedores('neta')" style="cursor:pointer;" title="Ordenar por VTAS">VTAS <i class="fa-solid fa-sort" style="color:#777; margin-left:3px;"></i></th><th class="monto-col">Importe</th><th style="text-align:center;">Entr</th><th style="text-align:center;">Promedio</th></tr>
+                    <tr><th>Pos</th><th onclick="ordenarVendedores('nom')" style="cursor:pointer;" title="Ordenar A-Z">Vendedor/a / Equipo <i class="fa-solid fa-sort" style="color:#777; margin-left:3px;"></i></th><th class="vts-netas-col" onclick="ordenarVendedores('neta')" style="cursor:pointer;" title="Ordenar por VTAS">VTAS <i class="fa-solid fa-sort" style="color:#777; margin-left:3px;"></i></th><th class="monto-col">Importe</th><th style="text-align:center; cursor:pointer;" onclick="ordenarVendedores('ent')" title="Ordenar por Entrevistas">Entr <i class="fa-solid fa-sort" style="color:#777; margin-left:3px;"></i></th><th style="text-align:center; cursor:pointer;" onclick="ordenarVendedores('prom')" title="Ordenar por Promedio">Promedio <i class="fa-solid fa-sort" style="color:#777; margin-left:3px;"></i></th></tr>
                 </thead>
                 <tbody id="cuerpoNacional"><tr><td colspan="5"><div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i>Cargando rankings...</div></td></tr></tbody>
             </table>
@@ -339,12 +339,18 @@
                 asc = !asc; // Cambia el sentido
             } else {
                 ordenActual = criterio;
-                asc = (criterio === 'nom'); // A-Z por defecto para nombre, descendente para ventas
+                asc = (criterio === 'nom' || criterio === 'prom'); // A-Z por defecto para nombre, y menor a mayor por promedio
             }
             
             lista.sort((a, b) => {
                 if (criterio === 'nom') {
                     return asc ? a.nom.localeCompare(b.nom) : b.nom.localeCompare(a.nom);
+                } else if (criterio === 'ent') {
+                    return asc ? a.ent - b.ent : b.ent - a.ent;
+                } else if (criterio === 'prom') {
+                    let promA = a.neta > 0 ? (a.ent / a.neta) : 9999;
+                    let promB = b.neta > 0 ? (b.ent / b.neta) : 9999;
+                    return asc ? promA - promB : promB - promA;
                 } else {
                     return asc ? (a.neta - b.neta || a.monto - b.monto) : (b.neta - a.neta || b.monto - a.monto);
                 }
