@@ -546,8 +546,7 @@
                 // Traemos TODAS las ventas de la empresa para calcular la incidencia
                 const { data: todasVentas } = await clienteSupabase.from('registro_ventas')
                     .select('*')
-                    .eq('campana', campanaStr)
-                    .eq('es_anulada', false);
+                    .eq('campana', campanaStr);
 
                 let totalBrutas = 0, totalBajas = 0, globalMonto = 0, totalObjetivoEquipo = 0, globalNetasEmpresa = 0;
                 let mapStats = {};

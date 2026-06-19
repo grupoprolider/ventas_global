@@ -178,7 +178,7 @@
                     document.querySelectorAll('.th-gerencia').forEach(el => el.style.display = 'table-cell');
                 }
 
-                const { data: vtas } = await clienteSupabase.from('registro_ventas').select('*').eq('campana', campana).eq('es_anulada', false);
+                const { data: vtas } = await clienteSupabase.from('registro_ventas').select('*').eq('campana', campana);
                 const { data: perfiles } = await clienteSupabase.from('perfiles').select('*');
                 const { data: equipos } = await clienteSupabase.from('equipos').select('*');
                 const { data: agencias } = await clienteSupabase.from('agencias').select('*');

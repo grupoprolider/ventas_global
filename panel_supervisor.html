@@ -582,8 +582,7 @@
                 
                 const { data: todasVentas } = await clienteSupabase.from('registro_ventas')
                     .select('*')
-                    .eq('campana', campanaStr)
-                    .eq('es_anulada', false);
+                    .eq('campana', campanaStr);
                 globalVentas = todasVentas || [];
 
                 globalNetasEmpresa = 0;

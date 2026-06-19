@@ -881,7 +881,7 @@
 
                 // 1. Obtener todos los datos necesarios
                 const [resVentas, resPerfiles, resEquipos, resAgencias] = await Promise.all([
-                    clienteSupabase.from('registro_ventas').select('*').eq('campana', campanaStr).eq('es_anulada', false),
+                    clienteSupabase.from('registro_ventas').select('*').eq('campana', campanaStr),
                     clienteSupabase.from('perfiles').select('*'),
                     clienteSupabase.from('equipos').select('*'),
                     clienteSupabase.from('agencias').select('*')
