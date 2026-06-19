@@ -251,7 +251,7 @@
                 <h3>Nueva Agencia</h3>
                 <div class="form-row">
                     <div><label>Nombre Agencia</label><input type="text" id="ag_nombre"></div>
-                    <div><label>Supervisor/a</label><select id="ag_super"></select></div>
+                    <div><label>Líder de Sucursal</label><select id="ag_super"></select></div>
                     <div><label>Color Hex</label><input type="color" id="ag_color" value="#0a3a46"></div>
                     <button class="btn-add" onclick="crearAgencia()">Crear Agencia</button>
                 </div>
@@ -259,7 +259,7 @@
                     <thead>
                         <tr>
                             <th>Agencia</th>
-                            <th>Supervisor</th>
+                            <th>Líder de Sucursal</th>
                             <th>Color</th>
                             <th>Acciones</th>
                         </tr>
@@ -275,7 +275,7 @@
                 <div class="form-row">
                     <div><label>Nombre Equipo</label><input type="text" id="eq_nombre"></div>
                     <div><label>Líder</label><select id="eq_lider"></select></div>
-                    <div><label>Coordinador</label><select id="eq_coordinador"></select></div>
+                    <div><label>Líder de Equipos</label><select id="eq_coordinador"></select></div>
                     <div><label>Agencia</label><select id="eq_agencia"></select></div>
                     <button class="btn-add" onclick="crearEquipo()">Crear Equipo</button>
                 </div>
@@ -284,7 +284,7 @@
                         <tr>
                             <th>Equipo</th>
                             <th>Líder</th>
-                            <th>Coordinador</th>
+                            <th>Líder de Equipos</th>
                             <th>Agencia</th>
                             <th>Acciones</th>
                         </tr>
@@ -305,8 +305,8 @@
                         <select id="per_rol">
                             <option value="Vendedor">Vendedor</option>
                             <option value="Líder">Líder</option>
-                            <option value="Coordinador">Coordinador</option>
-                            <option value="Supervisor">Supervisor</option>
+                            <option value="Líder de Equipos">Líder de Equipos</option>
+                            <option value="Líder de Sucursal">Líder de Sucursal</option>
                         </select>
                     </div>
                     <div>
@@ -447,7 +447,7 @@
 
                 const optionVacia = '<option value="">-- Seleccionar --</option>';
                 const comboGente = optionVacia + listaGente.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
-                const comboCoordinadores = optionVacia + listaGente.filter(p => p.rol === 'Coordinador').map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+                const comboCoordinadores = optionVacia + listaGente.filter(p => p.rol === 'Líder de Equipos').map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
 
                 document.getElementById('ag_super').innerHTML = comboGente;
                 document.getElementById('eq_lider').innerHTML = comboGente;
@@ -497,13 +497,13 @@
             const tbody = document.querySelector('#tabla_equipos tbody');
             if (!listaEqs.length) return tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No hay equipos creados.</td></tr>';
             
-            const coordinadores = listaGente.filter(p => p.rol === 'Coordinador');
+            const coordinadores = listaGente.filter(p => p.rol === 'Líder de Equipos');
             
             tbody.innerHTML = listaEqs.map(e => `
                 <tr>
                     <td>${e.nombre}</td>
                     <td><select onchange="updateEquipo('${e.id}', 'lider_id', this.value)"><option value="">Sin Líder</option>${listaGente.map(p => `<option value="${p.id}" ${p.id === e.lider_id ? 'selected' : ''}>${p.nombre}</option>`).join('')}</select></td>
-                    <td><select onchange="updateEquipo('${e.id}', 'coordinador_id', this.value)"><option value="">Sin Coordinador</option>${coordinadores.map(p => `<option value="${p.id}" ${p.id === e.coordinador_id ? 'selected' : ''}>${p.nombre}</option>`).join('')}</select></td>
+                    <td><select onchange="updateEquipo('${e.id}', 'coordinador_id', this.value)"><option value="">Sin Líder</option>${coordinadores.map(p => `<option value="${p.id}" ${p.id === e.coordinador_id ? 'selected' : ''}>${p.nombre}</option>`).join('')}</select></td>
                     <td><select onchange="updateEquipo('${e.id}', 'agencia_id', this.value)"><option value="">Sin Agencia</option>${listaAgs.map(a => `<option value="${a.id}" ${a.id === e.agencia_id ? 'selected' : ''}>${a.nombre}</option>`).join('')}</select></td>
                     <td><button class="btn-del" onclick="borrar('equipos', '${e.id}')">Eliminar</button></td>
                 </tr>
@@ -552,7 +552,7 @@
 
         function cargarPersonal(perfiles, equipos) {
             const tbody = document.querySelector('#tabla_personal tbody');
-            tbody.innerHTML = perfiles.map(p => `<tr><td>${p.nombre}</td><td><select onchange="updatePerfil('${p.id}', 'equipo_id', this.value)"><option value="">Sin Equipo</option>${equipos.map(e => `<option value="${e.id}" ${e.id === p.equipo_id ? 'selected' : ''}>${e.nombre}</option>`).join('')}</select></td><td><select onchange="updatePerfil('${p.id}', 'rol', this.value)"><option value="Vendedor" ${p.rol === 'Vendedor' ? 'selected' : ''}>Vendedor</option><option value="Líder" ${p.rol === 'Líder' ? 'selected' : ''}>Líder</option><option value="Coordinador" ${p.rol === 'Coordinador' ? 'selected' : ''}>Coordinador</option><option value="Supervisor" ${p.rol === 'Supervisor' ? 'selected' : ''}>Supervisor</option></select></td><td><select onchange="updatePerfil('${p.id}', 'categoria', this.value)"><option value="Senior" ${p.categoria === 'Senior' ? 'selected' : ''}>Senior</option><option value="Junior" ${p.categoria === 'Junior' ? 'selected' : ''}>Junior</option></select></td><td><button class="btn-del" onclick="borrar('perfiles', '${p.id}')">BAJA</button></td></tr>`).join('');
+            tbody.innerHTML = perfiles.map(p => `<tr><td>${p.nombre}</td><td><select onchange="updatePerfil('${p.id}', 'equipo_id', this.value)"><option value="">Sin Equipo</option>${equipos.map(e => `<option value="${e.id}" ${e.id === p.equipo_id ? 'selected' : ''}>${e.nombre}</option>`).join('')}</select></td><td><select onchange="updatePerfil('${p.id}', 'rol', this.value)"><option value="Vendedor" ${p.rol === 'Vendedor' ? 'selected' : ''}>Vendedor</option><option value="Líder" ${p.rol === 'Líder' ? 'selected' : ''}>Líder</option><option value="Líder de Equipos" ${p.rol === 'Líder de Equipos' ? 'selected' : ''}>Líder de Equipos</option><option value="Líder de Sucursal" ${p.rol === 'Líder de Sucursal' ? 'selected' : ''}>Líder de Sucursal</option></select></td><td><select onchange="updatePerfil('${p.id}', 'categoria', this.value)"><option value="Senior" ${p.categoria === 'Senior' ? 'selected' : ''}>Senior</option><option value="Junior" ${p.categoria === 'Junior' ? 'selected' : ''}>Junior</option></select></td><td><button class="btn-del" onclick="borrar('perfiles', '${p.id}')">BAJA</button></td></tr>`).join('');
         }
 
         async function crearPersonal() {

@@ -252,9 +252,9 @@
                     const rol = (data.rol || '').toLowerCase();
                     if (rol === 'lider' || rol === 'líder') {
                         window.location.href = `panel_lider.html?id=${idVendedor}`;
-                    } else if (rol === 'supervisor') {
+                    } else if (rol === 'líder de sucursal') {
                         window.location.href = `panel_supervisor.html?id=${idVendedor}`;
-                    } else if (rol === 'coordinador') {
+                    } else if (rol === 'líder de equipos') {
                         window.location.href = `panel_coordinador.html?id=${idVendedor}`;
                     } else if (rol === 'gerencia' || rol === 'gerente') {
                         window.location.href = `panel_gerencia.html`;

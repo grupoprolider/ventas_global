@@ -80,7 +80,7 @@
         <h2>Ranking Nacional de Ventas</h2>
         <div id="txtCampana" class="campana-badge">Cargando...</div>
         <select id="selectFiltroAgencia" onchange="filtrarRankingPorAgencia()" style="display: none; width: 90%; max-width: 340px; margin: 15px auto 5px auto; padding: 12px; border-radius: 8px; border: 2px solid var(--gpl-dorado); background: var(--fondo-oscuro); color: white; font-weight: bold; font-size: 14px; outline: none; cursor: pointer;">
-            <option value="TODAS">🌟 TODAS LAS AGENCIAS (Nacional)</option>
+            <option value="TODAS">🌟 TODAS LAS SUCURSALES (Nacional)</option>
         </select>
         <button id="btnDescargarExcel" class="btn-excel" onclick="descargarExcelGerencial()">
             <i class="fa-solid fa-file-excel"></i> Descargar Reporte Excel Gerencial
@@ -89,9 +89,9 @@
 
     <ul class="nav-rankings">
         <li onclick="switchRank(0)" class="active"><i class="fa-solid fa-user-tie"></i>Vendedores</li>
-        <li onclick="switchRank(1)"><i class="fa-solid fa-building"></i>Agencias</li>
+        <li onclick="switchRank(1)"><i class="fa-solid fa-building"></i>Sucursales</li>
         <li onclick="switchRank(2)"><i class="fa-solid fa-users-gear"></i>Equipos</li>
-        <li onclick="switchRank(3)"><i class="fa-solid fa-user-shield"></i>Coordinadores</li>
+        <li onclick="switchRank(3)"><i class="fa-solid fa-user-shield"></i>Líderes de Equipos</li>
     </ul>
 
     <div class="container-ranking">
@@ -107,7 +107,7 @@
         <div id="rank1" class="tab-ranking">
             <table>
                 <thead>
-                    <tr><th>Pos</th><th>Agencia / Supervisor/a</th><th class="vts-netas-col">VTAS</th><th class="monto-col th-gerencia" style="display:none;">Importe</th></tr>
+                    <tr><th>Pos</th><th>Sucursal / Líder de Sucursal</th><th class="vts-netas-col">VTAS</th><th class="monto-col th-gerencia" style="display:none;">Importe</th></tr>
                 </thead>
                 <tbody id="cuerpoAgencias"></tbody>
             </table>
@@ -125,7 +125,7 @@
         <div id="rank3" class="tab-ranking">
             <table>
                 <thead>
-                    <tr><th>Pos</th><th>Coordinador/a</th><th class="vts-netas-col">VTAS</th><th class="monto-col th-gerencia" style="display:none;">Importe</th></tr>
+                    <tr><th>Pos</th><th>Líder de Equipos</th><th class="vts-netas-col">VTAS</th><th class="monto-col th-gerencia" style="display:none;">Importe</th></tr>
                 </thead>
                 <tbody id="cuerpoCoordinadores"></tbody>
             </table>
@@ -204,7 +204,7 @@
 
                 let mAg = {}; L_Agencias.forEach(a => mAg[a.id] = { n: a.nombre, s: getNombre(a.supervisor_id), v: 0, m: 0, c: a.color_hex });
                 let mEq = {}; L_Equipos.forEach(e => mEq[e.id] = { n: e.nombre, l: getNombre(e.lider_id), c_id: e.coordinador_id, v: 0, m: 0, a_id: e.agencia_id });
-                let mCoord = {}; L_Perfiles.filter(p => p.rol === 'Coordinador').forEach(c => mCoord[c.id] = { n: c.nombre, v: 0, m: 0, ag: '-' });
+                let mCoord = {}; L_Perfiles.filter(p => p.rol === 'Líder de Equipos').forEach(c => mCoord[c.id] = { n: c.nombre, v: 0, m: 0, ag: '-' });
 
                 let nacList = L_Perfiles.map(p => {
                     let v = 0, b = 0, m = 0, ent = 0;
