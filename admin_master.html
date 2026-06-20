@@ -481,7 +481,7 @@
         function cargarAgencias(listaAgs, listaGente) {
             const tbody = document.querySelector('#tabla_agencias tbody');
             if (!listaAgs.length) return tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No hay agencias creadas.</td></tr>';
-            tbody.innerHTML = listaAgs.map(a => `<tr><td>${a.nombre}</td><td>${listaGente.find(p => p.id === a.supervisor_id)?.nombre || '-'}</td><td><div style="width:20px; height:20px; background:${a.color_hex}; border-radius:50%;"></div></td><td><button class="btn-del" onclick="borrar('agencias', '${a.id}')">Eliminar</button></td></tr>`).join('');
+            tbody.innerHTML = listaAgs.map(a => `<tr><td>${a.nombre}</td><td>${listaGente.find(p => p.id === a.supervisor_id)?.nombre || '-'}</td><td><div style="width:20px; height:20px; background:${a.color_hex}; border-radius:50%;"></div></td><td><button class="btn-edit" onclick="renombrar('agencias', '${a.id}', '${a.nombre}')">Renombrar</button><button class="btn-del" onclick="borrar('agencias', '${a.id}')">Eliminar</button></td></tr>`).join('');
         }
 
         async function crearAgencia() {
@@ -505,7 +505,7 @@
                     <td><select onchange="updateEquipo('${e.id}', 'lider_id', this.value)"><option value="">Sin Líder</option>${listaGente.map(p => `<option value="${p.id}" ${p.id === e.lider_id ? 'selected' : ''}>${p.nombre}</option>`).join('')}</select></td>
                     <td><select onchange="updateEquipo('${e.id}', 'coordinador_id', this.value)"><option value="">Sin Líder</option>${coordinadores.map(p => `<option value="${p.id}" ${p.id === e.coordinador_id ? 'selected' : ''}>${p.nombre}</option>`).join('')}</select></td>
                     <td><select onchange="updateEquipo('${e.id}', 'agencia_id', this.value)"><option value="">Sin Agencia</option>${listaAgs.map(a => `<option value="${a.id}" ${a.id === e.agencia_id ? 'selected' : ''}>${a.nombre}</option>`).join('')}</select></td>
-                    <td><button class="btn-del" onclick="borrar('equipos', '${e.id}')">Eliminar</button></td>
+                    <td><button class="btn-edit" onclick="renombrar('equipos', '${e.id}', '${e.nombre}')">Renombrar</button><button class="btn-del" onclick="borrar('equipos', '${e.id}')">Eliminar</button></td>
                 </tr>
             `).join('');
         }
@@ -552,7 +552,7 @@
 
         function cargarPersonal(perfiles, equipos) {
             const tbody = document.querySelector('#tabla_personal tbody');
-            tbody.innerHTML = perfiles.map(p => `<tr><td>${p.nombre}</td><td><select onchange="updatePerfil('${p.id}', 'equipo_id', this.value)"><option value="">Sin Equipo</option>${equipos.map(e => `<option value="${e.id}" ${e.id === p.equipo_id ? 'selected' : ''}>${e.nombre}</option>`).join('')}</select></td><td><select onchange="updatePerfil('${p.id}', 'rol', this.value)"><option value="Vendedor" ${p.rol === 'Vendedor' ? 'selected' : ''}>Vendedor</option><option value="Líder" ${p.rol === 'Líder' ? 'selected' : ''}>Líder</option><option value="Líder de Equipos" ${p.rol === 'Líder de Equipos' ? 'selected' : ''}>Líder de Equipos</option><option value="Líder de Sucursal" ${p.rol === 'Líder de Sucursal' ? 'selected' : ''}>Líder de Sucursal</option></select></td><td><select onchange="updatePerfil('${p.id}', 'categoria', this.value)"><option value="Senior" ${p.categoria === 'Senior' ? 'selected' : ''}>Senior</option><option value="Junior" ${p.categoria === 'Junior' ? 'selected' : ''}>Junior</option></select></td><td><button class="btn-del" onclick="borrar('perfiles', '${p.id}')">BAJA</button></td></tr>`).join('');
+            tbody.innerHTML = perfiles.map(p => `<tr><td>${p.nombre}</td><td><select onchange="updatePerfil('${p.id}', 'equipo_id', this.value)"><option value="">Sin Equipo</option>${equipos.map(e => `<option value="${e.id}" ${e.id === p.equipo_id ? 'selected' : ''}>${e.nombre}</option>`).join('')}</select></td><td><select onchange="updatePerfil('${p.id}', 'rol', this.value)"><option value="Vendedor" ${p.rol === 'Vendedor' ? 'selected' : ''}>Vendedor</option><option value="Líder" ${p.rol === 'Líder' ? 'selected' : ''}>Líder</option><option value="Líder de Equipos" ${p.rol === 'Líder de Equipos' ? 'selected' : ''}>Líder de Equipos</option><option value="Líder de Sucursal" ${p.rol === 'Líder de Sucursal' ? 'selected' : ''}>Líder de Sucursal</option></select></td><td><select onchange="updatePerfil('${p.id}', 'categoria', this.value)"><option value="Senior" ${p.categoria === 'Senior' ? 'selected' : ''}>Senior</option><option value="Junior" ${p.categoria === 'Junior' ? 'selected' : ''}>Junior</option></select></td><td><button class="btn-edit" onclick="renombrar('perfiles', '${p.id}', '${p.nombre}')">Renombrar</button><button class="btn-del" onclick="borrar('perfiles', '${p.id}')">BAJA</button></td></tr>`).join('');
         }
 
         async function crearPersonal() {
@@ -623,11 +623,9 @@
                     estiloFila = 'opacity: 0.5; text-decoration: line-through;';
                     btnAccion = `<span style="color:#e74c3c; font-weight:bold; font-size: 11px;"><i class="fa-solid fa-ban"></i> ANULADA</span>`;
                 } else {
-                    // Esta es una venta normal viva y coleando (Botón disponible)
                     btnAccion = `<button class="btn-baja" onclick="darDeBajaVenta('${v.id}')"><i class="fa-solid fa-arrow-trend-down"></i> DAR DE BAJA</button>`;
                 }
                 
-                // Botón de eliminar físico de la base de datos para todas las filas
                 btnAccion += `<button style="background:#c0392b; color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer; margin-left: 10px;" onclick="eliminarVentaDB('${v.id}')" title="Eliminar definitivamente de la DB"><i class="fa-solid fa-trash"></i></button>`;
 
 
@@ -647,17 +645,15 @@
         async function darDeBajaVenta(idVentaOriginal) {
             if (!confirm("¿Confirmás la BAJA de esta operación? Se generará un asiento negativo automático para descontar la comisión y los puntos en el ranking.")) return;
 
-            // 1. Traer la venta original intacta
             const { data: venta, error: errBusqueda } = await clienteSupabase.from('registro_ventas').select('*').eq('id', idVentaOriginal).single();
             if (errBusqueda || !venta) return alert("Error al buscar la operación.");
 
-            // 2. Insertar la reversión (Restar)
             const { error: errInsert } = await clienteSupabase.from('registro_ventas').insert([{
                 vendedor_id: venta.vendedor_id,
                 ventas_cerradas: 0,
-                entrevistas: 0, // Las entrevistas ya se hicieron, no se restan
-                bajas: venta.ventas_cerradas || 1, // Se clava como baja
-                monto: -(venta.monto || 0), // Importe en negativo
+                entrevistas: 0,
+                bajas: venta.ventas_cerradas || 1,
+                monto: -(venta.monto || 0),
                 semana: venta.semana,
                 campana: venta.campana,
                 beneficio: venta.beneficio,
@@ -666,7 +662,6 @@
 
             if (errInsert) return alert("Error al registrar la baja: " + errInsert.message);
 
-            // 3. Marcar la original como anulada
             await clienteSupabase.from('registro_ventas').update({ es_anulada: true }).eq('id', idVentaOriginal);
 
             alert("¡Baja impactada correctamente en los rankings!");
@@ -681,7 +676,17 @@
             refrescarDatos();
         }
 
-        // Mantenemos la función original para las opciones
+        async function renombrar(tabla, id, nombreActual) {
+            const nuevoNombre = prompt("Ingresá el nuevo nombre:", nombreActual);
+            if (nuevoNombre !== null && nuevoNombre.trim() !== '' && nuevoNombre !== nombreActual) {
+                if (confirm(`¿Confirmás cambiar el nombre "${nombreActual}" por "${nuevoNombre.trim()}"?`)) {
+                    const { error } = await clienteSupabase.from(tabla).update({ nombre: nuevoNombre.trim() }).eq('id', id);
+                    if (error) alert("Error al renombrar: " + error.message);
+                    else refrescarDatos();
+                }
+            }
+        }
+
         async function borrar(tabla, id) {
             if (confirm("¿Estás seguro? Esta acción no se puede deshacer.")) {
                 const { error } = await clienteSupabase.from(tabla).delete().eq('id', id);
