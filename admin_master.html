@@ -481,7 +481,7 @@
         function cargarAgencias(listaAgs, listaGente) {
             const tbody = document.querySelector('#tabla_agencias tbody');
             if (!listaAgs.length) return tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No hay agencias creadas.</td></tr>';
-            tbody.innerHTML = listaAgs.map(a => `<tr><td>${a.nombre}</td><td>${listaGente.find(p => p.id === a.supervisor_id)?.nombre || '-'}</td><td><div style="width:20px; height:20px; background:${a.color_hex}; border-radius:50%;"></div></td><td><button class="btn-edit" onclick="renombrar('agencias', '${a.id}', '${a.nombre}')">Renombrar</button><button class="btn-del" onclick="borrar('agencias', '${a.id}')">Eliminar</button></td></tr>`).join('');
+            tbody.innerHTML = listaAgs.map(a => `<tr><td>${a.nombre}</td><td>${listaGente.find(p => p.id === a.supervisor_id)?.nombre || '-'}</td><td><input type="color" value="${a.color_hex}" onchange="cambiarColorAgencia('${a.id}', this.value)" style="border:none; padding:0; width:30px; height:30px; cursor:pointer; background:transparent;" title="Clic para cambiar color"></td><td><button class="btn-edit" onclick="renombrar('agencias', '${a.id}', '${a.nombre}')">Renombrar</button><button class="btn-del" onclick="borrar('agencias', '${a.id}')">Eliminar</button></td></tr>`).join('');
         }
 
         async function crearAgencia() {
@@ -685,6 +685,12 @@
                     else refrescarDatos();
                 }
             }
+        }
+
+        async function cambiarColorAgencia(id, nuevoColor) {
+            const { error } = await clienteSupabase.from('agencias').update({ color_hex: nuevoColor }).eq('id', id);
+            if (error) alert("Error al cambiar color: " + error.message);
+            else refrescarDatos(); // Refresca para que todos los datos actualizados viajen a donde corresponda
         }
 
         async function borrar(tabla, id) {
