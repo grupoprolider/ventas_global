@@ -87,6 +87,10 @@
         .resumen-item span { font-size: 9px; color: #888; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; }
         .resumen-item strong { font-size: 16px; color: white; }
         .empty-state { text-align: center; padding: 40px 20px; color: #777; font-weight: bold; font-size: 14px; background: var(--celda-oscura); border-radius: 8px;}
+        #selectFiltroAgencia {
+            display: none; width: 90%; max-width: 340px; margin: 15px auto 5px auto; padding: 12px; border-radius: 8px; border: 2px solid var(--gpl-dorado); 
+            background: var(--celda-oscura); color: var(--texto-principal); font-weight: bold; font-size: 14px; outline: none; cursor: pointer; transition: background 0.3s, color 0.3s;
+        }
     </style>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#A42A68">
@@ -254,7 +258,10 @@
                         let cId = mEq[p.equipo_id].c_id;
                         if (cId && mCoord[cId]) { 
                             mCoord[cId].v += neta; mCoord[cId].m += m; 
-                            if (aId && mAg[aId]) mCoord[cId].ag = mAg[aId].n;
+                            if (aId && mAg[aId]) {
+                                mCoord[cId].ag = mAg[aId].n;
+                                mCoord[cId].c = mAg[aId].c;
+                            }
                         }
                     }
                     const miEq = L_Equipos.find(e => e.id === p.equipo_id);
@@ -314,8 +321,9 @@
             let filtradosEq = Object.values(mEq).filter(e => filtroAgencia === 'TODAS' || mAg[e.a_id]?.n === filtroAgencia).sort((a,b) => b.v - a.v || b.m - a.m);
             document.getElementById('cuerpoEquipos').innerHTML = filtradosEq.map((e, i) => {
                 let agNom = mAg[e.a_id]?.n || 'Sin Agencia';
+                let agCol = mAg[e.a_id]?.c || '#444';
                 return `
-                <tr>
+                <tr style="--row-color: ${agCol}">
                     <td class="posicion">${getMedalla(i)}</td>
                     <td class="info-principal">
                         <span class="col-nombre">${e.n}</span><span class="sub-txt">Líder: ${e.l} • ${agNom}</span>
@@ -327,7 +335,7 @@
 
             let filtradosCoord = Object.values(mCoord).filter(c => filtroAgencia === 'TODAS' || c.ag === filtroAgencia || c.ag === '-').sort((a,b) => b.v - a.v || b.m - a.m);
             document.getElementById('cuerpoCoordinadores').innerHTML = filtradosCoord.map((c, i) => `
-                <tr>
+                <tr style="--row-color: ${c.c || '#444'}">
                     <td class="posicion">${getMedalla(i)}</td>
                     <td class="info-principal">
                         <span class="col-nombre">${c.n}</span><span class="sub-txt">${c.ag !== '-' ? c.ag : 'Sin Agencia'}</span>
