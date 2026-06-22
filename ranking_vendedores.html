@@ -377,13 +377,20 @@
             const excelVisible = btnExcel.style.display;
             btnExcel.style.display = 'none';
 
+            // Ajustamos temporalmente el ancho del body para abarcar todo el contenido (evita cortes)
+            const originalBodyWidth = document.body.style.width;
+            const originalBodyMinWidth = document.body.style.minWidth;
+            const scrollWidth = document.documentElement.scrollWidth;
+            document.body.style.width = scrollWidth + 'px';
+            document.body.style.minWidth = scrollWidth + 'px';
+
             try {
                 // Capturamos el contenedor principal que envuelve todo (usamos body para tener los navs también)
                 const canvas = await html2canvas(document.body, {
                     scale: 2, // Mejor resolución para que no se vea borroso
                     useCORS: true,
                     backgroundColor: '#16213e',
-                    windowWidth: document.documentElement.offsetWidth,
+                    windowWidth: scrollWidth,
                     windowHeight: document.documentElement.scrollHeight
                 });
                 
@@ -396,7 +403,10 @@
                 console.error("Error al generar JPG:", err);
                 alert("Hubo un error al generar la imagen.");
             } finally {
-                // Restaurar botones
+                // Restaurar botones y anchos
+                document.body.style.width = originalBodyWidth;
+                document.body.style.minWidth = originalBodyMinWidth;
+
                 btn.innerHTML = '<i class="fa-solid fa-camera"></i> Descargar Imagen (JPG)';
                 btn.style.pointerEvents = 'auto';
                 btn.style.display = 'flex';
