@@ -396,7 +396,15 @@
                 
                 const dataURL = canvas.toDataURL('image/jpeg', 0.9);
                 const link = document.createElement('a');
-                link.download = `Ranking_ProLider_${new Date().toISOString().split('T')[0]}.jpg`;
+                
+                // Obtener nombre de la pestaña activa
+                let nombrePestana = "Ventas";
+                const tabActiva = document.querySelector('.nav-rankings li.active');
+                if (tabActiva) {
+                    nombrePestana = tabActiva.innerText.trim().replace(/\s+/g, '_').replace(/\./g, '');
+                }
+                
+                link.download = `Ranking_${nombrePestana}_ProLider_${new Date().toISOString().split('T')[0]}.jpg`;
                 link.href = dataURL;
                 link.click();
             } catch (err) {
