@@ -481,7 +481,8 @@
         function cargarAgencias(listaAgs, listaGente) {
             const tbody = document.querySelector('#tabla_agencias tbody');
             if (!listaAgs.length) return tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No hay agencias creadas.</td></tr>';
-            tbody.innerHTML = listaAgs.map(a => `<tr><td>${a.nombre}</td><td>${listaGente.find(p => p.id === a.supervisor_id)?.nombre || '-'}</td><td><input type="color" value="${a.color_hex}" onchange="cambiarColorAgencia('${a.id}', this.value)" style="border:none; padding:0; width:30px; height:30px; cursor:pointer; background:transparent;" title="Clic para cambiar color"></td><td><button class="btn-edit" onclick="renombrar('agencias', '${a.id}', '${a.nombre}')">Renombrar</button><button class="btn-del" onclick="borrar('agencias', '${a.id}')">Eliminar</button></td></tr>`).join('');
+            const supervisores = listaGente.filter(p => p.rol === 'Líder de Sucursal');
+            tbody.innerHTML = listaAgs.map(a => `<tr><td>${a.nombre}</td><td><select onchange="updateAgencia('${a.id}', 'supervisor_id', this.value)"><option value="">Sin Líder de Sucursal</option>${supervisores.map(p => `<option value="${p.id}" ${p.id === a.supervisor_id ? 'selected' : ''}>${p.nombre}</option>`).join('')}</select></td><td><input type="color" value="${a.color_hex}" onchange="cambiarColorAgencia('${a.id}', this.value)" style="border:none; padding:0; width:30px; height:30px; cursor:pointer; background:transparent;" title="Clic para cambiar color"></td><td><button class="btn-edit" onclick="renombrar('agencias', '${a.id}', '${a.nombre}')">Renombrar</button><button class="btn-del" onclick="borrar('agencias', '${a.id}')">Eliminar</button></td></tr>`).join('');
         }
 
         async function crearAgencia() {
@@ -521,9 +522,17 @@
         }
 
         async function updateEquipo(id, campo, valor) {
-            const valFinal = valor === "" ? null : valor;
-            const { error } = await clienteSupabase.from('equipos').update({ [campo]: valFinal }).eq('id', id);
-            if (error) alert("Error: " + error.message); else refrescarDatos();
+            const valFin = valor === "" ? null : valor;
+            const { error } = await clienteSupabase.from('equipos').update({ [campo]: valFin }).eq('id', id);
+            if (error) alert("Error: " + error.message);
+            else refrescarDatos();
+        }
+
+        async function updateAgencia(id, campo, valor) {
+            const valFin = valor === "" ? null : valor;
+            const { error } = await clienteSupabase.from('agencias').update({ [campo]: valFin }).eq('id', id);
+            if (error) alert("Error: " + error.message);
+            else refrescarDatos();
         }
 
         function aplicarFiltrosPersonal() {
