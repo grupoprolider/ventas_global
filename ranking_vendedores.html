@@ -8,14 +8,32 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        :root { 
+        :root {
             --gpl-petroleo: #006779; 
             --gpl-dorado: #A42A68; 
             --gpl-borravino: #72224c; 
             --fondo-oscuro: #1a252c;
             --celda-oscura: #23323c;
+            --texto-principal: white;
+            --texto-secundario: #ccc;
+            --texto-terciario: #999;
+            --fondo-nav: #0d1317;
+            --fondo-header-tabla: #111;
+            --border-celda: #333;
         }
-        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: var(--fondo-oscuro); margin: 0; padding: 0; color: white; padding-bottom: 30px; }
+
+        body.tema-claro {
+            --fondo-oscuro: #f0f4f8;
+            --celda-oscura: #ffffff;
+            --texto-principal: #2c3e50;
+            --texto-secundario: #555555;
+            --texto-terciario: #7f8c8d;
+            --fondo-nav: #e2e8f0;
+            --fondo-header-tabla: #e2e8f0;
+            --border-celda: #cbd5e1;
+        }
+
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: var(--fondo-oscuro); margin: 0; padding: 0; color: var(--texto-principal); padding-bottom: 30px; transition: background-color 0.3s, color 0.3s; }
         
         .header-ranking { background: white; padding: 20px; text-align: center; border-bottom: 5px solid var(--gpl-dorado); box-shadow: 0 4px 10px rgba(0,0,0,0.2); position: relative; }
         .header-ranking img { max-width: 140px; margin-bottom: 5px; }
@@ -27,8 +45,8 @@
         .btn-jpg { display: none; background: #2980b9; color: white; border: none; padding: 14px 20px; border-radius: 10px; font-weight: 900; font-size: 13px; text-transform: uppercase; margin: 5px auto 15px auto; cursor: pointer; text-align: center; width: 90%; max-width: 340px; box-shadow: 0 4px 12px rgba(41, 128, 185, 0.4); transition: 0.2s; align-items: center; justify-content: center; gap: 8px; }
         .btn-jpg:active { transform: scale(0.97); }
 
-        .nav-rankings { display: flex; justify-content: space-between; background: #0d1317; list-style: none; margin: 0; padding: 0; position: sticky; top: 0; z-index: 10; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        .nav-rankings li { flex: 1; text-align: center; padding: 15px 5px; cursor: pointer; font-weight: bold; text-transform: uppercase; font-size: 11px; color: #777; transition: 0.3s; border-bottom: 3px solid transparent; letter-spacing: 0.5px; }
+        .nav-rankings { display: flex; justify-content: space-between; background: var(--fondo-nav); list-style: none; margin: 0; padding: 0; position: sticky; top: 0; z-index: 10; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: background 0.3s; }
+        .nav-rankings li { flex: 1; text-align: center; padding: 15px 5px; cursor: pointer; font-weight: bold; text-transform: uppercase; font-size: 11px; color: var(--texto-terciario); transition: 0.3s; border-bottom: 3px solid transparent; letter-spacing: 0.5px; }
         .nav-rankings li.active { color: var(--gpl-dorado); border-bottom: 3px solid var(--gpl-dorado); background: var(--celda-oscura); }
         .nav-rankings i { display: block; font-size: 16px; margin-bottom: 4px; }
 
@@ -38,25 +56,25 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         table { width: 100%; border-collapse: separate; border-spacing: 0 8px; margin-top: 5px; }
-        th { background: #111; color: white; padding: 10px; text-align: left; font-size: 10px; text-transform: uppercase; border-bottom: 2px solid var(--gpl-dorado); }
-        th.vts-netas-col, th.monto-col { color: white !important; }
-        tr { background: var(--celda-oscura); box-shadow: 0 3px 8px rgba(0,0,0,0.2); }
-        td { padding: 12px 10px; vertical-align: middle; border-bottom: 1px solid #333; font-size: 13px;}
+        th { background: var(--fondo-header-tabla); color: var(--texto-principal); padding: 10px; text-align: left; font-size: 10px; text-transform: uppercase; border-bottom: 2px solid var(--gpl-dorado); transition: background 0.3s, color 0.3s; }
+        th.vts-netas-col, th.monto-col { color: var(--texto-principal) !important; }
+        tr { background: var(--celda-oscura); box-shadow: 0 3px 8px rgba(0,0,0,0.2); transition: background 0.3s; }
+        td { padding: 12px 10px; vertical-align: middle; border-bottom: 1px solid var(--border-celda); font-size: 13px; transition: border-color 0.3s; }
         td:first-child { border-radius: 8px 0 0 8px; }
         td:last-child { border-radius: 0 8px 8px 0; }
         
-        .posicion { font-size: 16px; font-weight: 900; color: #ccc; text-align: center; width: 40px; }
-        .vts-neta { font-size: 16px; font-weight: 900; color: white; text-align: center;}
+        .posicion { font-size: 16px; font-weight: 900; color: var(--texto-secundario); text-align: center; width: 40px; transition: color 0.3s; }
+        .vts-neta { font-size: 16px; font-weight: 900; color: var(--texto-principal); text-align: center; transition: color 0.3s;}
         .vts-netas-col { background: rgba(197, 160, 89, 0.08); text-align: center; color: var(--gpl-dorado); width: 50px; }
-        .entr-col { text-align: center; color: #a8d5e2; font-weight: bold; width: 50px; }
+        .entr-col { text-align: center; color: #3498db; font-weight: bold; width: 50px; }
         .monto-col { text-align: right; font-family: monospace; color: #2ecc71; font-weight: bold;}
-        .col-nombre { font-weight: bold; color: white; text-transform: uppercase; display: block; margin-bottom: 2px;}
-        .sub-txt { font-size: 10px; color: #999; text-transform: uppercase; font-weight: bold;}
+        .col-nombre { font-weight: bold; color: var(--texto-principal); text-transform: uppercase; display: block; margin-bottom: 2px; transition: color 0.3s;}
+        .sub-txt { font-size: 10px; color: var(--texto-terciario); text-transform: uppercase; font-weight: bold; transition: color 0.3s;}
 
         /* RESUMEN OCULTO POR DEFECTO PARA VENDEDORES */
         #bloqueResumenConsolidado { display: none; }
-        .card-resumen { background: #111a20; border: 2px solid var(--gpl-dorado); border-radius: 12px; padding: 18px; margin-top: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
-        .card-resumen h3 { margin: 0 0 15px 0; font-size: 13px; text-transform: uppercase; color: var(--gpl-dorado); text-align: center; border-bottom: 1px solid #333; padding-bottom: 8px;}
+        .card-resumen { background: var(--fondo-header-tabla); border: 2px solid var(--gpl-dorado); border-radius: 12px; padding: 18px; margin-top: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+        .card-resumen h3 { margin: 0 0 15px 0; font-size: 13px; text-transform: uppercase; color: var(--gpl-dorado); text-align: center; border-bottom: 1px solid var(--border-celda); padding-bottom: 8px;}
         .resumen-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; text-align: center; }
         @media(max-width: 480px) { .resumen-grid { grid-template-columns: repeat(2, 1fr); } }
         .resumen-item { background: var(--celda-oscura); padding: 10px; border-radius: 8px; border: 1px solid #333; display: flex; flex-direction: column; justify-content: center; }
@@ -79,6 +97,7 @@
 <body>
 
     <div class="header-ranking">
+        <button onclick="document.body.classList.toggle('tema-claro')" style="position:absolute; top: 15px; right: 15px; background: transparent; border: none; font-size: 20px; cursor: pointer;" title="Cambiar Tema Claro/Oscuro">💡</button>
         <img src="LOGO-gpl.png" alt="GPL">
         <h2>Ranking Nacional de Ventas</h2>
         <div id="txtCampana" class="campana-badge">Cargando...</div>
@@ -386,10 +405,11 @@
 
             try {
                 // Capturamos el contenedor principal que envuelve todo (usamos body para tener los navs también)
+                const bgColor = document.body.classList.contains('tema-claro') ? '#f0f4f8' : '#16213e';
                 const canvas = await html2canvas(document.body, {
-                    scale: 2, // Mejor resolución para que no se vea borroso
+                    scale: 3, // Aumentado a 3 para evitar blurriness en textos claritos
                     useCORS: true,
-                    backgroundColor: '#16213e',
+                    backgroundColor: bgColor,
                     windowWidth: scrollWidth,
                     windowHeight: document.documentElement.scrollHeight
                 });
