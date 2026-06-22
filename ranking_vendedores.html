@@ -22,6 +22,7 @@
             --texto-header-tabla: white;
             --border-celda: #333;
             --sombra-card: 0 3px 8px rgba(0,0,0,0.2);
+            --color-entr: #3498db;
         }
 
         body.tema-claro {
@@ -35,6 +36,7 @@
             --texto-header-tabla: white; /* Contraste perfecto en titulo petrol */
             --border-celda: #c8d4d8;
             --sombra-card: 0 4px 15px rgba(0, 103, 121, 0.15); /* Sombra elegante petrol */
+            --color-entr: #0275d8;
         }
 
         body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: var(--fondo-oscuro); margin: 0; padding: 0; color: var(--texto-principal); padding-bottom: 30px; transition: background-color 0.3s, color 0.3s; }
@@ -61,16 +63,16 @@
 
         table { width: 100%; border-collapse: separate; border-spacing: 0 8px; margin-top: 5px; }
         th { background: var(--fondo-header-tabla); color: var(--texto-header-tabla); padding: 10px; text-align: left; font-size: 10px; text-transform: uppercase; border-bottom: 2px solid var(--gpl-dorado); transition: background 0.3s, color 0.3s; }
-        th.vts-netas-col, th.monto-col { color: var(--texto-header-tabla) !important; }
-        tr { background: var(--celda-oscura); box-shadow: var(--sombra-card); transition: background 0.3s, box-shadow 0.3s; }
-        td { padding: 12px 10px; vertical-align: middle; border-bottom: 1px solid var(--border-celda); font-size: 13px; transition: border-color 0.3s; }
-        td:first-child { border-radius: 8px 0 0 8px; }
-        td:last-child { border-radius: 0 8px 8px 0; }
+        th.vts-netas-col, th.monto-col { color: var(--texto-header-tabla) !important; text-align: center; }
+        tr { background: var(--celda-oscura); box-shadow: var(--sombra-card); transition: background 0.3s, box-shadow 0.3s; --row-color: var(--border-celda); }
+        td { padding: 12px 10px; vertical-align: middle; font-size: 13px; transition: border-color 0.3s; border-top: 2px solid var(--row-color); border-bottom: 2px solid var(--row-color); }
+        td:first-child { border-radius: 8px 0 0 8px; border-left: 6px solid var(--row-color); }
+        td:last-child { border-radius: 0 8px 8px 0; border-right: 2px solid var(--row-color); }
         
         .posicion { font-size: 16px; font-weight: 900; color: var(--texto-secundario); text-align: center; width: 40px; transition: color 0.3s; }
         .vts-neta { font-size: 16px; font-weight: 900; color: var(--texto-principal); text-align: center; transition: color 0.3s;}
-        .vts-netas-col { background: rgba(197, 160, 89, 0.08); text-align: center; color: var(--gpl-dorado); width: 50px; }
-        .entr-col { text-align: center; color: #3498db; font-weight: bold; width: 50px; }
+        td.vts-netas-col { background: rgba(197, 160, 89, 0.08); text-align: center; color: var(--gpl-dorado); width: 50px; }
+        .entr-col { text-align: center; color: var(--color-entr); font-weight: bold; width: 50px; }
         .monto-col { text-align: right; font-family: monospace; color: #2ecc71; font-weight: bold;}
         .col-nombre { font-weight: bold; color: var(--texto-principal); text-transform: uppercase; display: block; margin-bottom: 2px; transition: color 0.3s;}
         .sub-txt { font-size: 10px; color: var(--texto-terciario); text-transform: uppercase; font-weight: bold; transition: color 0.3s;}
@@ -105,7 +107,7 @@
         <img src="LOGO-gpl.png" alt="GPL">
         <h2>Ranking Nacional de Ventas</h2>
         <div id="txtCampana" class="campana-badge">Cargando...</div>
-        <select id="selectFiltroAgencia" onchange="filtrarRankingPorAgencia()" style="display: none; width: 90%; max-width: 340px; margin: 15px auto 5px auto; padding: 12px; border-radius: 8px; border: 2px solid var(--gpl-dorado); background: var(--fondo-oscuro); color: white; font-weight: bold; font-size: 14px; outline: none; cursor: pointer;">
+        <select id="selectFiltroAgencia" onchange="filtrarRankingPorAgencia()">
             <option value="TODAS">🌟 TODAS LAS SUCURSALES (Nacional)</option>
         </select>
         <button id="btnDescargarExcel" class="btn-excel" onclick="descargarExcelGerencial()">
@@ -277,9 +279,9 @@
 
                 let agsFinal = Object.values(mAg).sort((a,b) => b.v - a.v || b.m - a.m);
                 document.getElementById('cuerpoAgencias').innerHTML = agsFinal.map((a, i) => `
-                    <tr>
+                    <tr style="--row-color: ${a.c}">
                         <td class="posicion">${getMedalla(i)}</td>
-                        <td class="info-principal" style="border-left: 4px solid ${a.c}">
+                        <td class="info-principal">
                             <span class="col-nombre">${a.n}</span><span class="sub-txt">L. Sucursal: ${a.s}</span>
                         </td>
                         <td class="vts-netas-col"><span class="vts-neta">${a.v}</span></td>
@@ -297,9 +299,9 @@
             
             let filtradosNac = nacList.filter(v => filtroAgencia === 'TODAS' || v.ag === filtroAgencia);
             document.getElementById('cuerpoNacional').innerHTML = filtradosNac.map((v, i) => `
-                <tr>
+                <tr style="--row-color: ${v.color}">
                     <td class="posicion">${getMedalla(i)}</td>
-                    <td class="info-principal" style="border-left: 4px solid ${v.color}">
+                    <td class="info-principal">
                         <span class="col-nombre">${v.nom}</span><span class="sub-txt">${v.eq} • ${v.ag}</span>
                     </td>
                     <td class="vts-netas-col"><span class="vts-neta">${v.neta}</span></td>
