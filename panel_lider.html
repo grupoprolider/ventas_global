@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Líder - Grupo ProLíder</title>
+    <title>Panel de Líder de Asesores - Grupo ProLíder</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
@@ -355,7 +355,7 @@
             <a href="index.html" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Salir</a>
             <img src="LOGO-gpl.png" alt="GPL" style="max-width: 140px; margin-bottom: 10px;">
             <br>
-            <span class="badge-rol" style="margin-bottom: 5px;"><i class="fa-solid fa-star"></i> Panel de Líder</span>
+            <span class="badge-rol" style="margin-bottom: 5px;"><i class="fa-solid fa-crown"></i> Panel de Líder de Asesores</span>
             <h2 id="txtNombreLider" style="padding: 0; font-size: 20px;">Cargando...</h2>
             <div id="txtNombreEquipo" style="background: var(--gpl-dorado); color: white; padding: 4px 15px; border-radius: 20px; font-size: 11px; font-weight: 900; text-transform: uppercase; display: inline-block; margin-top: 8px; letter-spacing: 0.5px;">Sincronizando información...</div>
         </div>
@@ -618,7 +618,7 @@
                         return `
                         <li class="integrante-item">
                             <div class="integ-info">
-                                <span class="integ-nombre">${int.nombre} ${(int.rol || '').toLowerCase() === 'lider' ? '<i class="fa-solid fa-crown" style="color:var(--gpl-dorado); font-size:11px;" title="Líder"></i>' : ''} ${badgeRiesgo}</span>
+                                <span class="integ-nombre">${int.nombre} ${(int.rol || '').toLowerCase() === 'líder de asesores' ? '<i class="fa-solid fa-crown" style="color:var(--gpl-dorado); font-size:11px;" title="Líder de Asesores"></i>' : ''} ${badgeRiesgo}</span>
                                 <span class="integ-rol">Brutas: ${int.brutas} | Bajas: ${int.bajas} | Entrevistas: ${int.entrevistas}</span>
                                 <div style="font-size: 11px; color: #666; margin-top: 4px; font-weight: bold;">
                                     🎯 Obj: <span style="color:var(--gpl-petroleo)">${int.objetivo}</span> &nbsp;|&nbsp; 📊 <span style="color:${colorRiesgo}">${int.proyeccionTexto}</span>

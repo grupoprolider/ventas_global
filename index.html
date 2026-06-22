@@ -250,7 +250,7 @@
 
                 if (data.pin_acceso === pinIngresado) {
                     const rol = (data.rol || '').toLowerCase();
-                    if (rol === 'lider' || rol === 'líder') {
+                    if (rol === 'lider' || rol === 'líder' || rol === 'líder de asesores' || rol === 'lider de asesores') {
                         window.location.href = `panel_lider.html?id=${idVendedor}`;
                     } else if (rol === 'líder de sucursal') {
                         window.location.href = `panel_supervisor.html?id=${idVendedor}`;

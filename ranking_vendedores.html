@@ -24,6 +24,8 @@
 
         .btn-excel { display: none; background: #27ae60; color: white; border: none; padding: 14px 20px; border-radius: 10px; font-weight: 900; font-size: 13px; text-transform: uppercase; margin: 15px auto 5px auto; cursor: pointer; text-align: center; width: 90%; max-width: 340px; box-shadow: 0 4px 12px rgba(39, 174, 96, 0.4); transition: 0.2s; align-items: center; justify-content: center; gap: 8px; }
         .btn-excel:active { transform: scale(0.97); }
+        .btn-jpg { display: none; background: #2980b9; color: white; border: none; padding: 14px 20px; border-radius: 10px; font-weight: 900; font-size: 13px; text-transform: uppercase; margin: 5px auto 15px auto; cursor: pointer; text-align: center; width: 90%; max-width: 340px; box-shadow: 0 4px 12px rgba(41, 128, 185, 0.4); transition: 0.2s; align-items: center; justify-content: center; gap: 8px; }
+        .btn-jpg:active { transform: scale(0.97); }
 
         .nav-rankings { display: flex; justify-content: space-between; background: #0d1317; list-style: none; margin: 0; padding: 0; position: sticky; top: 0; z-index: 10; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         .nav-rankings li { flex: 1; text-align: center; padding: 15px 5px; cursor: pointer; font-weight: bold; text-transform: uppercase; font-size: 11px; color: #777; transition: 0.3s; border-bottom: 3px solid transparent; letter-spacing: 0.5px; }
@@ -72,6 +74,7 @@
             });
         }
     </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
@@ -84,6 +87,9 @@
         </select>
         <button id="btnDescargarExcel" class="btn-excel" onclick="descargarExcelGerencial()">
             <i class="fa-solid fa-file-excel"></i> Descargar Reporte Excel Gerencial
+        </button>
+        <button id="btnDescargarJPG" class="btn-jpg" onclick="descargarRankingJPG()">
+            <i class="fa-solid fa-camera"></i> Descargar Imagen (JPG)
         </button>
     </div>
 
@@ -243,6 +249,7 @@
                 const esVendedor = urlParams.get('rol') === 'vendedor';
                 if (!esVendedor) {
                     selectFiltro.style.display = 'block';
+                    document.getElementById('btnDescargarJPG').style.display = 'flex';
                 }
 
                 let agsFinal = Object.values(mAg).sort((a,b) => b.v - a.v || b.m - a.m);
@@ -357,6 +364,44 @@
             });
             
             filtrarRankingPorAgencia();
+        }
+
+        async function descargarRankingJPG() {
+            const btn = document.getElementById('btnDescargarJPG');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generando...';
+            btn.style.pointerEvents = 'none';
+
+            // Ocultamos los botones antes de sacar la foto para que no salgan en la imagen
+            btn.style.display = 'none';
+            const btnExcel = document.getElementById('btnDescargarExcel');
+            const excelVisible = btnExcel.style.display;
+            btnExcel.style.display = 'none';
+
+            try {
+                // Capturamos el contenedor principal que envuelve todo (usamos body para tener los navs también)
+                const canvas = await html2canvas(document.body, {
+                    scale: 2, // Mejor resolución para que no se vea borroso
+                    useCORS: true,
+                    backgroundColor: '#16213e',
+                    windowWidth: document.documentElement.offsetWidth,
+                    windowHeight: document.documentElement.scrollHeight
+                });
+                
+                const dataURL = canvas.toDataURL('image/jpeg', 0.9);
+                const link = document.createElement('a');
+                link.download = `Ranking_ProLider_${new Date().toISOString().split('T')[0]}.jpg`;
+                link.href = dataURL;
+                link.click();
+            } catch (err) {
+                console.error("Error al generar JPG:", err);
+                alert("Hubo un error al generar la imagen.");
+            } finally {
+                // Restaurar botones
+                btn.innerHTML = '<i class="fa-solid fa-camera"></i> Descargar Imagen (JPG)';
+                btn.style.pointerEvents = 'auto';
+                btn.style.display = 'flex';
+                btnExcel.style.display = excelVisible;
+            }
         }
 
         cargarRankings();
