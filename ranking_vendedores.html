@@ -91,6 +91,12 @@
             display: none; width: 90%; max-width: 340px; margin: 15px auto 5px auto; padding: 12px; border-radius: 8px; border: 2px solid var(--gpl-dorado); 
             background: var(--celda-oscura); color: var(--texto-principal); font-weight: bold; font-size: 14px; outline: none; cursor: pointer; transition: background 0.3s, color 0.3s;
         }
+
+        /* Utilidad para html2canvas: evita que las animaciones se reinicien y queden transparentes en la captura */
+        .no-animation, .no-animation * {
+            animation: none !important;
+            transition: none !important;
+        }
     </style>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#A42A68">
@@ -417,6 +423,9 @@
             document.body.style.width = scrollWidth + 'px';
             document.body.style.minWidth = scrollWidth + 'px';
 
+            // Evitamos que html2canvas reinicie las animaciones CSS (que causan opacidad 0 al clonar el DOM)
+            document.body.classList.add('no-animation');
+
             try {
                 // Capturamos el contenedor principal que envuelve todo (usamos body para tener los navs también)
                 const bgColor = document.body.classList.contains('tema-claro') ? '#f0f4f8' : '#16213e';
@@ -445,7 +454,8 @@
                 console.error("Error al generar JPG:", err);
                 alert("Hubo un error al generar la imagen.");
             } finally {
-                // Restaurar botones y anchos
+                // Restaurar botones, anchos y animaciones
+                document.body.classList.remove('no-animation');
                 document.body.style.width = originalBodyWidth;
                 document.body.style.minWidth = originalBodyMinWidth;
 
