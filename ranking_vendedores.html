@@ -91,6 +91,10 @@
             display: none; width: 90%; max-width: 340px; margin: 15px auto 5px auto; padding: 12px; border-radius: 8px; border: 2px solid var(--gpl-dorado); 
             background: var(--celda-oscura); color: var(--texto-principal); font-weight: bold; font-size: 14px; outline: none; cursor: pointer; transition: background 0.3s, color 0.3s;
         }
+        #selectFiltroTop {
+            display: block; width: 90%; max-width: 340px; margin: 5px auto 15px auto; padding: 12px; border-radius: 8px; border: 2px solid #3498db; 
+            background: var(--celda-oscura); color: var(--texto-principal); font-weight: bold; font-size: 14px; outline: none; cursor: pointer; transition: background 0.3s, color 0.3s;
+        }
 
         /* Utilidad para html2canvas: evita que las animaciones se reinicien y queden transparentes en la captura */
         .no-animation, .no-animation * {
@@ -119,6 +123,12 @@
         <div id="txtCampana" class="campana-badge">Cargando...</div>
         <select id="selectFiltroAgencia" onchange="filtrarRankingPorAgencia()">
             <option value="TODAS">🌟 TODAS LAS SUCURSALES (Nacional)</option>
+        </select>
+        <select id="selectFiltroTop" onchange="filtrarRankingPorAgencia()">
+            <option value="TODOS">👥 Mostrar Todos</option>
+            <option value="50">🏆 Top 50</option>
+            <option value="30" selected>🏆 Top 30</option>
+            <option value="10">🏆 Top 10</option>
         </select>
         <button id="btnDescargarExcel" class="btn-excel" onclick="descargarExcelGerencial()">
             <i class="fa-solid fa-file-excel"></i> Descargar Reporte Excel Gerencial
@@ -310,7 +320,10 @@
             if (!window.datosGlobalesReporte) return;
             const { mAg, mEq, mCoord, nacList, esGerente } = window.datosGlobalesReporte;
             
-            let filtradosNac = nacList.filter(v => filtroAgencia === 'TODAS' || v.ag === filtroAgencia);
+            let limitSelect = document.getElementById('selectFiltroTop');
+            let maxRows = (limitSelect && limitSelect.value !== 'TODOS') ? parseInt(limitSelect.value) : Infinity;
+            
+            let filtradosNac = nacList.filter(v => filtroAgencia === 'TODAS' || v.ag === filtroAgencia).slice(0, maxRows);
             document.getElementById('cuerpoNacional').innerHTML = filtradosNac.map((v, i) => `
                 <tr style="--row-color: ${v.color}">
                     <td class="posicion">${getMedalla(i)}</td>
@@ -324,7 +337,7 @@
                 </tr>
             `).join('');
 
-            let filtradosEq = Object.values(mEq).filter(e => filtroAgencia === 'TODAS' || mAg[e.a_id]?.n === filtroAgencia).sort((a,b) => b.v - a.v || b.m - a.m);
+            let filtradosEq = Object.values(mEq).filter(e => filtroAgencia === 'TODAS' || mAg[e.a_id]?.n === filtroAgencia).sort((a,b) => b.v - a.v || b.m - a.m).slice(0, maxRows);
             document.getElementById('cuerpoEquipos').innerHTML = filtradosEq.map((e, i) => {
                 let agNom = mAg[e.a_id]?.n || 'Sin Agencia';
                 let agCol = mAg[e.a_id]?.c || '#444';
@@ -339,7 +352,7 @@
                 </tr>
             `}).join('');
 
-            let filtradosCoord = Object.values(mCoord).filter(c => filtroAgencia === 'TODAS' || c.ag === filtroAgencia || c.ag === '-').sort((a,b) => b.v - a.v || b.m - a.m);
+            let filtradosCoord = Object.values(mCoord).filter(c => filtroAgencia === 'TODAS' || c.ag === filtroAgencia || c.ag === '-').sort((a,b) => b.v - a.v || b.m - a.m).slice(0, maxRows);
             document.getElementById('cuerpoCoordinadores').innerHTML = filtradosCoord.map((c, i) => `
                 <tr style="--row-color: ${c.c || '#444'}">
                     <td class="posicion">${getMedalla(i)}</td>
