@@ -48,8 +48,8 @@
 
         .btn-excel { display: none; background: #27ae60; color: white; border: none; padding: 14px 20px; border-radius: 10px; font-weight: 900; font-size: 13px; text-transform: uppercase; margin: 15px auto 5px auto; cursor: pointer; text-align: center; width: 90%; max-width: 340px; box-shadow: 0 4px 12px rgba(39, 174, 96, 0.4); transition: 0.2s; align-items: center; justify-content: center; gap: 8px; }
         .btn-excel:active { transform: scale(0.97); }
-        .btn-jpg { display: none; background: #2980b9; color: white; border: none; padding: 14px 20px; border-radius: 10px; font-weight: 900; font-size: 13px; text-transform: uppercase; margin: 5px auto 15px auto; cursor: pointer; text-align: center; width: 90%; max-width: 340px; box-shadow: 0 4px 12px rgba(41, 128, 185, 0.4); transition: 0.2s; align-items: center; justify-content: center; gap: 8px; }
-        .btn-jpg:active { transform: scale(0.97); }
+        .btn-pdf { display: none; background: #c0392b; color: white; border: none; padding: 14px 20px; border-radius: 10px; font-weight: 900; font-size: 13px; text-transform: uppercase; margin: 5px auto 15px auto; cursor: pointer; text-align: center; width: 90%; max-width: 340px; box-shadow: 0 4px 12px rgba(192, 57, 43, 0.4); transition: 0.2s; align-items: center; justify-content: center; gap: 8px; }
+        .btn-pdf:active { transform: scale(0.97); }
 
         .nav-rankings { display: flex; justify-content: space-between; background: var(--fondo-nav); list-style: none; margin: 0; padding: 0; position: sticky; top: 0; z-index: 10; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: background 0.3s; }
         .nav-rankings li { flex: 1; text-align: center; padding: 15px 5px; cursor: pointer; font-weight: bold; text-transform: uppercase; font-size: 11px; color: var(--texto-terciario); transition: 0.3s; border-bottom: 3px solid transparent; letter-spacing: 0.5px; }
@@ -113,6 +113,7 @@
         }
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
@@ -133,8 +134,8 @@
         <button id="btnDescargarExcel" class="btn-excel" onclick="descargarExcelGerencial()">
             <i class="fa-solid fa-file-excel"></i> Descargar Reporte Excel Gerencial
         </button>
-        <button id="btnDescargarJPG" class="btn-jpg" onclick="descargarRankingJPG()">
-            <i class="fa-solid fa-camera"></i> Descargar Imagen (JPG)
+        <button id="btnDescargarPDF" class="btn-pdf" onclick="descargarRankingPDF()">
+            <i class="fa-solid fa-file-pdf"></i> Descargar Reporte (PDF HD)
         </button>
     </div>
 
@@ -297,7 +298,7 @@
                 const esVendedor = urlParams.get('rol') === 'vendedor';
                 if (!esVendedor) {
                     selectFiltro.style.display = 'block';
-                    document.getElementById('btnDescargarJPG').style.display = 'flex';
+                    document.getElementById('btnDescargarPDF').style.display = 'flex';
                 }
 
                 let agsFinal = Object.values(mAg).sort((a,b) => b.v - a.v || b.m - a.m);
@@ -418,8 +419,8 @@
             filtrarRankingPorAgencia();
         }
 
-        async function descargarRankingJPG() {
-            const btn = document.getElementById('btnDescargarJPG');
+        async function descargarRankingPDF() {
+            const btn = document.getElementById('btnDescargarPDF');
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generando...';
             btn.style.pointerEvents = 'none';
 
@@ -443,15 +444,29 @@
                 // Capturamos el contenedor principal que envuelve todo (usamos body para tener los navs también)
                 const bgColor = document.body.classList.contains('tema-claro') ? '#f0f4f8' : '#16213e';
                 const canvas = await html2canvas(document.body, {
-                    scale: 3, // Aumentado a 3 para evitar blurriness en textos claritos
+                    scale: 3, 
                     useCORS: true,
                     backgroundColor: bgColor,
                     windowWidth: scrollWidth,
                     windowHeight: document.documentElement.scrollHeight
                 });
                 
-                const dataURL = canvas.toDataURL('image/jpeg', 0.9);
-                const link = document.createElement('a');
+                const imgData = canvas.toDataURL('image/jpeg', 1.0);
+                
+                const { jsPDF } = window.jspdf;
+                
+                // Calcular dimensiones del PDF basado en el canvas
+                let pdfWidth = canvas.width;
+                let pdfHeight = canvas.height;
+                
+                // Crear PDF con el tamaño exacto del canvas (en pixels)
+                const pdf = new jsPDF({
+                    orientation: pdfWidth > pdfHeight ? 'landscape' : 'portrait',
+                    unit: 'px',
+                    format: [pdfWidth, pdfHeight]
+                });
+                
+                pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
                 
                 // Obtener nombre de la pestaña activa
                 let nombrePestana = "Ventas";
@@ -460,22 +475,20 @@
                     nombrePestana = tabActiva.innerText.trim().replace(/\s+/g, '_').replace(/\./g, '');
                 }
                 
-                link.download = `Ranking_${nombrePestana}_ProLider_${new Date().toISOString().split('T')[0]}.jpg`;
-                link.href = dataURL;
-                link.click();
+                pdf.save(`Ranking_${nombrePestana}_ProLider_${new Date().toISOString().split('T')[0]}.pdf`);
+                
             } catch (err) {
-                console.error("Error al generar JPG:", err);
-                alert("Hubo un error al generar la imagen.");
+                console.error("Error al generar PDF:", err);
+                alert("Hubo un error al generar el PDF.");
             } finally {
                 // Restaurar botones, anchos y animaciones
-                document.body.classList.remove('no-animation');
+                btn.style.display = 'flex';
+                btn.innerHTML = '<i class="fa-solid fa-file-pdf"></i> Descargar Reporte (PDF HD)';
+                btn.style.pointerEvents = 'auto';
+                btnExcel.style.display = excelVisible;
                 document.body.style.width = originalBodyWidth;
                 document.body.style.minWidth = originalBodyMinWidth;
-
-                btn.innerHTML = '<i class="fa-solid fa-camera"></i> Descargar Imagen (JPG)';
-                btn.style.pointerEvents = 'auto';
-                btn.style.display = 'flex';
-                btnExcel.style.display = excelVisible;
+                document.body.classList.remove('no-animation');
             }
         }
 
