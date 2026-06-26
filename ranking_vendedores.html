@@ -48,8 +48,8 @@
 
         .btn-excel { display: none; background: #27ae60; color: white; border: none; padding: 14px 20px; border-radius: 10px; font-weight: 900; font-size: 13px; text-transform: uppercase; margin: 15px auto 5px auto; cursor: pointer; text-align: center; width: 90%; max-width: 340px; box-shadow: 0 4px 12px rgba(39, 174, 96, 0.4); transition: 0.2s; align-items: center; justify-content: center; gap: 8px; }
         .btn-excel:active { transform: scale(0.97); }
-        .btn-pdf { display: none; background: #c0392b; color: white; border: none; padding: 14px 20px; border-radius: 10px; font-weight: 900; font-size: 13px; text-transform: uppercase; margin: 5px auto 15px auto; cursor: pointer; text-align: center; width: 90%; max-width: 340px; box-shadow: 0 4px 12px rgba(192, 57, 43, 0.4); transition: 0.2s; align-items: center; justify-content: center; gap: 8px; }
-        .btn-pdf:active { transform: scale(0.97); }
+        .btn-png { display: none; background: #8e44ad; color: white; border: none; padding: 14px 20px; border-radius: 10px; font-weight: 900; font-size: 13px; text-transform: uppercase; margin: 5px auto 15px auto; cursor: pointer; text-align: center; width: 90%; max-width: 340px; box-shadow: 0 4px 12px rgba(142, 68, 173, 0.4); transition: 0.2s; align-items: center; justify-content: center; gap: 8px; }
+        .btn-png:active { transform: scale(0.97); }
 
         .nav-rankings { display: flex; justify-content: space-between; background: var(--fondo-nav); list-style: none; margin: 0; padding: 0; position: sticky; top: 0; z-index: 10; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: background 0.3s; }
         .nav-rankings li { flex: 1; text-align: center; padding: 15px 5px; cursor: pointer; font-weight: bold; text-transform: uppercase; font-size: 11px; color: var(--texto-terciario); transition: 0.3s; border-bottom: 3px solid transparent; letter-spacing: 0.5px; }
@@ -113,7 +113,6 @@
         }
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
@@ -134,8 +133,8 @@
         <button id="btnDescargarExcel" class="btn-excel" onclick="descargarExcelGerencial()">
             <i class="fa-solid fa-file-excel"></i> Descargar Reporte Excel Gerencial
         </button>
-        <button id="btnDescargarPDF" class="btn-pdf" onclick="descargarRankingPDF()">
-            <i class="fa-solid fa-file-pdf"></i> Descargar Reporte (PDF HD)
+        <button id="btnDescargarPNG" class="btn-png" onclick="descargarRankingPNG()">
+            <i class="fa-solid fa-image"></i> Descargar Imagen (PNG HD)
         </button>
     </div>
 
@@ -298,7 +297,7 @@
                 const esVendedor = urlParams.get('rol') === 'vendedor';
                 if (!esVendedor) {
                     selectFiltro.style.display = 'block';
-                    document.getElementById('btnDescargarPDF').style.display = 'flex';
+                    document.getElementById('btnDescargarPNG').style.display = 'flex';
                 }
 
                 let agsFinal = Object.values(mAg).sort((a,b) => b.v - a.v || b.m - a.m);
@@ -419,8 +418,8 @@
             filtrarRankingPorAgencia();
         }
 
-        async function descargarRankingPDF() {
-            const btn = document.getElementById('btnDescargarPDF');
+        async function descargarRankingPNG() {
+            const btn = document.getElementById('btnDescargarPNG');
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generando...';
             btn.style.pointerEvents = 'none';
 
@@ -451,22 +450,8 @@
                     windowHeight: document.documentElement.scrollHeight
                 });
                 
-                const imgData = canvas.toDataURL('image/jpeg', 1.0);
-                
-                const { jsPDF } = window.jspdf;
-                
-                // Calcular dimensiones del PDF basado en el canvas
-                let pdfWidth = canvas.width;
-                let pdfHeight = canvas.height;
-                
-                // Crear PDF con el tamaño exacto del canvas (en pixels)
-                const pdf = new jsPDF({
-                    orientation: pdfWidth > pdfHeight ? 'landscape' : 'portrait',
-                    unit: 'px',
-                    format: [pdfWidth, pdfHeight]
-                });
-                
-                pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+                const dataURL = canvas.toDataURL('image/png', 1.0);
+                const link = document.createElement('a');
                 
                 // Obtener nombre de la pestaña activa
                 let nombrePestana = "Ventas";
@@ -475,15 +460,16 @@
                     nombrePestana = tabActiva.innerText.trim().replace(/\s+/g, '_').replace(/\./g, '');
                 }
                 
-                pdf.save(`Ranking_${nombrePestana}_ProLider_${new Date().toISOString().split('T')[0]}.pdf`);
-                
+                link.download = `Ranking_${nombrePestana}_ProLider_${new Date().toISOString().split('T')[0]}.png`;
+                link.href = dataURL;
+                link.click();
             } catch (err) {
-                console.error("Error al generar PDF:", err);
-                alert("Hubo un error al generar el PDF.");
+                console.error("Error al generar PNG:", err);
+                alert("Hubo un error al generar la imagen.");
             } finally {
                 // Restaurar botones, anchos y animaciones
                 btn.style.display = 'flex';
-                btn.innerHTML = '<i class="fa-solid fa-file-pdf"></i> Descargar Reporte (PDF HD)';
+                btn.innerHTML = '<i class="fa-solid fa-image"></i> Descargar Imagen (PNG HD)';
                 btn.style.pointerEvents = 'auto';
                 btnExcel.style.display = excelVisible;
                 document.body.style.width = originalBodyWidth;
