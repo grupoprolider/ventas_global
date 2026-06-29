@@ -580,10 +580,19 @@
                 const hoy = new Date();
                 const campanaStr = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
                 
-                const { data: todasVentas } = await clienteSupabase.from('registro_ventas')
-                    .select('*')
-                    .eq('campana', campanaStr);
-                globalVentas = todasVentas || [];
+                let todasVentas = [];
+                let step = 1000, fromRow = 0;
+                while(true) {
+                    const { data } = await clienteSupabase.from('registro_ventas')
+                        .select('*')
+                        .eq('campana', campanaStr)
+                        .range(fromRow, fromRow + step - 1);
+                    if(!data || data.length === 0) break;
+                    todasVentas = todasVentas.concat(data);
+                    if(data.length < step) break;
+                    fromRow += step;
+                }
+                globalVentas = todasVentas;
 
                 globalNetasEmpresa = 0;
                 globalVentas.forEach(v => {

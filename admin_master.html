@@ -604,11 +604,26 @@
             if (vendedorId) query = query.eq('vendedor_id', vendedorId);
             if (fecha) {
                 query = query.gte('created_at', fecha + "T00:00:00").lte('created_at', fecha + "T23:59:59");
+                
+                let vtas = [];
+                let step = 1000, fromRow = 0;
+                let hasError = null;
+                while (true) {
+                    const { data, error } = await query.range(fromRow, fromRow + step - 1);
+                    if (error) { hasError = error; break; }
+                    if (!data || data.length === 0) break;
+                    vtas = vtas.concat(data);
+                    if (data.length < step) break;
+                    fromRow += step;
+                }
+                var error = hasError;
+                var data = vtas;
             } else {
                 query = query.limit(100);
+                var { data, error } = await query;
             }
 
-            const { data: vtas, error } = await query;
+            const vtas = data;
             const tbody = document.querySelector('#tabla_auditoria tbody');
 
             if (error) return tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Error cargando ventas.</td></tr>`;

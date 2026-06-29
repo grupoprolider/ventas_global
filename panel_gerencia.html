@@ -921,15 +921,24 @@
         async function inicializarDashboard(campanaStr) {
             try {
 
+                let ventasPaginadas = [];
+                let step = 1000, fromRow = 0;
+                while(true) {
+                    let { data } = await clienteSupabase.from('registro_ventas').select('*').eq('campana', campanaStr).range(fromRow, fromRow + step - 1);
+                    if(!data || data.length === 0) break;
+                    ventasPaginadas = ventasPaginadas.concat(data);
+                    if(data.length < step) break;
+                    fromRow += step;
+                }
+
                 // 1. Obtener todos los datos necesarios
-                const [resVentas, resPerfiles, resEquipos, resAgencias] = await Promise.all([
-                    clienteSupabase.from('registro_ventas').select('*').eq('campana', campanaStr),
+                const [resPerfiles, resEquipos, resAgencias] = await Promise.all([
                     clienteSupabase.from('perfiles').select('*'),
                     clienteSupabase.from('equipos').select('*'),
                     clienteSupabase.from('agencias').select('*')
                 ]);
 
-                const ventas = resVentas.data || [];
+                const ventas = ventasPaginadas;
                 globalVentasGerencia = ventas;
                 const perfiles = resPerfiles.data || [];
                 const equipos = resEquipos.data || [];

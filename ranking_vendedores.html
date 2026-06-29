@@ -229,7 +229,15 @@
                     document.querySelectorAll('.th-gerencia').forEach(el => el.style.display = 'table-cell');
                 }
 
-                const { data: vtas } = await clienteSupabase.from('registro_ventas').select('*').eq('campana', campana);
+                let vtas = [];
+                let step = 1000, fromRow = 0;
+                while (true) {
+                    const { data } = await clienteSupabase.from('registro_ventas').select('*').eq('campana', campana).range(fromRow, fromRow + step - 1);
+                    if (!data || data.length === 0) break;
+                    vtas = vtas.concat(data);
+                    if (data.length < step) break;
+                    fromRow += step;
+                }
                 const { data: perfiles } = await clienteSupabase.from('perfiles').select('*');
                 const { data: equipos } = await clienteSupabase.from('equipos').select('*');
                 const { data: agencias } = await clienteSupabase.from('agencias').select('*');

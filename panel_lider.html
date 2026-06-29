@@ -544,9 +544,18 @@
                 const campanaStr = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
                 
                 // Traemos TODAS las ventas de la empresa para calcular la incidencia
-                const { data: todasVentas } = await clienteSupabase.from('registro_ventas')
-                    .select('*')
-                    .eq('campana', campanaStr);
+                let todasVentas = [];
+                let step = 1000, fromRow = 0;
+                while(true) {
+                    const { data } = await clienteSupabase.from('registro_ventas')
+                        .select('*')
+                        .eq('campana', campanaStr)
+                        .range(fromRow, fromRow + step - 1);
+                    if(!data || data.length === 0) break;
+                    todasVentas = todasVentas.concat(data);
+                    if(data.length < step) break;
+                    fromRow += step;
+                }
 
                 let totalBrutas = 0, totalBajas = 0, globalMonto = 0, totalObjetivoEquipo = 0, globalNetasEmpresa = 0;
                 let mapStats = {};

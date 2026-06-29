@@ -572,11 +572,20 @@
                 
                 const idsIntegrantes = globalIntegrantes.map(i => i.id);
                 if(idsIntegrantes.length > 0) {
-                    const { data: ventas } = await clienteSupabase.from('registro_ventas')
-                        .select('*')
-                        .eq('campana', campanaStr)
-                        .in('vendedor_id', idsIntegrantes);
-                    globalVentas = ventas || [];
+                    let ventas = [];
+                    let step = 1000, fromRow = 0;
+                    while(true) {
+                        const { data } = await clienteSupabase.from('registro_ventas')
+                            .select('*')
+                            .eq('campana', campanaStr)
+                            .in('vendedor_id', idsIntegrantes)
+                            .range(fromRow, fromRow + step - 1);
+                        if(!data || data.length === 0) break;
+                        ventas = ventas.concat(data);
+                        if(data.length < step) break;
+                        fromRow += step;
+                    }
+                    globalVentas = ventas;
                 }
 
                 // Renderizar
