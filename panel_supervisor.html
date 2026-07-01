@@ -423,6 +423,58 @@
             </ul>
         </div>
 
+        <!-- MÓDULO DE GESTIÓN DE SUCURSAL -->
+        <div class="card-equipos" style="margin-top: 20px; border-top: 4px solid var(--gpl-petroleo);">
+            <h3><i class="fa-solid fa-users-gear"></i> Gestión de Sucursal</h3>
+            
+            <div style="padding: 10px; background: #f9f9f9; border-radius: 8px; margin-bottom: 15px;">
+                <h4 style="margin-top: 0; color: var(--gpl-petroleo); font-size: 14px;">Alta de Vendedor</h4>
+                <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">
+                    <input type="text" id="altaNombre" placeholder="Nombre y Apellido" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Poppins', sans-serif;">
+                    <select id="altaCategoria" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Poppins', sans-serif;">
+                        <option value="Junior">Junior</option>
+                        <option value="Senior">Senior</option>
+                    </select>
+                    <select id="altaEquipo" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Poppins', sans-serif;">
+                        <option value="">Cargando equipos...</option>
+                    </select>
+                    <button onclick="altaVendedor()" style="background: var(--gpl-dorado); color: white; padding: 10px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; transition: 0.2s;"><i class="fa-solid fa-user-plus"></i> Dar de Alta</button>
+                </div>
+            </div>
+
+            <div style="padding: 10px; background: #fff3f3; border-radius: 8px; margin-bottom: 15px;">
+                <h4 style="margin-top: 0; color: #e74c3c; font-size: 14px;">Baja de Vendedor</h4>
+                <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">
+                    <select id="bajaVendedorId" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Poppins', sans-serif;">
+                        <option value="">Cargando vendedores...</option>
+                    </select>
+                    <button onclick="bajaVendedor()" style="background: #e74c3c; color: white; padding: 10px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; transition: 0.2s;"><i class="fa-solid fa-user-minus"></i> Dar de Baja</button>
+                </div>
+                <p style="font-size: 10px; color: #666; margin-top: 5px; margin-bottom: 0;">Esto lo desasignará de la sucursal, pero sus ventas pasadas se mantienen.</p>
+            </div>
+            
+            <div style="padding: 10px; background: #fdfdfd; border-radius: 8px; border: 1px solid #eee;">
+                <h4 style="margin-top: 0; color: var(--gpl-petroleo); font-size: 14px;">Auditoría Local (Últimas Ventas)</h4>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                        <thead>
+                            <tr style="background: #eee; text-align: left;">
+                                <th style="padding: 5px; border-bottom: 1px solid #ddd;">Fecha</th>
+                                <th style="padding: 5px; border-bottom: 1px solid #ddd;">Vendedor/Equipo</th>
+                                <th style="padding: 5px; border-bottom: 1px solid #ddd;">Detalles</th>
+                                <th style="padding: 5px; text-align: center; border-bottom: 1px solid #ddd;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="listaAuditoriaLocal">
+                            <tr><td colspan="4" style="text-align: center; padding: 10px;">Cargando ventas...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+        <!-- FIN MÓDULO -->
+
         <div class="botones-accion">
             <button class="btn-accion btn-ver-ranking" onclick="abrirRanking()">
                 <i class="fa-solid fa-trophy"></i> Ver Ranking Nacional
@@ -767,6 +819,116 @@
                 </li>
                 `;
             }).join('');
+
+            // Llamar a cargar modulo de gestión
+            cargarModuloGestion(equiposAgencia, integrantesAgencia, ventasAgencia);
+        }
+
+        // FUNCIONES DE GESTIÓN DE SUCURSAL
+        let globalEquiposSucursal = [];
+        let globalVendedoresSucursal = [];
+
+        function cargarModuloGestion(equipos, vendedores, ventas) {
+            globalEquiposSucursal = equipos;
+            globalVendedoresSucursal = vendedores;
+
+            // 1. Llenar Select de Equipos para Alta
+            let selectAltaEq = document.getElementById('altaEquipo');
+            selectAltaEq.innerHTML = '<option value="">Seleccione un Equipo</option>' + equipos.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('');
+
+            // 2. Llenar Select de Vendedores para Baja
+            let selectBajaVen = document.getElementById('bajaVendedorId');
+            selectBajaVen.innerHTML = '<option value="">Seleccione un Vendedor</option>' + vendedores.sort((a,b) => a.nombre.localeCompare(b.nombre)).map(v => `<option value="${v.id}">${v.nombre}</option>`).join('');
+
+            // 3. Llenar Tabla de Auditoría (Últimas 50 ventas)
+            let tbAudit = document.getElementById('listaAuditoriaLocal');
+            let ventasOrdenadas = ventas.sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 50);
+            
+            if (ventasOrdenadas.length === 0) {
+                tbAudit.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 10px;">No hay ventas registradas aún.</td></tr>';
+            } else {
+                tbAudit.innerHTML = ventasOrdenadas.map(v => {
+                    let vend = vendedores.find(x => x.id === v.vendedor_id);
+                    let nombreVend = vend ? vend.nombre : 'Desconocido';
+                    let nombreEq = vend ? (equipos.find(e => e.id === vend.equipo_id)?.nombre || 'Sin Equipo') : 'Desconocido';
+                    let esReversion = v.monto < 0 || v.comentario?.includes("BAJA");
+                    let det = v.ventas_cerradas > 0 ? `${v.ventas_cerradas} vts` : `Baja: ${v.bajas}`;
+                    let btnAccion = esReversion ? 
+                        `<span style="color:#ff6b6b; font-size:10px;"><i class="fa-solid fa-arrow-trend-down"></i> Reversión</span>` : 
+                        `<button onclick="darDeBajaVentaLocal('${v.id}')" style="background:#ff6b6b; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:10px; cursor:pointer; font-weight:bold;">BAJA</button>`;
+
+                    return `<tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 5px;">${new Date(v.created_at).toLocaleDateString()}</td>
+                        <td style="padding: 5px;"><strong>${nombreVend}</strong><br><span style="color:#888; font-size:9px;">${nombreEq}</span></td>
+                        <td style="padding: 5px;">${det}<br><span style="color:#888; font-size:9px;">${new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(v.monto)}</span></td>
+                        <td style="padding: 5px; text-align:center;">${btnAccion}</td>
+                    </tr>`;
+                }).join('');
+            }
+        }
+
+        async function altaVendedor() {
+            let nombre = document.getElementById('altaNombre').value.trim();
+            let cat = document.getElementById('altaCategoria').value;
+            let eqId = document.getElementById('altaEquipo').value;
+
+            if (!nombre) return alert("Por favor, ingresá el nombre del vendedor.");
+            if (!eqId) return alert("Por favor, seleccioná un equipo.");
+
+            if (!confirm(`¿Confirmás el alta de ${nombre} como vendedor ${cat}?`)) return;
+
+            const { error } = await clienteSupabase.from('perfiles').insert([{
+                nombre: nombre,
+                rol: 'Vendedor',
+                categoria: cat,
+                equipo_id: eqId,
+                objetivo_campana: cat === 'Senior' ? 50 : 30
+            }]);
+
+            if (error) return alert("Error al registrar: " + error.message);
+            alert("¡Vendedor dado de alta con éxito!");
+            document.getElementById('altaNombre').value = '';
+            location.reload();
+        }
+
+        async function bajaVendedor() {
+            let venId = document.getElementById('bajaVendedorId').value;
+            if (!venId) return alert("Por favor, seleccioná un vendedor.");
+
+            if (!confirm("¿Confirmás la baja? El vendedor quedará desasignado de la sucursal.")) return;
+
+            const { error } = await clienteSupabase.from('perfiles').update({ equipo_id: null }).eq('id', venId);
+            
+            if (error) return alert("Error al dar de baja: " + error.message);
+            alert("¡Vendedor dado de baja (desasignado) con éxito!");
+            location.reload();
+        }
+
+        async function darDeBajaVentaLocal(idVentaOriginal) {
+            if (!confirm("¿Confirmás la BAJA de esta venta? Se descontará del ranking de tu sucursal.")) return;
+
+            const { data: venta, error: errBusqueda } = await clienteSupabase.from('registro_ventas').select('*').eq('id', idVentaOriginal).single();
+            if (errBusqueda || !venta) return alert("Error al buscar la operación.");
+
+            let nombreSupervisor = document.getElementById('txtNombreSupervisor').textContent;
+
+            const payloadInsert = {
+                vendedor_id: venta.vendedor_id,
+                ventas_cerradas: 0,
+                entrevistas: 0,
+                bajas: venta.ventas_cerradas || 1,
+                monto: -(venta.monto || 0),
+                semana: venta.semana,
+                campana: venta.campana,
+                beneficio: venta.beneficio,
+                medio_pago: venta.medio_pago,
+                comentario: `BAJA DE VENTA (por Líd. Sucursal: ${nombreSupervisor}) - Reversión de op original de fecha ${new Date(venta.created_at).toLocaleDateString()}. ` + (venta.comentario || '')
+            };
+            const { error: errInsert } = await clienteSupabase.from('registro_ventas').insert([payloadInsert]);
+
+            if (errInsert) return alert("Error al registrar la baja: " + errInsert.message);
+            alert("¡Baja impactada correctamente!");
+            location.reload();
         }
 
         init();

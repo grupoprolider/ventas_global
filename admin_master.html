@@ -673,7 +673,7 @@
             const { data: venta, error: errBusqueda } = await clienteSupabase.from('registro_ventas').select('*').eq('id', idVentaOriginal).single();
             if (errBusqueda || !venta) return alert("Error al buscar la operación.");
 
-            const { error: errInsert } = await clienteSupabase.from('registro_ventas').insert([{
+            const payloadInsert = {
                 vendedor_id: venta.vendedor_id,
                 ventas_cerradas: 0,
                 entrevistas: 0,
@@ -682,8 +682,10 @@
                 semana: venta.semana,
                 campana: venta.campana,
                 beneficio: venta.beneficio,
-                medio_pago: venta.medio_pago
-            }]);
+                medio_pago: venta.medio_pago,
+                comentario: `BAJA DE VENTA (por Administrador Central) - Reversión de operación original de fecha ${new Date(venta.created_at).toLocaleDateString()}. ` + (venta.comentario || '')
+            };
+            const { error: errInsert } = await clienteSupabase.from('registro_ventas').insert([payloadInsert]);
 
             if (errInsert) return alert("Error al registrar la baja: " + errInsert.message);
 
