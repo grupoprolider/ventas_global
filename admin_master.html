@@ -469,7 +469,7 @@
                 // Poblar filtro de vendedores en auditoría
                 let selectVendedor = document.getElementById('filtro_vendedor_audit');
                 let vendedorSel = selectVendedor.value;
-                selectVendedor.innerHTML = '<option value="">Todos los vendedores</option>' + listaGente.filter(p => p.rol === 'Vendedor').map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+                selectVendedor.innerHTML = '<option value="">Todos los vendedores</option>' + listaGente.sort((a, b) => a.nombre.localeCompare(b.nombre)).map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
                 selectVendedor.value = vendedorSel;
 
                 cargarAuditoria();
