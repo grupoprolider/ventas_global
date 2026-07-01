@@ -812,7 +812,7 @@
                 let eq = mapEquipos[i.equipo_id]?.nombre || 'Sin Equipo';
                 
                 return { nombre: i.nombre, equipo: eq, netas: vts, objetivo: obj, atraso: atraso, proyeccion: proyeccion, proyeccionTexto: proyeccionTexto };
-            }).sort((a,b) => b.atraso - a.atraso);
+            }).filter(v => !v.nombre.includes('(BAJA)')).sort((a,b) => b.atraso - a.atraso);
             
             document.getElementById('listaRadar').innerHTML = listaVendedores.map(v => {
                 let colorRiesgo = v.atraso > 0 ? '#e74c3c' : '#2ecc71';
@@ -946,12 +946,28 @@
             let venId = document.getElementById('bajaVendedorId').value;
             if (!venId) return alert("Por favor, seleccioná un vendedor.");
 
-            if (!confirm("¿Confirmás la baja? El vendedor quedará desasignado de la sucursal.")) return;
+            let vendedor = globalVendedoresSucursal.find(v => v.id === venId);
+            if (!vendedor) return alert("Error al buscar vendedor.");
 
-            const { error } = await clienteSupabase.from('perfiles').update({ equipo_id: null }).eq('id', venId);
+            if (!confirm(`¿Confirmás la BAJA de ${vendedor.nombre}? Se igualará su objetivo a sus ventas netas actuales para no perjudicar al equipo.`)) return;
+
+            // Calcular ventas netas actuales del vendedor
+            let vtsNetas = 0;
+            globalVentasSucursal.filter(v => v.vendedor_id === venId).forEach(v => {
+                vtsNetas += (v.ventas_cerradas || 0) - (v.bajas || 0);
+            });
+            if (vtsNetas < 0) vtsNetas = 0;
+
+            // Evitar agregar (BAJA) multiples veces si ya lo tiene
+            let nuevoNombre = vendedor.nombre.includes('(BAJA)') ? vendedor.nombre : vendedor.nombre + ' (BAJA)';
+
+            const { error } = await clienteSupabase.from('perfiles').update({ 
+                nombre: nuevoNombre,
+                objetivo_campana: vtsNetas
+            }).eq('id', venId);
             
             if (error) return alert("Error al dar de baja: " + error.message);
-            alert("¡Vendedor dado de baja (desasignado) con éxito!");
+            alert("¡Vendedor procesado como BAJA con éxito!");
             location.reload();
         }
 
