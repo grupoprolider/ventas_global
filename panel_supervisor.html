@@ -454,21 +454,34 @@
             </div>
             
             <div style="padding: 10px; background: #fdfdfd; border-radius: 8px; border: 1px solid #eee;">
-                <h4 style="margin-top: 0; color: var(--gpl-petroleo); font-size: 14px;">Auditoría Local (Últimas Ventas)</h4>
-                <div style="overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
-                        <thead>
-                            <tr style="background: #eee; text-align: left;">
-                                <th style="padding: 5px; border-bottom: 1px solid #ddd;">Fecha</th>
-                                <th style="padding: 5px; border-bottom: 1px solid #ddd;">Vendedor/Equipo</th>
-                                <th style="padding: 5px; border-bottom: 1px solid #ddd;">Detalles</th>
-                                <th style="padding: 5px; text-align: center; border-bottom: 1px solid #ddd;">Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody id="listaAuditoriaLocal">
-                            <tr><td colspan="4" style="text-align: center; padding: 10px;">Cargando ventas...</td></tr>
-                        </tbody>
-                    </table>
+                <button onclick="toggleAuditoriaLocal()" style="width: 100%; background: var(--gpl-petroleo); color: white; padding: 10px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                    <span><i class="fa-solid fa-magnifying-glass"></i> Auditorías Locales</span>
+                    <i id="iconoAuditoriaLocal" class="fa-solid fa-chevron-down"></i>
+                </button>
+
+                <div id="panelAuditoriaLocal" style="display: none; margin-top: 15px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                        <input type="date" id="filtroAuditFecha" onchange="renderAuditoriaLocal()" style="padding: 8px; border-radius: 4px; border: 1px solid #ccc; font-family: 'Poppins', sans-serif;">
+                        <select id="filtroAuditVendedor" onchange="renderAuditoriaLocal()" style="padding: 8px; border-radius: 4px; border: 1px solid #ccc; font-family: 'Poppins', sans-serif;">
+                            <option value="">Todos los Vendedores</option>
+                        </select>
+                    </div>
+                    
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                            <thead>
+                                <tr style="background: #eee; text-align: left;">
+                                    <th style="padding: 5px; border-bottom: 1px solid #ddd;">Fecha</th>
+                                    <th style="padding: 5px; border-bottom: 1px solid #ddd;">Vendedor/Equipo</th>
+                                    <th style="padding: 5px; border-bottom: 1px solid #ddd;">Detalles</th>
+                                    <th style="padding: 5px; text-align: center; border-bottom: 1px solid #ddd;">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="listaAuditoriaLocal">
+                                <tr><td colspan="4" style="text-align: center; padding: 10px;">Cargando ventas...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
@@ -827,30 +840,46 @@
         // FUNCIONES DE GESTIÓN DE SUCURSAL
         let globalEquiposSucursal = [];
         let globalVendedoresSucursal = [];
+        let globalVentasSucursal = [];
 
-        function cargarModuloGestion(equipos, vendedores, ventas) {
-            globalEquiposSucursal = equipos;
-            globalVendedoresSucursal = vendedores;
+        function toggleAuditoriaLocal() {
+            let panel = document.getElementById('panelAuditoriaLocal');
+            let icono = document.getElementById('iconoAuditoriaLocal');
+            if (panel.style.display === 'none') {
+                panel.style.display = 'block';
+                icono.classList.remove('fa-chevron-down');
+                icono.classList.add('fa-chevron-up');
+            } else {
+                panel.style.display = 'none';
+                icono.classList.remove('fa-chevron-up');
+                icono.classList.add('fa-chevron-down');
+            }
+        }
 
-            // 1. Llenar Select de Equipos para Alta
-            let selectAltaEq = document.getElementById('altaEquipo');
-            selectAltaEq.innerHTML = '<option value="">Seleccione un Equipo</option>' + equipos.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('');
-
-            // 2. Llenar Select de Vendedores para Baja
-            let selectBajaVen = document.getElementById('bajaVendedorId');
-            selectBajaVen.innerHTML = '<option value="">Seleccione un Vendedor</option>' + vendedores.sort((a,b) => a.nombre.localeCompare(b.nombre)).map(v => `<option value="${v.id}">${v.nombre}</option>`).join('');
-
-            // 3. Llenar Tabla de Auditoría (Últimas 50 ventas)
+        function renderAuditoriaLocal() {
             let tbAudit = document.getElementById('listaAuditoriaLocal');
-            let ventasOrdenadas = ventas.sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 50);
+            let filtroFecha = document.getElementById('filtroAuditFecha').value;
+            let filtroVendedor = document.getElementById('filtroAuditVendedor').value;
+
+            let ventasFiltradas = globalVentasSucursal;
+            
+            if (filtroFecha) {
+                // Ajustar zona horaria si es necesario o comparar YYYY-MM-DD
+                ventasFiltradas = ventasFiltradas.filter(v => v.created_at.startsWith(filtroFecha));
+            }
+            if (filtroVendedor) {
+                ventasFiltradas = ventasFiltradas.filter(v => v.vendedor_id === filtroVendedor);
+            }
+
+            let ventasOrdenadas = ventasFiltradas.sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 50);
             
             if (ventasOrdenadas.length === 0) {
-                tbAudit.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 10px;">No hay ventas registradas aún.</td></tr>';
+                tbAudit.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 10px;">No hay ventas registradas con esos filtros.</td></tr>';
             } else {
                 tbAudit.innerHTML = ventasOrdenadas.map(v => {
-                    let vend = vendedores.find(x => x.id === v.vendedor_id);
+                    let vend = globalVendedoresSucursal.find(x => x.id === v.vendedor_id);
                     let nombreVend = vend ? vend.nombre : 'Desconocido';
-                    let nombreEq = vend ? (equipos.find(e => e.id === vend.equipo_id)?.nombre || 'Sin Equipo') : 'Desconocido';
+                    let nombreEq = vend ? (globalEquiposSucursal.find(e => e.id === vend.equipo_id)?.nombre || 'Sin Equipo') : 'Desconocido';
                     let esReversion = v.monto < 0 || v.comentario?.includes("BAJA");
                     let det = v.ventas_cerradas > 0 ? `${v.ventas_cerradas} vts` : `Baja: ${v.bajas}`;
                     let btnAccion = esReversion ? 
@@ -865,6 +894,28 @@
                     </tr>`;
                 }).join('');
             }
+        }
+
+        function cargarModuloGestion(equipos, vendedores, ventas) {
+            globalEquiposSucursal = equipos;
+            globalVendedoresSucursal = vendedores;
+            globalVentasSucursal = ventas;
+
+            // 1. Llenar Select de Equipos para Alta
+            let selectAltaEq = document.getElementById('altaEquipo');
+            selectAltaEq.innerHTML = '<option value="">Seleccione un Equipo</option>' + equipos.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('');
+
+            // 2. Llenar Select de Vendedores para Baja
+            let selectBajaVen = document.getElementById('bajaVendedorId');
+            let opcionesVend = vendedores.sort((a,b) => a.nombre.localeCompare(b.nombre)).map(v => `<option value="${v.id}">${v.nombre}</option>`).join('');
+            selectBajaVen.innerHTML = '<option value="">Seleccione un Vendedor</option>' + opcionesVend;
+
+            // 3. Llenar Filtro de Vendedores en Auditoría
+            let selectAuditVend = document.getElementById('filtroAuditVendedor');
+            selectAuditVend.innerHTML = '<option value="">Todos los Vendedores</option>' + opcionesVend;
+
+            // 4. Render inicial de la tabla
+            renderAuditoriaLocal();
         }
 
         async function altaVendedor() {
