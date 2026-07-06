@@ -579,6 +579,7 @@
                             .select('*')
                             .eq('campana', campanaStr)
                             .in('vendedor_id', idsIntegrantes)
+                            .order('id')
                             .range(fromRow, fromRow + step - 1);
                         if(!data || data.length === 0) break;
                         ventas = ventas.concat(data);

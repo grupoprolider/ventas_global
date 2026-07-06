@@ -924,7 +924,7 @@
                 let ventasPaginadas = [];
                 let step = 1000, fromRow = 0;
                 while(true) {
-                    let { data } = await clienteSupabase.from('registro_ventas').select('*').eq('campana', campanaStr).range(fromRow, fromRow + step - 1);
+                    let { data } = await clienteSupabase.from('registro_ventas').select('*').eq('campana', campanaStr).order('id').range(fromRow, fromRow + step - 1);
                     if(!data || data.length === 0) break;
                     ventasPaginadas = ventasPaginadas.concat(data);
                     if(data.length < step) break;
@@ -932,17 +932,27 @@
                 }
 
                 // 1. Obtener todos los datos necesarios
-                const [resPerfiles, resEquipos, resAgencias] = await Promise.all([
-                    clienteSupabase.from('perfiles').select('*'),
-                    clienteSupabase.from('equipos').select('*'),
-                    clienteSupabase.from('agencias').select('*')
+                async function fetchAll(table) {
+                    let allData = [];
+                    let s = 1000, f = 0;
+                    while (true) {
+                        const { data } = await clienteSupabase.from(table).select('*').order('id').range(f, f + s - 1);
+                        if (!data || data.length === 0) break;
+                        allData = allData.concat(data);
+                        if (data.length < s) break;
+                        f += s;
+                    }
+                    return allData;
+                }
+
+                const [perfiles, equipos, agencias] = await Promise.all([
+                    fetchAll('perfiles'),
+                    fetchAll('equipos'),
+                    fetchAll('agencias')
                 ]);
 
                 const ventas = ventasPaginadas;
                 globalVentasGerencia = ventas;
-                const perfiles = resPerfiles.data || [];
-                const equipos = resEquipos.data || [];
-                const agencias = resAgencias.data || [];
 
                 globalPerfilesGerencia = perfiles;
                 globalEquiposGerencia = equipos;

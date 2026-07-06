@@ -436,13 +436,22 @@
 
         async function refrescarDatos() {
             try {
-                const { data: gente } = await clienteSupabase.from('perfiles').select('*').order('nombre');
-                const { data: ags } = await clienteSupabase.from('agencias').select('*').order('nombre');
-                const { data: eqs } = await clienteSupabase.from('equipos').select('*').order('nombre');
+                async function fetchAll(table) {
+                    let allData = [];
+                    let s = 1000, f = 0;
+                    while (true) {
+                        const { data } = await clienteSupabase.from(table).select('*').order('nombre').range(f, f + s - 1);
+                        if (!data || data.length === 0) break;
+                        allData = allData.concat(data);
+                        if (data.length < s) break;
+                        f += s;
+                    }
+                    return allData;
+                }
 
-                const listaGente = gente || [];
-                const listaAgs = ags || [];
-                const listaEqs = eqs || [];
+                const listaGente = await fetchAll('perfiles');
+                const listaAgs = await fetchAll('agencias');
+                const listaEqs = await fetchAll('equipos');
 
                 window.datosGlobalesMaster = { perfiles: listaGente, agencias: listaAgs, equipos: listaEqs };
 

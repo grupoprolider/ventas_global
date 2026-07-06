@@ -268,7 +268,7 @@
     </div>
 
     <script>
-        const clienteSupabase = supabase.createClient('https://pumpwqyazqaxeeknrhyo.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1bXB3cXlhenFheGVla25yaHlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MjQ4ODEsImV4cCI6MjA5NDIwMDg4MX0.-AQZZYAt-uskDLUpbiafJXbHgW0lErf8bwEnk7eq1DE');
+        const clienteSupabase = supabase.createClient('https://pumpwqyazqaxeeknrhyo.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1bXB3cXlhenFheGVla25yaHlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MjQ4ODEsImV4cCI6MjA5NDIwMDg4MX0.-AQZZYAt-uskDLUpbiafJXbHgW0lErf8bwEnk7eq1DE', { auth: { persistSession: false } });
 
         window.datosGlobalesReporte = null;
 
@@ -305,20 +305,30 @@
                 let vtas = [];
                 let step = 1000, fromRow = 0;
                 while (true) {
-                    const { data } = await clienteSupabase.from('registro_ventas').select('*').eq('campana', campana).range(fromRow, fromRow + step - 1);
+                    const { data } = await clienteSupabase.from('registro_ventas').select('*').eq('campana', campana).order('id').range(fromRow, fromRow + step - 1);
                     if (!data || data.length === 0) break;
                     vtas = vtas.concat(data);
                     if (data.length < step) break;
                     fromRow += step;
                 }
-                const { data: perfiles } = await clienteSupabase.from('perfiles').select('*');
-                const { data: equipos } = await clienteSupabase.from('equipos').select('*');
-                const { data: agencias } = await clienteSupabase.from('agencias').select('*');
 
+                async function fetchAll(table) {
+                    let allData = [];
+                    let s = 1000, f = 0;
+                    while (true) {
+                        const { data } = await clienteSupabase.from(table).select('*').order('id').range(f, f + s - 1);
+                        if (!data || data.length === 0) break;
+                        allData = allData.concat(data);
+                        if (data.length < s) break;
+                        f += s;
+                    }
+                    return allData;
+                }
+
+                const L_Perfiles = await fetchAll('perfiles');
+                const L_Equipos = await fetchAll('equipos');
+                const L_Agencias = await fetchAll('agencias');
                 const L_Vtas = vtas || [];
-                const L_Perfiles = perfiles || [];
-                const L_Equipos = equipos || [];
-                const L_Agencias = agencias || [];
 
                 const getNombre = (id) => L_Perfiles.find(x => x.id === id)?.nombre || 'Sin Asignar';
 

@@ -612,7 +612,7 @@
                 let vtas = [];
                 let step = 1000, fromRow = 0;
                 while(true) {
-                    const { data } = await clienteSupabase.from('registro_ventas').select('monto, ventas_cerradas, bajas, beneficio, medio_pago').eq('vendedor_id', id).eq('campana', campanaStr).range(fromRow, fromRow + step - 1);
+                    const { data } = await clienteSupabase.from('registro_ventas').select('id, monto, ventas_cerradas, bajas, beneficio, medio_pago').eq('vendedor_id', id).eq('campana', campanaStr).order('id').range(fromRow, fromRow + step - 1);
                     if(!data || data.length === 0) break;
                     vtas = vtas.concat(data);
                     if(data.length < step) break;

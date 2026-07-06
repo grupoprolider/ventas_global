@@ -651,6 +651,7 @@
                     const { data } = await clienteSupabase.from('registro_ventas')
                         .select('*')
                         .eq('campana', campanaStr)
+                        .order('id')
                         .range(fromRow, fromRow + step - 1);
                     if(!data || data.length === 0) break;
                     todasVentas = todasVentas.concat(data);
