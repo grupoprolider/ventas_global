@@ -881,7 +881,7 @@
                     let vend = globalVendedoresSucursal.find(x => x.id === v.vendedor_id);
                     let nombreVend = vend ? vend.nombre : 'Desconocido';
                     let nombreEq = vend ? (globalEquiposSucursal.find(e => e.id === vend.equipo_id)?.nombre || 'Sin Equipo') : 'Desconocido';
-                    let esReversion = v.monto < 0 || v.comentario?.includes("BAJA");
+                    let esReversion = v.monto < 0 || v.beneficio?.includes("BAJA");
                     let det = v.ventas_cerradas > 0 ? `${v.ventas_cerradas} vts` : `Baja: ${v.bajas}`;
                     let btnAccion = esReversion ? 
                         `<span style="color:#ff6b6b; font-size:10px;"><i class="fa-solid fa-arrow-trend-down"></i> Reversión</span>` : 
@@ -988,9 +988,8 @@
                 monto: -(venta.monto || 0),
                 semana: venta.semana,
                 campana: venta.campana,
-                beneficio: venta.beneficio,
-                medio_pago: venta.medio_pago,
-                comentario: `BAJA DE VENTA (por Líd. Sucursal: ${nombreSupervisor}) - Reversión de op original de fecha ${new Date(venta.created_at).toLocaleDateString()}. ` + (venta.comentario || '')
+                beneficio: `BAJA (por Líd. Sucursal: ${nombreSupervisor}) - Op orig. del ${new Date(venta.created_at).toLocaleDateString()}`,
+                medio_pago: 'Reversión'
             };
             const { error: errInsert } = await clienteSupabase.from('registro_ventas').insert([payloadInsert]);
 

@@ -690,9 +690,8 @@
                 monto: -(venta.monto || 0),
                 semana: venta.semana,
                 campana: venta.campana,
-                beneficio: venta.beneficio,
-                medio_pago: venta.medio_pago,
-                comentario: `BAJA DE VENTA (por Administrador Central) - Reversión de operación original de fecha ${new Date(venta.created_at).toLocaleDateString()}. ` + (venta.comentario || '')
+                beneficio: `BAJA (por Admin Central) - Reversión de op orig. del ${new Date(venta.created_at).toLocaleDateString()}`,
+                medio_pago: 'Reversión'
             };
             const { error: errInsert } = await clienteSupabase.from('registro_ventas').insert([payloadInsert]);
 
