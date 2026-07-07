@@ -212,17 +212,17 @@
     </div>
 
     <ul class="nav-rankings">
-        <li onclick="switchRank(0)" class="active"><i class="fa-solid fa-user-tie"></i>Vendedores</li>
-        <li onclick="switchRank(1)"><i class="fa-solid fa-building"></i>Sucursales</li>
-        <li onclick="switchRank(2)"><i class="fa-solid fa-users-gear"></i>Equipos</li>
-        <li onclick="switchRank(3)"><i class="fa-solid fa-user-shield"></i>Líderes de Equipos</li>
+        <li onclick="switchRank(0)" class="active"><i class="fa-solid fa-user-tie"></i>Ranking Nacional de Asesores</li>
+        <li onclick="switchRank(1)"><i class="fa-solid fa-building"></i>Ranking Nacional de Sucursales</li>
+        <li onclick="switchRank(2)"><i class="fa-solid fa-users-gear"></i>Ranking Nacional de Líderes</li>
+        <li onclick="switchRank(3)" style="display:none;"><i class="fa-solid fa-user-shield"></i>Líderes de Equipos</li>
     </ul>
 
     <div class="container-ranking">
         <div id="rank0" class="tab-ranking active">
             <table>
                 <thead>
-                    <tr><th>Pos</th><th onclick="ordenarVendedores('nom')" style="cursor:pointer;" title="Ordenar A-Z">Vendedor/a / Equipo <i class="fa-solid fa-sort" style="color:#777; margin-left:3px;"></i></th><th class="vts-netas-col" onclick="ordenarVendedores('neta')" style="cursor:pointer;" title="Ordenar por VTAS">VTAS <i class="fa-solid fa-sort" style="color:#777; margin-left:3px;"></i></th><th class="monto-col">Importe</th><th style="text-align:center; cursor:pointer;" onclick="ordenarVendedores('ent')" title="Ordenar por Entrevistas">Entr <i class="fa-solid fa-sort" style="color:#777; margin-left:3px;"></i></th><th style="text-align:center; cursor:pointer;" onclick="ordenarVendedores('prom')" title="Ordenar por Promedio">Promedio <i class="fa-solid fa-sort" style="color:#777; margin-left:3px;"></i></th></tr>
+                    <tr><th>Pos</th><th onclick="ordenarVendedores('nom')" style="cursor:pointer;" title="Ordenar A-Z">Asesor/a / Equipo <i class="fa-solid fa-sort" style="color:#777; margin-left:3px;"></i></th><th class="vts-netas-col" onclick="ordenarVendedores('neta')" style="cursor:pointer;" title="Ordenar por VTAS">VTAS <i class="fa-solid fa-sort" style="color:#777; margin-left:3px;"></i></th><th class="monto-col">Importe</th><th style="text-align:center; cursor:pointer;" onclick="ordenarVendedores('ent')" title="Ordenar por Entrevistas">Entr <i class="fa-solid fa-sort" style="color:#777; margin-left:3px;"></i></th><th style="text-align:center; cursor:pointer;" onclick="ordenarVendedores('prom')" title="Ordenar por Promedio">Promedio <i class="fa-solid fa-sort" style="color:#777; margin-left:3px;"></i></th></tr>
                 </thead>
                 <tbody id="cuerpoNacional"><tr><td colspan="5"><div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i>Cargando rankings...</div></td></tr></tbody>
             </table>
@@ -240,7 +240,7 @@
         <div id="rank2" class="tab-ranking">
             <table>
                 <thead>
-                    <tr><th>Pos</th><th>Equipo / Líder</th><th class="vts-netas-col">VTAS</th><th class="monto-col th-gerencia" style="display:none;">Importe</th></tr>
+                    <tr><th>Pos</th><th>Líder / Equipo</th><th class="vts-netas-col">VTAS</th><th class="monto-col th-gerencia" style="display:none;">Importe</th></tr>
                 </thead>
                 <tbody id="cuerpoEquipos"></tbody>
             </table>
