@@ -398,7 +398,7 @@
             <p style="font-size: 11px; color: #666; margin: 0 0 10px 0; line-height: 1.3;">Definí tus propios objetivos para esta campaña. Crecer empieza por comprometerse.</p>
             <div class="row-pin" style="margin-bottom: 10px;">
                 <input type="number" id="inputMiMetaVentas" placeholder="Cant. Ventas (ej: 30)" style="border: 1px solid #ccc; border-radius: 6px;">
-                <input type="number" id="inputMiMetaMonto" placeholder="Monto $ (ej: 2500000)" style="border: 1px solid #ccc; border-radius: 6px;">
+                <input type="number" id="inputMiMetaMonto" placeholder="Monto $" style="display:none;">
             </div>
             <button type="button" class="btn-pin" style="width: 100%; background: var(--gpl-dorado); color: white;" onclick="guardarMisMetas()">Comprometerme con mi Meta</button>
         </div>
@@ -592,10 +592,15 @@
 
                 vendedorActual = p;
 
-                if (p.objetivo_campana > 0) {
+                if (localStorage.getItem('metaFijada_' + vendedorActual.id) === 'true') {
                     const blockMeta = document.getElementById('blockMisMetas');
                     if (blockMeta) {
                         blockMeta.innerHTML = `<div style="text-align:center; padding:10px; color:#27ae60; font-weight:bold;"><i class="fa-solid fa-check-circle"></i> Meta de la campaña fijada con éxito. ¡Éxitos!</div>`;
+                    }
+                } else {
+                    const inputVts = document.getElementById('inputMiMetaVentas');
+                    if (inputVts && p.objetivo_campana) {
+                        inputVts.value = p.objetivo_campana;
                     }
                 }
 
@@ -707,9 +712,10 @@
 
         async function guardarMisMetas() {
             const vts = parseInt(document.getElementById('inputMiMetaVentas').value);
-            const monto = parseFloat(document.getElementById('inputMiMetaMonto').value);
+            
+            if (!vts) return alert("Por favor, ingresá la cantidad de ventas.");
 
-            if (!vts || !monto) return alert("Por favor, ingresá tanto la cantidad de ventas como el monto esperado.");
+            const monto = vts * 65000;
 
             if (!confirm("Atención: Una vez que fijes tu objetivo, no podrás volver a editarlo. Solo el Administrador podrá hacerlo. ¿Estás seguro de que esta es la meta con la que te comprometes?")) {
                 return;

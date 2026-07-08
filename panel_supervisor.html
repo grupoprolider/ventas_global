@@ -919,6 +919,29 @@
             renderAuditoriaLocal();
         }
 
+        function calcularProrrateoObjetivo(metaBase = 18) {
+            const hoy = new Date();
+            let mesFin = hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth();
+            let anioFin = hoy.getFullYear();
+            if (mesFin > 11) { mesFin = 0; anioFin++; }
+            let mesInicio = hoy.getDate() >= 16 ? hoy.getMonth() : hoy.getMonth() - 1;
+            let anioInicio = hoy.getFullYear();
+            if (mesInicio < 0) { mesInicio = 11; anioInicio--; }
+            const inicioCampana = new Date(anioInicio, mesInicio, 16);
+            const finCampana = new Date(anioFin, mesFin, 15);
+            function getDiasHabiles(desde, hasta) {
+                let count = 0, cur = new Date(desde);
+                cur.setHours(0,0,0,0); let end = new Date(hasta); end.setHours(0,0,0,0);
+                while(cur <= end) { let day = cur.getDay(); if (day !== 0 && day !== 6) count++; cur.setDate(cur.getDate() + 1); }
+                return count;
+            }
+            const totales = getDiasHabiles(inicioCampana, finCampana);
+            const restantes = getDiasHabiles(hoy, finCampana);
+            if (restantes <= 0) return 0;
+            if (restantes >= totales) return metaBase;
+            return Math.round(metaBase * (restantes / totales));
+        }
+
         async function altaVendedor() {
             let nombre = document.getElementById('altaNombre').value.trim();
             let cat = document.getElementById('altaCategoria').value;
@@ -929,12 +952,14 @@
 
             if (!confirm(`¿Confirmás el alta de ${nombre} como vendedor ${cat}?`)) return;
 
+            const objetivoAsignado = calcularProrrateoObjetivo(18);
+
             const { error } = await clienteSupabase.from('perfiles').insert([{
                 nombre: nombre,
                 rol: 'Vendedor',
                 categoria: cat,
                 equipo_id: eqId,
-                objetivo_campana: cat === 'Senior' ? 50 : 30
+                objetivo_campana: objetivoAsignado
             }]);
 
             if (error) return alert("Error al registrar: " + error.message);

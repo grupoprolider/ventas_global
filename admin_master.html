@@ -243,6 +243,7 @@
         <li onclick="cambiarTab(4)"><i class="fa-solid fa-list-check"></i> Auditoría</li>
         <li onclick="cambiarTab(5)"><i class="fa-solid fa-sliders"></i> Opciones</li>
         <li onclick="window.open('ranking_tv.html', '_blank')" style="border-left: 2px solid var(--gpl-dorado);"><i class="fa-solid fa-tv"></i> Transmitir en TV</li>
+        <li onclick="window.location.href='index.html'" style="background: #e74c3c; color: white;"><i class="fa-solid fa-right-from-bracket"></i> Salir</li>
     </ul>
 
     <div class="container">
@@ -352,7 +353,7 @@
                 <div class="form-row">
                     <div><label>Vendedor/a</label><select id="obj_vendedor"></select></div>
                     <div><label>Meta Ventas</label><input type="number" id="obj_vts"></div>
-                    <div><label>Meta Importe ($)</label><input type="number" id="obj_monto"></div>
+                    <div style="display:none;"><label>Meta Importe ($)</label><input type="number" id="obj_monto"></div>
                     <button class="btn-save" onclick="guardarMetas()">Actualizar</button>
                 </div>
             </div>
@@ -574,12 +575,38 @@
             tbody.innerHTML = perfiles.map(p => `<tr><td>${p.nombre}</td><td><select onchange="updatePerfil('${p.id}', 'equipo_id', this.value)"><option value="">Sin Equipo</option>${equipos.map(e => `<option value="${e.id}" ${e.id === p.equipo_id ? 'selected' : ''}>${e.nombre}</option>`).join('')}</select></td><td><select onchange="updatePerfil('${p.id}', 'rol', this.value)"><option value="Vendedor" ${p.rol === 'Vendedor' ? 'selected' : ''}>Vendedor</option><option value="Líder de Asesores" ${p.rol === 'Líder de Asesores' ? 'selected' : ''}>Líder de Asesores</option><option value="Líder de Equipos" ${p.rol === 'Líder de Equipos' ? 'selected' : ''}>Líder de Equipos</option><option value="Líder de Sucursal" ${p.rol === 'Líder de Sucursal' ? 'selected' : ''}>Líder de Sucursal</option></select></td><td><select onchange="updatePerfil('${p.id}', 'categoria', this.value)"><option value="Senior" ${p.categoria === 'Senior' ? 'selected' : ''}>Senior</option><option value="Junior" ${p.categoria === 'Junior' ? 'selected' : ''}>Junior</option></select></td><td><button class="btn-edit" onclick="renombrar('perfiles', '${p.id}', '${p.nombre}')">Renombrar</button><button class="btn-del" onclick="borrar('perfiles', '${p.id}')">BAJA</button></td></tr>`).join('');
         }
 
+        function calcularProrrateoObjetivo(metaBase = 18) {
+            const hoy = new Date();
+            let mesFin = hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth();
+            let anioFin = hoy.getFullYear();
+            if (mesFin > 11) { mesFin = 0; anioFin++; }
+            let mesInicio = hoy.getDate() >= 16 ? hoy.getMonth() : hoy.getMonth() - 1;
+            let anioInicio = hoy.getFullYear();
+            if (mesInicio < 0) { mesInicio = 11; anioInicio--; }
+            const inicioCampana = new Date(anioInicio, mesInicio, 16);
+            const finCampana = new Date(anioFin, mesFin, 15);
+            function getDiasHabiles(desde, hasta) {
+                let count = 0, cur = new Date(desde);
+                cur.setHours(0,0,0,0); let end = new Date(hasta); end.setHours(0,0,0,0);
+                while(cur <= end) { let day = cur.getDay(); if (day !== 0 && day !== 6) count++; cur.setDate(cur.getDate() + 1); }
+                return count;
+            }
+            const totales = getDiasHabiles(inicioCampana, finCampana);
+            const restantes = getDiasHabiles(hoy, finCampana);
+            if (restantes <= 0) return 0;
+            if (restantes >= totales) return metaBase;
+            return Math.round(metaBase * (restantes / totales));
+        }
+
         async function crearPersonal() {
             const n = document.getElementById('per_nombre').value.trim();
             const r = document.getElementById('per_rol').value;
             const c = document.getElementById('per_cat').value;
             if (!n) return alert("Ingresá el nombre");
-            const { error } = await clienteSupabase.from('perfiles').insert([{ nombre: n, rol: r, categoria: c }]);
+            const objetivoAsignado = calcularProrrateoObjetivo(18);
+            const { error } = await clienteSupabase.from('perfiles').insert([{ 
+                nombre: n, rol: r, categoria: c, objetivo_campana: objetivoAsignado 
+            }]);
             if (error) alert("Error: " + error.message); else { document.getElementById('per_nombre').value = ''; refrescarDatos(); }
         }
 
@@ -596,7 +623,7 @@
         async function guardarMetas() {
             const id = document.getElementById('obj_vendedor').value;
             const vts = parseInt(document.getElementById('obj_vts').value) || 0;
-            const monto = parseFloat(document.getElementById('obj_monto').value) || 0;
+            const monto = vts * 65000;
             if (!id) return alert("Seleccioná un vendedor");
             const { error } = await clienteSupabase.from('perfiles').update({ objetivo_campana: vts, objetivo_monto: monto }).eq('id', id);
             if (error) alert("Error: " + error.message); else alert("¡Metas guardadas!");
