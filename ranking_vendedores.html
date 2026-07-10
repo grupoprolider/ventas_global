@@ -272,7 +272,11 @@
                 document.getElementById('totImporte').textContent = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(globalMonto);
 
                 let mAg = {}; L_Agencias.forEach(a => mAg[a.id] = { n: a.nombre, s: getNombre(a.supervisor_id), v: 0, m: 0, c: a.color_hex });
-                let mEq = {}; L_Equipos.forEach(e => mEq[e.id] = { n: e.nombre, l: getNombre(e.lider_id), c_id: e.coordinador_id, v: 0, m: 0, a_id: e.agencia_id });
+                let mEq = {}; L_Equipos.forEach(e => {
+                    let integrantes = new Set(L_Perfiles.filter(p => p.equipo_id === e.id).map(p => p.id));
+                    if (e.lider_id) integrantes.add(e.lider_id);
+                    mEq[e.id] = { n: e.nombre, l: getNombre(e.lider_id), c_id: e.coordinador_id, v: 0, m: 0, a_id: e.agencia_id, count: integrantes.size };
+                });
                 let mCoord = {}; L_Perfiles.filter(p => p.rol === 'Líder de Equipos').forEach(c => mCoord[c.id] = { n: c.nombre, v: 0, m: 0, ag: '-' });
 
                 let nacList = L_Perfiles.map(p => {
@@ -363,7 +367,7 @@
                 <tr style="--row-color: ${agCol}">
                     <td class="posicion">${getMedalla(i)}</td>
                     <td class="info-principal">
-                        <span class="col-nombre">${e.n}</span><span class="sub-txt">Líder: ${e.l} • ${agNom}</span>
+                        <span class="col-nombre">${e.n} (${e.count})</span><span class="sub-txt">Líder: ${e.l} • ${agNom}</span>
                     </td>
                     <td class="vts-netas-col"><span class="vts-neta">${e.v}</span></td>
                     ${esGerente ? `<td class="monto-col">$${e.m.toLocaleString()}</td>` : ''}
