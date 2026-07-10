@@ -440,7 +440,7 @@
                 <tr style="--row-color: ${agCol}">
                     <td class="posicion">${getMedalla(i)}</td>
                     <td class="info-principal">
-                        <span class="col-nombre">${e.n} (${e.count})</span><span class="sub-txt">Líder: ${e.l} • ${agNom}</span>
+                        <span class="col-nombre">${e.n}</span><span class="sub-txt">Líder: ${e.l} • ${agNom} &nbsp;&nbsp;&nbsp; Cant. Integrantes: ${e.count}</span>
                     </td>
                     <td class="vts-netas-col"><span class="vts-neta">${e.v}</span></td>
                     ${esGerente ? `<td class="monto-col">$${e.m.toLocaleString()}</td>` : ''}
