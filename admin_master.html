@@ -309,6 +309,7 @@
                             <option value="Líder de Asesores">Líder de Asesores</option>
                             <option value="Líder de Equipos">Líder de Equipos</option>
                             <option value="Líder de Sucursal">Líder de Sucursal</option>
+                            <option value="Gerente">Gerente Comercial</option>
                         </select>
                     </div>
                     <div>
@@ -636,7 +637,10 @@
             let fecha = document.getElementById('filtro_fecha_audit').value;
             let vendedorId = document.getElementById('filtro_vendedor_audit').value;
 
-            let query = clienteSupabase.from('registro_ventas').select('*').order('created_at', { ascending: false });
+            const hoy = new Date();
+            const campanaActual = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
+
+            let query = clienteSupabase.from('registro_ventas').select('*').eq('campana', campanaActual).order('created_at', { ascending: false });
 
             if (vendedorId) query = query.eq('vendedor_id', vendedorId);
             if (fecha) {
