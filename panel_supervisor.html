@@ -872,6 +872,9 @@
                 ventasFiltradas = ventasFiltradas.filter(v => v.vendedor_id === filtroVendedor);
             }
 
+            // Filtrar registros que sean pura entrevista
+            ventasFiltradas = ventasFiltradas.filter(v => (v.ventas_cerradas > 0) || (v.bajas > 0) || (v.monto < 0) || v.beneficio?.includes('BAJA'));
+
             let ventasOrdenadas = ventasFiltradas.sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 50);
             
             if (ventasOrdenadas.length === 0) {

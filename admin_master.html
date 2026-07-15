@@ -379,7 +379,6 @@
                                 <th>Fecha</th>
                                 <th>Vendedor</th>
                                 <th>Vts / Bajas</th>
-                                <th>Entrevistas</th>
                                 <th>Importe</th>
                                 <th>Estado / Acción</th>
                             </tr>
@@ -664,29 +663,31 @@
                 var { data, error } = await query;
             }
 
-            const vtas = data;
-            const tbody = document.querySelector('#tabla_auditoria tbody');
+            if (error) {
+                console.error("Error cargando auditoría:", error);
+                return;
+            }
 
-            if (error) return tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Error cargando ventas.</td></tr>`;
-            if (!vtas || vtas.length === 0) return tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Aún no hay ventas.</td></tr>';
+            // Filtrar registros que sean pura entrevista (sin ventas ni bajas ni reversiones)
+            let datosReales = data.filter(v => (v.ventas_cerradas > 0) || (v.bajas > 0) || (v.monto < 0) || v.beneficio?.includes('BAJA'));
 
-            tbody.innerHTML = vtas.map(v => {
-                const nombreVendedor = globalGenteAudit.find(p => p.id === v.vendedor_id)?.nombre || 'Desconocido';
+            let tb = document.querySelector('#tabla_auditoria tbody');
+            if (!datosReales || datosReales.length === 0) {
+                tb.innerHTML = '<tr><td colspan="5" class="empty-state">No hay registros con esos filtros.</td></tr>';
+                return;
+            }
 
-                const esReversion = (v.monto < 0);
-                const fueAnulada = (v.es_anulada === true);
-
+            tb.innerHTML = datosReales.map(v => {
+                let nombreVendedor = globalGenteAudit.find(p => p.id === v.vendedor_id)?.nombre || 'Desconocido';
+                
+                let esReversion = v.monto < 0 || v.beneficio?.includes("BAJA");
+                let estiloFila = esReversion ? "background: #fff0f0;" : "";
+                
                 let btnAccion = '';
-                let estiloFila = '';
-
                 if (esReversion) {
-                    // Esta es la fila roja que descuenta
-                    estiloFila = 'background-color: rgba(231, 76, 60, 0.08); color: #ff6b6b; font-weight: bold;';
-                    btnAccion = `<span style="color:#ff6b6b; font-size: 11px; text-transform: uppercase;"><i class="fa-solid fa-arrow-trend-down"></i> Asiento de Baja</span>`;
-                } else if (fueAnulada) {
-                    // Esta es la venta original ya anulada (grisada y tachada)
-                    estiloFila = 'opacity: 0.5; text-decoration: line-through;';
-                    btnAccion = `<span style="color:#e74c3c; font-weight:bold; font-size: 11px;"><i class="fa-solid fa-ban"></i> ANULADA</span>`;
+                    btnAccion = `<span style="color:#e74c3c; font-weight:bold; font-size:12px;"><i class="fa-solid fa-arrow-trend-down"></i> REVERSIÓN</span><br><span style="font-size:10px; color:#555;">${v.beneficio}</span>`;
+                } else if (v.es_anulada) {
+                    btnAccion = `<span style="color:#e74c3c; font-weight:bold; font-size:12px;"><i class="fa-solid fa-ban"></i> ANULADA</span>`;
                 } else {
                     btnAccion = `<button class="btn-baja" onclick="darDeBajaVenta('${v.id}')"><i class="fa-solid fa-arrow-trend-down"></i> DAR DE BAJA</button>`;
                 }
@@ -699,7 +700,6 @@
                         <td>${v.created_at ? new Date(v.created_at).toLocaleDateString() : '-'}</td>
                         <td>${nombreVendedor}</td>
                         <td>${esReversion ? '-' + v.bajas : (v.ventas_cerradas || 0)}</td>
-                        <td><span style="background: #e1f5fe; color: #0288d1; padding: 2px 6px; border-radius: 10px; font-weight: bold;">${v.entrevistas || 0}</span></td>
                         <td>$${(v.monto || 0).toLocaleString()}</td>
                         <td>${btnAccion}</td>
                     </tr>
