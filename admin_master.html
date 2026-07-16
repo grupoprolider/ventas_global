@@ -326,6 +326,11 @@
             <div class="card-admin">
                 <h3>Gestión y Asignación de Equipos</h3>
                 <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <select id="filtro_estado_personal" onchange="aplicarFiltrosPersonal()" style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Poppins', sans-serif; font-weight: bold;">
+                        <option value="ACTIVOS">Solo Activos</option>
+                        <option value="BAJAS">Solo Bajas</option>
+                        <option value="TODOS">Todos (Activos y Bajas)</option>
+                    </select>
                     <select id="filtro_agencia_personal" onchange="aplicarFiltrosPersonal()" style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Poppins', sans-serif; font-weight: bold;">
                         <option value="TODAS">Todas las Agencias</option>
                     </select>
@@ -603,6 +608,7 @@
             if (!window.datosGlobalesMaster) return;
             const agFilter = document.getElementById('filtro_agencia_personal').value;
             const eqFilter = document.getElementById('filtro_equipo_personal').value;
+            const estadoFilter = document.getElementById('filtro_estado_personal') ? document.getElementById('filtro_estado_personal').value : 'ACTIVOS';
             
             const { perfiles, agencias, equipos } = window.datosGlobalesMaster;
             
@@ -617,6 +623,10 @@
                 if (agFilter !== 'TODAS' && pAgId !== agFilter) return false;
                 if (eqFilter !== 'TODOS' && pEqId !== eqFilter) return false;
                 
+                const esBaja = p.nombre.includes('(BAJA)');
+                if (estadoFilter === 'ACTIVOS' && esBaja) return false;
+                if (estadoFilter === 'BAJAS' && !esBaja) return false;
+                
                 return true;
             });
             
@@ -625,7 +635,7 @@
 
         function cargarPersonal(perfiles, equipos) {
             const tbody = document.querySelector('#tabla_personal tbody');
-            tbody.innerHTML = perfiles.map(p => `<tr><td>${p.nombre}</td><td><select onchange="updatePerfil('${p.id}', 'equipo_id', this.value)"><option value="">Sin Equipo</option>${equipos.map(e => `<option value="${e.id}" ${e.id === p.equipo_id ? 'selected' : ''}>${e.nombre}</option>`).join('')}</select></td><td><select onchange="updatePerfil('${p.id}', 'rol', this.value)"><option value="Vendedor" ${p.rol === 'Vendedor' ? 'selected' : ''}>Vendedor</option><option value="Líder de Asesores" ${p.rol === 'Líder de Asesores' ? 'selected' : ''}>Líder de Asesores</option><option value="Líder de Equipos" ${p.rol === 'Líder de Equipos' ? 'selected' : ''}>Líder de Equipos</option><option value="Líder de Sucursal" ${p.rol === 'Líder de Sucursal' ? 'selected' : ''}>Líder de Sucursal</option></select></td><td><select onchange="updatePerfil('${p.id}', 'categoria', this.value)"><option value="Senior" ${p.categoria === 'Senior' ? 'selected' : ''}>Senior</option><option value="Junior" ${p.categoria === 'Junior' ? 'selected' : ''}>Junior</option></select></td><td><button class="btn-edit" onclick="renombrar('perfiles', '${p.id}', '${p.nombre}')">Renombrar</button><button class="btn-del" onclick="borrar('perfiles', '${p.id}')">BAJA</button></td></tr>`).join('');
+            tbody.innerHTML = perfiles.map(p => `<tr><td>${p.nombre}</td><td><select onchange="updatePerfil('${p.id}', 'equipo_id', this.value)"><option value="">Sin Equipo</option>${equipos.map(e => `<option value="${e.id}" ${e.id === p.equipo_id ? 'selected' : ''}>${e.nombre}</option>`).join('')}</select></td><td><select onchange="updatePerfil('${p.id}', 'rol', this.value)"><option value="Vendedor" ${p.rol === 'Vendedor' ? 'selected' : ''}>Vendedor</option><option value="Líder de Asesores" ${p.rol === 'Líder de Asesores' ? 'selected' : ''}>Líder de Asesores</option><option value="Líder de Equipos" ${p.rol === 'Líder de Equipos' ? 'selected' : ''}>Líder de Equipos</option><option value="Líder de Sucursal" ${p.rol === 'Líder de Sucursal' ? 'selected' : ''}>Líder de Sucursal</option></select></td><td><select onchange="updatePerfil('${p.id}', 'categoria', this.value)"><option value="Senior" ${p.categoria === 'Senior' ? 'selected' : ''}>Senior</option><option value="Junior" ${p.categoria === 'Junior' ? 'selected' : ''}>Junior</option></select></td><td><button class="btn-edit" onclick="renombrar('perfiles', '${p.id}', '${p.nombre}')">Renombrar</button><button class="btn-del" style="background-color: #f39c12;" onclick="darDeBajaPerfil('${p.id}', '${p.nombre}')">Baja Lógica</button><button class="btn-del" onclick="borrar('perfiles', '${p.id}')">Eliminar</button></td></tr>`).join('');
         }
 
         function calcularProrrateoObjetivo(metaBase = 18) {
@@ -803,6 +813,22 @@
                     if (error) alert("Error al renombrar: " + error.message);
                     else refrescarDatos();
                 }
+            }
+        }
+
+        async function darDeBajaPerfil(id, nombreActual) {
+            if (nombreActual.includes('(BAJA)')) {
+                return alert("Este perfil ya está dado de baja.");
+            }
+            if (!confirm(`¿Estás seguro de que querés marcar a ${nombreActual} como (BAJA) y dejarlo Sin Equipo?\nEsto ocultará su perfil de los radares activos.`)) return;
+            
+            const nuevoNombre = nombreActual + ' (BAJA)';
+            const { error } = await clienteSupabase.from('perfiles').update({ nombre: nuevoNombre, equipo_id: null }).eq('id', id);
+            
+            if (error) {
+                alert("Error al dar de baja: " + error.message);
+            } else {
+                refrescarDatos();
             }
         }
 
