@@ -1192,7 +1192,9 @@
                         vts += (v.ventas_cerradas || 0) - (v.bajas || 0);
                     });
                     return { p, vts };
-                }).filter(data => data.p.equipo_id !== null || data.vts > 0).map(data => {
+                }).filter(data => data.p.equipo_id !== null || data.vts > 0)
+                  .filter(data => !data.p.nombre.includes('(BAJA)'))
+                  .map(data => {
                     let p = data.p;
                     let vts = data.vts;
                     

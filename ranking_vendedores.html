@@ -285,7 +285,7 @@
                         v += (x.ventas_cerradas || 0); b += (x.bajas || 0); m += (x.monto || 0); ent += (x.entrevistas || 0);
                     });
                     return { p, v, b, m, ent };
-                }).filter(data => data.p.equipo_id !== null || data.v > 0 || data.b > 0).map(data => {
+                }).filter(data => (data.p.equipo_id !== null || data.v > 0 || data.b > 0) && !data.p.nombre.includes('(BAJA)')).map(data => {
                     let { p, v, b, m, ent } = data;
                     const neta = v - b;
                     

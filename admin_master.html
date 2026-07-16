@@ -537,10 +537,17 @@
             
             if (!confirm(`⚠️ ATENCIÓN: Esta acción va a resetear la meta de TODOS los vendedores a ${metaBase} ventas. \n¿Estás seguro de que querés iniciar los objetivos para esta nueva campaña?`)) return;
 
-            // Update all perfiles
-            const { error } = await clienteSupabase.from('perfiles').update({ 
+            // Update perfiles activos a la metaBase
+            const { error: err1 } = await clienteSupabase.from('perfiles').update({ 
                 objetivo_campana: parseInt(metaBase)
-            }).neq('id', '00000000-0000-0000-0000-000000000000'); // Dummy condition to update all
+            }).not('nombre', 'ilike', '%(BAJA)%');
+            
+            // Update perfiles BAJA a 0
+            const { error: err2 } = await clienteSupabase.from('perfiles').update({ 
+                objetivo_campana: 0
+            }).ilike('nombre', '%(BAJA)%');
+
+            const error = err1 || err2;
 
             if (error) {
                 alert("Error al reiniciar objetivos: " + error.message);
