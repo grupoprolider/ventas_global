@@ -549,6 +549,23 @@
 
             const error = err1 || err2;
 
+            if (!error) {
+                // Determinar campaña actual
+                const hoy = new Date();
+                const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+                let mIndex = hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth();
+                let y = hoy.getFullYear();
+                if (mIndex > 11) { mIndex = 0; y++; }
+                const campanaActual = `Campaña ${meses[mIndex]} ${y}`;
+
+                // Guardar en el historial
+                const { data: perfiles } = await clienteSupabase.from('perfiles').select('id, objetivo_campana');
+                if (perfiles) {
+                    const historial = perfiles.map(p => ({ vendedor_id: p.id, campana: campanaActual, objetivo_ventas: p.objetivo_campana || 0 }));
+                    await clienteSupabase.from('historial_objetivos').upsert(historial, { onConflict: 'vendedor_id,campana' });
+                }
+            }
+
             if (error) {
                 alert("Error al reiniciar objetivos: " + error.message);
                 return;

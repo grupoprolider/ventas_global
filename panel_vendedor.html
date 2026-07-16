@@ -734,6 +734,16 @@
 
             const { error } = await clienteSupabase.from('perfiles').update({ objetivo_campana: vts, objetivo_monto: monto }).eq('id', vendedorActual.id);
 
+            if (!error) {
+                const hoy = new Date();
+                const campanaStr = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
+                await clienteSupabase.from('historial_objetivos').upsert({
+                    vendedor_id: vendedorActual.id,
+                    campana: campanaStr,
+                    objetivo_ventas: vts
+                }, { onConflict: 'vendedor_id,campana' });
+            }
+
             if (error) {
                 alert("Error al guardar la meta: " + error.message);
             } else {

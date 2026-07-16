@@ -945,11 +945,20 @@
                     return allData;
                 }
 
-                const [perfiles, equipos, agencias] = await Promise.all([
+                const [perfiles, equipos, agencias, reqHistorial] = await Promise.all([
                     fetchAll('perfiles'),
                     fetchAll('equipos'),
-                    fetchAll('agencias')
+                    fetchAll('agencias'),
+                    clienteSupabase.from('historial_objetivos').select('*').eq('campana', campanaStr)
                 ]);
+
+                // Integrar historial de objetivos si existe para esta campaña
+                if (reqHistorial.data) {
+                    perfiles.forEach(p => {
+                        let h = reqHistorial.data.find(x => x.vendedor_id === p.id);
+                        if (h) p.objetivo_campana = h.objetivo_ventas;
+                    });
+                }
 
                 const ventas = ventasPaginadas;
                 globalVentasGerencia = ventas;

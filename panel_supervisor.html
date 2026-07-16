@@ -674,6 +674,15 @@
                 if (idsEquipos.length > 0) {
                     const { data: integrantes, error: errIntegrantes } = await clienteSupabase.from('perfiles').select('*').in('equipo_id', idsEquipos);
                     if (errIntegrantes) throw errIntegrantes;
+
+                    const { data: historialObj } = await clienteSupabase.from('historial_objetivos').select('*').eq('campana', campanaStr).in('vendedor_id', integrantes.map(i => i.id));
+                    if (historialObj) {
+                        integrantes.forEach(p => {
+                            let h = historialObj.find(x => x.vendedor_id === p.id);
+                            if (h) p.objetivo_campana = h.objetivo_ventas;
+                        });
+                    }
+
                     globalIntegrantes = integrantes || [];
                 }
 
