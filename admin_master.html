@@ -540,7 +540,7 @@
             // Update all perfiles
             const { error } = await clienteSupabase.from('perfiles').update({ 
                 objetivo_campana: parseInt(metaBase)
-            }).neq('id', 'dummy'); // Dummy condition to update all
+            }).neq('id', '00000000-0000-0000-0000-000000000000'); // Dummy condition to update all
 
             if (error) {
                 alert("Error al reiniciar objetivos: " + error.message);
