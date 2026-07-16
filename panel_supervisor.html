@@ -373,8 +373,13 @@
             </select>
         </div>
 
+        <div style="margin-bottom: 20px;">
+            <select id="selectCampana" onchange="cambiarCampana()" style="padding: 12px; font-size: 14px; font-weight: bold; border-radius: 8px; width: 100%; box-sizing: border-box; outline: none; border: 1px solid #ccc;">
+            </select>
+        </div>
+
         <div class="card-metricas">
-            <h3><i class="fa-solid fa-chart-pie"></i> Rendimiento Global Agencia - Campaña Actual</h3>
+            <h3><i class="fa-solid fa-chart-pie"></i> Rendimiento Global Agencia</h3>
             <div class="metricas-grid">
                 <div class="metrica-box">
                     <span>Ventas Brutas</span>
@@ -588,6 +593,26 @@
             }
         }
 
+        let campanaGlobal = '';
+        const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+
+        function generarListaCampanas() {
+            const hoy = new Date();
+            let lista = [];
+            let mIndex = hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth();
+            let y = hoy.getFullYear();
+            if (mIndex > 11) { mIndex = 0; y++; }
+            if (mIndex < 0) { mIndex = 11; y--; }
+
+            for (let i = 0; i < 6; i++) {
+                let tempM = mIndex - i;
+                let tempY = y;
+                if (tempM < 0) { tempM += 12; tempY--; }
+                lista.push(`Campaña ${meses[tempM]} ${tempY}`);
+            }
+            return lista;
+        }
+
         async function init() {
             const urlParams = new URLSearchParams(window.location.search);
             idSeguroURL = urlParams.get('id');
@@ -598,7 +623,18 @@
                 return;
             }
 
-            cargarDatosSupervisor(idSeguroURL);
+            let lista = generarListaCampanas();
+            let select = document.getElementById('selectCampana');
+            select.innerHTML = lista.map((c, i) => `<option value="${c}">${c} ${i === 0 ? '(Actual)' : ''}</option>`).join('');
+            
+            campanaGlobal = lista[0];
+
+            cargarDatosSupervisor(idSeguroURL, campanaGlobal);
+        }
+
+        function cambiarCampana() {
+            campanaGlobal = document.getElementById('selectCampana').value;
+            cargarDatosSupervisor(idSeguroURL, campanaGlobal);
         }
 
         let globalAgencias = [];
@@ -607,7 +643,7 @@
         let globalVentas = [];
         let globalNetasEmpresa = 0;
 
-        async function cargarDatosSupervisor(idSupervisor) {
+        async function cargarDatosSupervisor(idSupervisor, campanaStr) {
             try {
                 // 1. Buscar perfil del supervisor
                 const { data: perfilSupervisor, error: errPerfil } = await clienteSupabase.from('perfiles').select('*').eq('id', idSupervisor).single();
@@ -642,8 +678,6 @@
                 }
 
                 // 5. Obtener ventas de toda la empresa (para incidencia)
-                const hoy = new Date();
-                const campanaStr = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
                 
                 let todasVentas = [];
                 let step = 1000, fromRow = 0;

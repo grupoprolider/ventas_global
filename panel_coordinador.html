@@ -373,8 +373,13 @@
             </select>
         </div>
 
+        <div style="margin-bottom: 20px;">
+            <select id="selectCampana" onchange="cambiarCampana()" style="padding: 12px; font-size: 14px; font-weight: bold; border-radius: 8px; width: 100%; box-sizing: border-box; outline: none; border: 1px solid #ccc;">
+            </select>
+        </div>
+
         <div class="card-metricas">
-            <h3><i class="fa-solid fa-chart-pie"></i> Rendimiento Global Equipos Asignados - Campaña Actual</h3>
+            <h3><i class="fa-solid fa-chart-pie"></i> Rendimiento Global Equipos Asignados</h3>
             <div class="metricas-grid">
                 <div class="metrica-box">
                     <span>Ventas del Área</span>
@@ -523,6 +528,26 @@
             }
         }
 
+        let campanaGlobal = '';
+        const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+
+        function generarListaCampanas() {
+            const hoy = new Date();
+            let lista = [];
+            let mIndex = hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth();
+            let y = hoy.getFullYear();
+            if (mIndex > 11) { mIndex = 0; y++; }
+            if (mIndex < 0) { mIndex = 11; y--; }
+
+            for (let i = 0; i < 6; i++) {
+                let tempM = mIndex - i;
+                let tempY = y;
+                if (tempM < 0) { tempM += 12; tempY--; }
+                lista.push(`Campaña ${meses[tempM]} ${tempY}`);
+            }
+            return lista;
+        }
+
         async function init() {
             const urlParams = new URLSearchParams(window.location.search);
             idSeguroURL = urlParams.get('id');
@@ -533,14 +558,25 @@
                 return;
             }
 
-            cargarDatosCoordinador(idSeguroURL);
+            let lista = generarListaCampanas();
+            let select = document.getElementById('selectCampana');
+            select.innerHTML = lista.map((c, i) => `<option value="${c}">${c} ${i === 0 ? '(Actual)' : ''}</option>`).join('');
+            
+            campanaGlobal = lista[0];
+
+            cargarDatosCoordinador(idSeguroURL, campanaGlobal);
+        }
+
+        function cambiarCampana() {
+            campanaGlobal = document.getElementById('selectCampana').value;
+            cargarDatosCoordinador(idSeguroURL, campanaGlobal);
         }
 
         let globalEquipos = [];
         let globalIntegrantes = [];
         let globalVentas = [];
 
-        async function cargarDatosCoordinador(idCoordinador) {
+        async function cargarDatosCoordinador(idCoordinador, campanaStr) {
             try {
                 // 1. Buscar perfil
                 const { data: perfil, error: errPerfil } = await clienteSupabase.from('perfiles').select('*').eq('id', idCoordinador).single();
@@ -567,8 +603,6 @@
                 globalIntegrantes = integrantes || [];
 
                 // 4. Obtener ventas
-                const hoy = new Date();
-                const campanaStr = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
                 
                 const idsIntegrantes = globalIntegrantes.map(i => i.id);
                 if(idsIntegrantes.length > 0) {

@@ -350,12 +350,21 @@
 
         <div id="tab3" class="tab-content">
             <div class="card-admin">
-                <h3>Objetivos de Campaña</h3>
+                <h3>Objetivos de Campaña (Individual)</h3>
                 <div class="form-row">
                     <div><label>Vendedor/a</label><select id="obj_vendedor"></select></div>
                     <div><label>Meta Ventas</label><input type="number" id="obj_vts"></div>
                     <div style="display:none;"><label>Meta Importe ($)</label><input type="number" id="obj_monto"></div>
                     <button class="btn-save" onclick="guardarMetas()">Actualizar</button>
+                </div>
+            </div>
+            
+            <div class="card-admin" style="margin-top: 20px; border-left: 5px solid #e74c3c;">
+                <h3><i class="fa-solid fa-rotate"></i> Reinicio Masivo de Objetivos (Nueva Campaña)</h3>
+                <p style="font-size: 13px; color: #555;">Utilizá esta opción al inicio de una nueva campaña para resetear los objetivos de <b>todos los asesores</b> al valor por defecto.</p>
+                <div class="form-row" style="align-items: flex-end;">
+                    <div><label>Meta por Defecto (Ventas)</label><input type="number" id="obj_default_vts" value="18" style="width: 150px; font-weight: bold; font-size: 16px; text-align: center;"></div>
+                    <button class="btn-save" style="background-color: #e74c3c;" onclick="reiniciarObjetivosMasivos()">Reiniciar Todos los Objetivos</button>
                 </div>
             </div>
         </div>
@@ -520,6 +529,26 @@
                     <td><button class="btn-edit" onclick="renombrar('equipos', '${e.id}', '${e.nombre}')">Renombrar</button><button class="btn-del" onclick="borrar('equipos', '${e.id}')">Eliminar</button></td>
                 </tr>
             `).join('');
+        }
+
+        async function reiniciarObjetivosMasivos() {
+            let metaBase = document.getElementById('obj_default_vts').value;
+            if (!metaBase || isNaN(metaBase) || metaBase <= 0) return alert("Por favor ingresá un valor de meta válido.");
+            
+            if (!confirm(`⚠️ ATENCIÓN: Esta acción va a resetear la meta de TODOS los vendedores a ${metaBase} ventas. \n¿Estás seguro de que querés iniciar los objetivos para esta nueva campaña?`)) return;
+
+            // Update all perfiles
+            const { error } = await clienteSupabase.from('perfiles').update({ 
+                objetivo_campana: parseInt(metaBase)
+            }).neq('id', 'dummy'); // Dummy condition to update all
+
+            if (error) {
+                alert("Error al reiniciar objetivos: " + error.message);
+                return;
+            }
+            
+            alert(`¡Éxito! Los objetivos de todos los asesores se han reiniciado a ${metaBase}.`);
+            refrescarDatos();
         }
 
         async function crearEquipo() {
