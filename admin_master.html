@@ -240,7 +240,8 @@
         <li onclick="cambiarTab(1)"><i class="fa-solid fa-users-gear"></i> Equipos</li>
         <li onclick="cambiarTab(2)"><i class="fa-solid fa-user-tie"></i> Personal</li>
         <li onclick="cambiarTab(3)"><i class="fa-solid fa-bullseye"></i> Metas</li>
-        <li onclick="cambiarTab(4)"><i class="fa-solid fa-list-check"></i> Auditoría</li>
+        <li onclick="cambiarTab(4)"><i class="fa-solid fa-list-check"></i> Auditoría Ventas</li>
+        
         <li onclick="cambiarTab(5)"><i class="fa-solid fa-sliders"></i> Opciones</li>
         <li onclick="window.open('ranking_tv.html', '_blank')" style="border-left: 2px solid var(--gpl-dorado);"><i class="fa-solid fa-tv"></i> Transmitir en TV</li>
         <li onclick="window.location.href='index.html'" style="background: #e74c3c; color: white;"><i class="fa-solid fa-right-from-bracket"></i> Salir</li>
@@ -407,8 +408,18 @@
             </div>
         </div>
 
+        
+
         <div id="tab5" class="tab-content">
-            <div class="card-admin" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+            <div class="card-admin" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;">
+                <div>
+                    <h3>Estados de Entrevista</h3>
+                    <div class="form-row">
+                        <div><input type="text" id="opt_est" placeholder="Ej: Entrevista OK"></div>
+                        <button class="btn-add" onclick="addOpt('opciones_estados_entrevista', 'opt_est')">Añadir</button>
+                    </div>
+                    <ul id="lista_est" style="list-style:none; padding:0;"></ul>
+                </div>
                 <div>
                     <h3>Beneficios / Ocupación</h3>
                     <div class="form-row">
@@ -490,11 +501,9 @@
 
                 globalGenteAudit = listaGente;
                 
-                // Poblar filtro de vendedores en auditoría
+                // Poblar filtro de vendedores en auditorías
                 let selectVendedor = document.getElementById('filtro_vendedor_audit');
-                let vendedorSel = selectVendedor.value;
-                selectVendedor.innerHTML = '<option value="">Todos los vendedores</option>' + listaGente.sort((a, b) => a.nombre.localeCompare(b.nombre)).map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
-                selectVendedor.value = vendedorSel;
+                
 
                 cargarAuditoria();
                 cargarOpciones();
@@ -688,8 +697,20 @@
             const vts = parseInt(document.getElementById('obj_vts').value) || 0;
             const monto = vts * 65000;
             if (!id) return alert("Seleccioná un vendedor");
+            
             const { error } = await clienteSupabase.from('perfiles').update({ objetivo_campana: vts, objetivo_monto: monto }).eq('id', id);
-            if (error) alert("Error: " + error.message); else alert("¡Metas guardadas!");
+            if (error) return alert("Error: " + error.message);
+            
+            const hoy = new Date();
+            const campanaActual = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
+            
+            await clienteSupabase.from('historial_objetivos').upsert({
+                vendedor_id: id,
+                campana: campanaActual,
+                objetivo_ventas: vts
+            }, { onConflict: 'vendedor_id,campana' });
+            
+            alert("¡Metas guardadas e impactadas en la campaña actual!");
         }
 
         let globalGenteAudit = [];
@@ -862,17 +883,25 @@
 
             const { data: fers } = await clienteSupabase.from('opciones_feriados').select('*').order('nombre');
             if (fers) document.getElementById('lista_fer').innerHTML = fers.map(b => `<li style="padding:8px; border-bottom:1px solid #333; display:flex; justify-content:space-between;">${b.nombre} <button class="btn-del" onclick="borrarOpt('opciones_feriados', '${b.id}')">X</button></li>`).join('');
+
+            const { data: ests } = await clienteSupabase.from('opciones_estados_entrevista').select('*').order('nombre');
+            if (ests) document.getElementById('lista_est').innerHTML = ests.map(b => `<li style="padding:8px; border-bottom:1px solid #333; display:flex; justify-content:space-between;">${b.nombre} <button class="btn-del" onclick="borrarOpt('opciones_estados_entrevista', '${b.id}')">X</button></li>`).join('');
+            
+            
         }
 
         async function addOpt(tabla, inputId) {
             const val = document.getElementById(inputId).value;
             if (!val) return;
-            await clienteSupabase.from(tabla).insert([{ nombre: val }]);
+            const { error } = await clienteSupabase.from(tabla).insert([{ nombre: val }]);
+            if (error) alert("Error al añadir opción: " + error.message);
             document.getElementById(inputId).value = ''; cargarOpciones();
         }
 
         async function borrarOpt(tabla, id) {
-            await clienteSupabase.from(tabla).delete().eq('id', id); cargarOpciones();
+            const { error } = await clienteSupabase.from(tabla).delete().eq('id', id); 
+            if (error) alert("Error al borrar opción: " + error.message);
+            cargarOpciones();
         }
 
         refrescarDatos();

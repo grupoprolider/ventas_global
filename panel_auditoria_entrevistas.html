@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auditoría de Entrevistas | ProLider</title>
+    <link rel="apple-touch-icon" href="LOGO-gpl.png">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gpl-dorado: #c49c48;
+            --gpl-petroleo: #0a3a46;
+            --gpl-petroleo-claro: #14596b;
+            --bg-color: #f4f6f9;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: var(--bg-color);
+            color: #333;
+        }
+
+        header {
+            background: white;
+            color: var(--gpl-petroleo);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        header img {
+            height: 40px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--gpl-dorado);
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        h3 {
+            margin-top: 0;
+            color: var(--gpl-petroleo);
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .filtros-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .filtro-item {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filtro-item label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            font-size: 13px;
+            color: #555;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-family: 'Poppins', sans-serif;
+            box-sizing: border-box;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+
+        .btn:hover {
+            transform: scale(1.02);
+            opacity: 0.9;
+        }
+
+        .btn-filtrar {
+            background: var(--gpl-petroleo);
+            color: white;
+        }
+
+        .btn-excel {
+            background: #27ae60;
+            color: white;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        th {
+            background: var(--gpl-petroleo);
+            color: var(--gpl-dorado);
+            padding: 12px;
+            text-align: left;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        tr:hover {
+            background: #f9f9f9;
+        }
+
+        .estado-select {
+            padding: 5px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .btn-delete {
+            background: #c0392b;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+            color: #888;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-left">
+            <img src="LOGO-gpl.png" alt="GPL">
+            <h1>Auditoría de Entrevistas (Prospectos)</h1>
+        </div>
+        <button class="btn" style="background:#e74c3c; color:white;" onclick="window.location.href='index.html'">Volver al Inicio</button>
+    </header>
+
+    <div class="container">
+        <div class="card">
+            <h3>Gestión y Seguimiento de Leads</h3>
+            <div class="filtros-container">
+                <div class="filtro-item">
+                    <label>Vendedor</label>
+                    <select id="filtro_vend">
+                        <option value="">Cargando vendedores...</option>
+                    </select>
+                </div>
+                <div class="filtro-item">
+                    <label>Campaña</label>
+                    <select id="filtro_camp">
+                        <option value="TODAS">Todas</option>
+                    </select>
+                </div>
+                <div class="filtro-item">
+                    <label>Estado</label>
+                    <select id="filtro_est">
+                        <option value="TODOS">Todos los Estados</option>
+                    </select>
+                </div>
+                <div>
+                    <button class="btn btn-filtrar" onclick="cargarAuditoriaEntrevistas()"><i class="fa-solid fa-search"></i> Buscar</button>
+                </div>
+                <div>
+                    <button class="btn btn-excel" onclick="descargarExcel()"><i class="fa-solid fa-file-excel"></i> Exportar</button>
+                </div>
+            </div>
+
+            <div style="overflow-x: auto;">
+                <table id="tabla_auditoria">
+                    <thead>
+                        <tr>
+                            <th>Fecha Carga</th>
+                            <th>Campaña</th>
+                            <th>Vendedor</th>
+                            <th>Prospecto</th>
+                            <th>DNI</th>
+                            <th>Teléfono</th>
+                            <th>Estado Actual</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td colspan="8" class="empty-state">Utilizá los filtros y presioná Buscar.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const clienteSupabase = supabase.createClient('https://pumpwqyazqaxeeknrhyo.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1bXB3cXlhenFheGVla25yaHlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MjQ4ODEsImV4cCI6MjA5NDIwMDg4MX0.-AQZZYAt-uskDLUpbiafJXbHgW0lErf8bwEnk7eq1DE');
+        
+        let globalEstados = [];
+        window.datosExcel = [];
+
+        async function init() {
+            // Cargar Vendedores
+            const { data: perfiles } = await clienteSupabase.from('perfiles').select('id, nombre').order('nombre');
+            if(perfiles) {
+                document.getElementById('filtro_vend').innerHTML = '<option value="">Todos los vendedores</option>' + perfiles.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+            }
+            
+            // Cargar Campañas de la BD (solo las usadas)
+            const { data: cData } = await clienteSupabase.from('registro_entrevistas').select('campana');
+            if(cData) {
+                const unicas = [...new Set(cData.map(c => c.campana))];
+                document.getElementById('filtro_camp').innerHTML = '<option value="TODAS">Todas</option>' + unicas.map(c => `<option value="${c}">${c}</option>`).join('');
+                
+                // Set default to current campaign
+                const hoy = new Date();
+                const campanaActual = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
+                if(unicas.includes(campanaActual)) document.getElementById('filtro_camp').value = campanaActual;
+            }
+            
+            // Cargar Estados
+            const { data: estados } = await clienteSupabase.from('opciones_estados_entrevista').select('nombre').order('nombre');
+            if(estados) {
+                globalEstados = estados.map(e => e.nombre);
+                document.getElementById('filtro_est').innerHTML = '<option value="TODOS">Todos los Estados</option>' + globalEstados.map(e => `<option value="${e}">${e}</option>`).join('');
+            }
+        }
+
+        async function cargarAuditoriaEntrevistas() {
+            const btn = document.querySelector('.btn-filtrar');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            
+            const vId = document.getElementById('filtro_vend').value;
+            const cStr = document.getElementById('filtro_camp').value;
+            const eStr = document.getElementById('filtro_est').value;
+            
+            let query = clienteSupabase.from('registro_entrevistas').select('*, perfiles(nombre)');
+            if(vId) query = query.eq('vendedor_id', vId);
+            if(cStr !== 'TODAS') query = query.eq('campana', cStr);
+            if(eStr !== 'TODOS') query = query.eq('estado', eStr);
+            
+            query = query.order('created_at', { ascending: false }).limit(500); // 500 max display
+            
+            const { data, error } = await query;
+            btn.innerHTML = '<i class="fa-solid fa-search"></i> Buscar';
+            
+            if(error) return alert("Error: " + error.message);
+            
+            window.datosExcel = data;
+            
+            const tbody = document.querySelector('#tabla_auditoria tbody');
+            if(!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No se encontraron resultados.</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = data.map(v => {
+                let fecha = new Date(v.created_at).toLocaleString('es-AR');
+                let colorEstado = v.estado.toLowerCase().includes('ok') ? '#27ae60' : (v.estado.toLowerCase().includes('sin') ? '#e74c3c' : '#34495e');
+                
+                let selectHtml = `<select class="estado-select" style="border:1px solid ${colorEstado}; color:${colorEstado};" onchange="updateEstado('${v.id}', this)">`;
+                
+                // Add current state if not in options
+                let opts = [...globalEstados];
+                if(!opts.includes(v.estado)) opts.push(v.estado);
+                
+                selectHtml += opts.map(e => `<option value="${e}" ${v.estado === e ? 'selected' : ''}>${e}</option>`).join('');
+                selectHtml += `</select>`;
+                
+                return `<tr>
+                    <td style="color:#777;">${fecha}</td>
+                    <td>${v.campana}</td>
+                    <td><b>${v.perfiles ? v.perfiles.nombre : 'S/N'}</b></td>
+                    <td style="color:var(--gpl-petroleo); font-weight:600;">${v.nombre_apellido}</td>
+                    <td>${v.dni || '-'}</td>
+                    <td><a href="https://wa.me/${v.telefono}" target="_blank" style="color:#2980b9; text-decoration:none;"><i class="fa-brands fa-whatsapp"></i> ${v.telefono}</a></td>
+                    <td>${selectHtml}</td>
+                    <td><button class="btn-delete" onclick="eliminarProspecto('${v.id}')"><i class="fa-solid fa-trash"></i></button></td>
+                </tr>`;
+            }).join('');
+        }
+
+        async function updateEstado(id, selectElement) {
+            let nuevo = selectElement.value;
+            let colorEstado = nuevo.toLowerCase().includes('ok') ? '#27ae60' : (nuevo.toLowerCase().includes('sin') ? '#e74c3c' : '#34495e');
+            selectElement.style.borderColor = colorEstado;
+            selectElement.style.color = colorEstado;
+            
+            const { error } = await clienteSupabase.from('registro_entrevistas').update({ estado: nuevo }).eq('id', id);
+            if(error) alert("Error al guardar en base de datos: " + error.message);
+        }
+
+        async function eliminarProspecto(id) {
+            if(!confirm("⚠️ ¿Estás seguro de que querés borrar permanentemente este prospecto? No se puede deshacer.")) return;
+            const { error } = await clienteSupabase.from('registro_entrevistas').delete().eq('id', id);
+            if(error) alert("Error: " + error.message);
+            else cargarAuditoriaEntrevistas();
+        }
+
+        function descargarExcel() {
+            if(!window.datosExcel || window.datosExcel.length === 0) return alert("Hacé una búsqueda primero antes de exportar.");
+            let hoja = window.datosExcel.map(v => ({
+                "Fecha Ingreso": new Date(v.created_at).toLocaleString('es-AR'),
+                "Campaña": v.campana,
+                "Vendedor": v.perfiles ? v.perfiles.nombre : 'Desconocido',
+                "Prospecto": v.nombre_apellido,
+                "DNI": v.dni || '-',
+                "Teléfono": v.telefono,
+                "Estado CRM": v.estado
+            }));
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(hoja), "Auditoria");
+            XLSX.writeFile(wb, `Auditoria_Prospectos_${new Date().toISOString().split('T')[0]}.xlsx`);
+        }
+
+        init();
+    </script>
+</body>
+</html>

@@ -1116,6 +1116,35 @@
                     }
                 });
 
+                // Sumar Entrevistas desde la nueva tabla de prospectos (Retrocompatibilidad CRM)
+                let entrevistasRow = [];
+                step = 1000; fromRow = 0;
+                while (true) {
+                    const { data } = await clienteSupabase.from('registro_entrevistas').select('vendedor_id, campana').eq('campana', campanaStr).range(fromRow, fromRow + step - 1);
+                    if (!data || data.length === 0) break;
+                    entrevistasRow = entrevistasRow.concat(data);
+                    if (data.length < step) break;
+                    fromRow += step;
+                }
+                
+                entrevistasRow.forEach(ent => {
+                    let vendedor = perfiles.find(p => p.id === ent.vendedor_id);
+                    if (vendedor) {
+                        let eq = equipos.find(e => e.id === vendedor.equipo_id);
+                        if (eq && mapAgenciasData[eq.agencia_id]) {
+                            mapAgenciasData[eq.agencia_id].entrevistas += 1;
+                            
+                            if(mapAgenciasData[eq.agencia_id].equipos[eq.id]) {
+                                mapAgenciasData[eq.agencia_id].equipos[eq.id].entrevistas += 1;
+                                
+                                if(mapAgenciasData[eq.agencia_id].equipos[eq.id].vendedores[vendedor.id]) {
+                                    mapAgenciasData[eq.agencia_id].equipos[eq.id].vendedores[vendedor.id].entrevistas += 1;
+                                }
+                            }
+                        }
+                    }
+                });
+
                 // 4.1. Calcular días hábiles antes del desglose para usar proyecciones
                 const dias = await getDiasHabiles(campanaStr);
                 document.getElementById('kpiDias').textContent = dias.restantes;
@@ -1269,8 +1298,8 @@
                     "Bajas Registradas": v.bajas || 0, 
                     "Ventas Netas": (v.ventas_cerradas || 0) - (v.bajas || 0),
                     "Beneficio / Ocupación Cliente": v.beneficio || "No Especificado", 
-                    "Banco / Medio de Pago": v.medio_pago || "No Especificado", 
-                    "Monto de Operación ($)": v.monto || 0 
+                    "Banco / Medio de Pago": v.medio_pago || "No Especificado",
+                    "Monto de Operación ($)": v.monto || 0
                 };
             });
 
