@@ -25,6 +25,32 @@
             color: #333;
         }
 
+        #login-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 58, 70, 0.95);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 99999;
+        }
+        .login-box {
+            background: white; padding: 40px; border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center;
+            max-width: 400px; width: 90%;
+        }
+        .login-box img { height: 60px; margin-bottom: 20px; }
+        .login-box h2 { color: var(--gpl-petroleo); margin-top: 0; }
+        .login-box input {
+            width: 100%; padding: 12px; border: 1px solid #ccc;
+            border-radius: 6px; margin-bottom: 20px; font-size: 16px;
+            box-sizing: border-box; text-align: center;
+        }
+        .login-box button {
+            background: var(--gpl-dorado); color: white; border: none;
+            padding: 12px 24px; font-size: 16px; font-weight: bold;
+            border-radius: 6px; cursor: pointer; width: 100%;
+        }
+        .login-box button:hover { background: #a67c33; }
+        .error-msg { color: #e74c3c; font-size: 14px; margin-bottom: 15px; display: none; }
+
         header {
             background: white;
             color: var(--gpl-petroleo);
@@ -182,6 +208,16 @@
     </style>
 </head>
 <body>
+    <div id="login-overlay">
+        <div class="login-box">
+            <img src="LOGO-gpl.png" alt="ProLider Logo">
+            <h2>Acceso Restringido</h2>
+            <p>Ingrese la contraseña de auditoría</p>
+            <input type="password" id="passInput" placeholder="Contraseña..." onkeyup="if(event.key === 'Enter') checkPass()">
+            <div id="loginError" class="error-msg">Contraseña incorrecta</div>
+            <button onclick="checkPass()">Ingresar</button>
+        </div>
+    </div>
 
     <header>
         <div class="header-left">
@@ -363,7 +399,16 @@
             XLSX.writeFile(wb, `Auditoria_Prospectos_${new Date().toISOString().split('T')[0]}.xlsx`);
         }
 
-        init();
+        function checkPass() {
+            if (document.getElementById('passInput').value === 'gpl3423') {
+                document.getElementById('login-overlay').style.display = 'none';
+                init();
+            } else {
+                document.getElementById('loginError').style.display = 'block';
+            }
+        }
+
+        // init(); // Se llama después de poner la clave
     </script>
 </body>
 </html>
