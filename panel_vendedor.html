@@ -452,11 +452,12 @@
                 </div>
                 
                 
-                <h3 style="margin-top: 25px; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">Cargar Prospectos (Detalle)</h3>
+                <h3 style="margin-top: 25px; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; color: #1e646e;">Cargar <span style="color: #27ae60;">Entrevista</span></h3>
                 <div id="contenedorProspectos"></div>
                 <button type="button" onclick="agregarProspecto()" style="background: #eef2f5; color: #333; border: 1px solid #ccc; width: 100%; margin-bottom: 15px; border-radius: 6px; padding: 10px; cursor: pointer; font-weight: bold;">+ Agregar un Prospecto</button>
+                <button type="button" class="btn-enviar" onclick="enviarEntrevistas()" style="width: 100%; margin-bottom: 30px;">SUBIR ENTREVISTA</button>
                 
-                <h3 style="margin-top: 25px; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">Cargar Venta/s</h3>
+                <h3 style="margin-top: 25px; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; color: #1e646e;">Cargar Venta/s</h3>
                 <div id="contenedorVentas">
                     <div class="venta-item" style="background: #f9f9f9; padding: 15px; border-radius: 10px; border: 1px solid #eee; margin-bottom: 15px; position: relative;">
                         <div style="margin-bottom: 10px;">
@@ -476,7 +477,7 @@
 
                 <button type="button" onclick="agregarVenta()" style="background: #eee; color: #333; border: 1px dashed #ccc; padding: 10px; width: 100%; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 15px;">+ Agregar otra venta</button>
 
-                <button type="button" class="btn-enviar" onclick="enviarProduccion()" style="width: 100%;">Subir Mis Números</button>
+                <button type="button" class="btn-enviar" onclick="enviarProduccion()" style="width: 100%;">CARGAR MI VENTA</button>
             </form>
         </div>
 
@@ -804,8 +805,8 @@
             }
         }
 
-        async function enviarProduccion() {
-            const btn = document.querySelector('button[onclick="enviarProduccion()"]');
+        async function enviarEntrevistas() {
+            const btn = document.querySelector('button[onclick="enviarEntrevistas()"]');
             const oldText = btn.innerHTML;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
             btn.style.pointerEvents = 'none';
@@ -819,7 +820,7 @@
                 const estado = item.querySelector('.inputProspectoEstado').value;
                 
                 if (nombre === "" && dni === "" && telefono === "" && estado === "") {
-                    continue; // Skip if completely empty (default block)
+                    continue; 
                 }
 
                 if (!nombre || !telefono || !estado) {
@@ -843,7 +844,52 @@
                 });
             }
 
-            const ent = arrayProspectos.length;
+            if (arrayProspectos.length === 0) {
+                alert("No hay ninguna entrevista completada para subir.");
+                btn.innerHTML = oldText; btn.style.pointerEvents = 'auto'; return;
+            }
+
+            const { error: errP } = await clienteSupabase.from('registro_entrevistas').insert(arrayProspectos);
+            if (errP) {
+                alert("Error al guardar entrevistas: " + errP.message);
+                btn.innerHTML = oldText; btn.style.pointerEvents = 'auto'; return;
+            }
+
+            // Dummy sale para sumar entrevistas al ranking
+            const esRetro = document.getElementById('checkRetroactivo') && document.getElementById('checkRetroactivo').checked;
+            const hoy = new Date();
+            if (esRetro) hoy.setDate(hoy.getDate() - 1);
+            const campanaStr = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
+            
+            await clienteSupabase.from('registro_ventas').insert([{
+                vendedor_id: vendedorActual.id,
+                ventas_cerradas: 0,
+                entrevistas: arrayProspectos.length,
+                monto: 0,
+                semana: document.getElementById('inputSemana') ? document.getElementById('inputSemana').value : '1',
+                campana: campanaStr,
+                beneficio: 'Ninguno (Solo Entrevistas)',
+                medio_pago: 'No Aplica'
+            }]);
+
+            btn.innerHTML = oldText; btn.style.pointerEvents = 'auto';
+            alert("¡Entrevistas guardadas con éxito!");
+            
+            document.getElementById('contenedorProspectos').innerHTML = '';
+            agregarProspecto();
+            
+            cargarDatosVendedor(idSeguroURL);
+            if (confirm("¡Carga exitosa! Tus números se actualizaron. ¿Querés ver cómo quedaste en el Ranking ahora mismo?")) {
+                abrirRanking();
+            }
+        }
+
+        async function enviarProduccion() {
+            const btn = document.querySelector('button[onclick="enviarProduccion()"]');
+            const oldText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+            btn.style.pointerEvents = 'none';
+
             const sem = document.getElementById('inputSemana') ? document.getElementById('inputSemana').value : '1';
             const ventasElements = document.querySelectorAll('.venta-item');
             let arrayVentas = [];
@@ -853,12 +899,9 @@
                 let banco = v.querySelector('.inputBanco').value;
                 let monto = parseFloat(v.querySelector('.inputMonto').value) || 0;
                 
-                if (ventasElements.length === 1 && beneficio === "" && banco === "" && monto === 0 && ent === 0) {
-                    if (arrayProspectos.length === 0) {
-                        alert("Debe cargar al menos una venta, prospecto o registrar sus entrevistas.");
-                        btn.innerHTML = oldText; btn.style.pointerEvents = 'auto'; return;
-                    }
-                    continue;
+                if (ventasElements.length === 1 && beneficio === "" && banco === "" && monto === 0) {
+                    alert("Debe completar los datos de la venta para subirla.");
+                    btn.innerHTML = oldText; btn.style.pointerEvents = 'auto'; return;
                 }
                 
                 if (beneficio === "" || banco === "") {
@@ -874,32 +917,13 @@
                 arrayVentas.push({
                     vendedor_id: vendedorActual.id,
                     ventas_cerradas: 1,
-                    entrevistas: arrayVentas.length === 0 ? ent : 0,
+                    entrevistas: 0,
                     monto: monto,
                     semana: sem,
                     campana: campanaStr,
                     beneficio: beneficio,
                     medio_pago: banco
                 });
-            }
-
-            if (arrayVentas.length === 0) {
-                if (ent > 0 || arrayProspectos.length > 0) {
-                    const esRetro = document.getElementById('checkRetroactivo') && document.getElementById('checkRetroactivo').checked;
-                    const hoy = new Date();
-                    if (esRetro) hoy.setDate(hoy.getDate() - 1);
-                    const campanaStr = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
-                    arrayVentas.push({
-                        vendedor_id: vendedorActual.id,
-                        ventas_cerradas: 0,
-                        entrevistas: ent,
-                        monto: 0,
-                        semana: sem,
-                        campana: campanaStr,
-                        beneficio: 'Ninguno (Solo Entrevistas)',
-                        medio_pago: 'No Aplica'
-                    });
-                }
             }
 
             if (arrayVentas.length > 0) {
@@ -909,16 +933,9 @@
                     btn.innerHTML = oldText; btn.style.pointerEvents = 'auto'; return;
                 }
             }
-            if (arrayProspectos.length > 0) {
-                const { error: errP } = await clienteSupabase.from('registro_entrevistas').insert(arrayProspectos);
-                if (errP) {
-                    alert("Error al guardar prospectos: " + errP.message);
-                    btn.innerHTML = oldText; btn.style.pointerEvents = 'auto'; return;
-                }
-            }
 
             btn.innerHTML = oldText; btn.style.pointerEvents = 'auto';
-            alert("¡Información guardada con éxito!");
+            alert("¡Venta guardada con éxito!");
             
             document.getElementById('contenedorVentas').innerHTML = `
                 <div class="venta-item" style="background: #f9f9f9; padding: 15px; border-radius: 10px; border: 1px solid #eee; margin-bottom: 15px; position: relative;">
@@ -936,8 +953,6 @@
                     </div>
                 </div>
             `;
-            document.getElementById('contenedorProspectos').innerHTML = '';
-            agregarProspecto();
             
             cargarDatosVendedor(idSeguroURL);
             if (confirm("¡Carga exitosa! Tus números se actualizaron. ¿Querés ver cómo quedaste en el Ranking ahora mismo?")) {
