@@ -580,6 +580,7 @@
             }
 
             cargarDatosVendedor(idSeguroURL);
+            agregarProspecto();
         }
 
         function agregarVenta() {
@@ -608,8 +609,9 @@
             const div = document.createElement('div');
             div.className = 'prospecto-item';
             div.style.cssText = 'background: #fdfdfd; padding: 15px; border-radius: 10px; border: 1px dashed #bbb; margin-bottom: 15px; position: relative;';
+            const btnEliminar = document.querySelectorAll('.prospecto-item').length > 0 ? `<button type="button" onclick="this.parentElement.remove()" style="position: absolute; right: 10px; top: 10px; background: none; border: none; color: #c0392b; cursor: pointer; font-weight: bold; font-size: 16px;">✖</button>` : '';
             div.innerHTML = `
-                <button type="button" onclick="this.parentElement.remove()" style="position: absolute; right: 10px; top: 10px; background: none; border: none; color: #c0392b; cursor: pointer; font-weight: bold; font-size: 16px;">✖</button>
+                ${btnEliminar}
                 <div style="margin-bottom: 5px;"><input type="text" class="inputProspectoNombre" placeholder="Nombre y Apellido"></div>
                 <div style="margin-bottom: 5px;"><input type="text" class="inputProspectoDNI" placeholder="DNI"></div>
                 <div style="margin-bottom: 5px;"><input type="text" class="inputProspectoTelefono" placeholder="Teléfono"></div>
@@ -815,6 +817,11 @@
                 const dni = item.querySelector('.inputProspectoDNI').value;
                 const telefono = item.querySelector('.inputProspectoTelefono').value;
                 const estado = item.querySelector('.inputProspectoEstado').value;
+                
+                if (nombre === "" && dni === "" && telefono === "" && estado === "") {
+                    continue; // Skip if completely empty (default block)
+                }
+
                 if (!nombre || !telefono || !estado) {
                     alert("Por favor completá Nombre, Teléfono y Estado de todos los prospectos agregados, o eliminá los que no uses.");
                     btn.innerHTML = oldText;
@@ -930,6 +937,7 @@
                 </div>
             `;
             document.getElementById('contenedorProspectos').innerHTML = '';
+            agregarProspecto();
             
             cargarDatosVendedor(idSeguroURL);
             if (confirm("¡Carga exitosa! Tus números se actualizaron. ¿Querés ver cómo quedaste en el Ranking ahora mismo?")) {
