@@ -486,9 +486,10 @@
                 document.getElementById('obj_vendedor').innerHTML = comboGente;
                 document.getElementById('eq_agencia').innerHTML = optionVacia + listaAgs.map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
 
-                // Poblar filtros de personal
+                // Poblar filtros de personal y auditoría
                 document.getElementById('filtro_agencia_personal').innerHTML = '<option value="TODAS">Todas las Agencias</option>' + listaAgs.map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
                 document.getElementById('filtro_equipo_personal').innerHTML = '<option value="TODOS">Todos los Equipos</option>' + listaEqs.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('');
+                document.getElementById('filtro_vendedor_audit').innerHTML = '<option value="">Todos los vendedores</option>' + listaGente.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
 
                 cargarAgencias(listaAgs, listaGente);
                 cargarEquipos(listaEqs, listaGente, listaAgs);
