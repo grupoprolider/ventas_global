@@ -322,10 +322,8 @@
                 
                 const rolURL = urlParams.get('rol');
                 const esVendedor = rolURL === 'vendedor';
-                const esGerenteReal = urlParams.get('mode') === 'gerente';
-                const esLiderSucursal = rolURL === 'supervisor';
                 
-                if (esGerenteReal || esLiderSucursal) {
+                if (!esVendedor) {
                     document.getElementById('selectFiltroAgenciaWrapper').style.display = 'block';
                 }
                 
