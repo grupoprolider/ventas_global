@@ -321,10 +321,15 @@
                 });
                 
                 const rolURL = urlParams.get('rol');
-                if (rolURL === 'gerente' || rolURL === 'lider_sucursal') {
+                const esVendedor = rolURL === 'vendedor';
+                const esGerenteReal = urlParams.get('mode') === 'gerente';
+                const esLiderSucursal = rolURL === 'supervisor';
+                
+                if (esGerenteReal || esLiderSucursal) {
                     document.getElementById('selectFiltroAgenciaWrapper').style.display = 'block';
                 }
-                if (rolURL !== 'vendedor') {
+                
+                if (!esVendedor) {
                     document.getElementById('btnDescargarPNG').style.display = 'flex';
                 }
 
