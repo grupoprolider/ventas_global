@@ -1315,54 +1315,24 @@
             if(!window.radarGlobalData) return alert("Los datos aún no se terminaron de procesar.");
             const campana = window.datosGlobalesExcel ? window.datosGlobalesExcel.campanaStr : 'Campaña';
             
-            let tablaHTML = `
-                <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-                <head><meta charset="utf-8"></head>
-                <body>
-                    <table border="1">
-                        <thead>
-                            <tr style="background-color: #34495e; color: white; font-weight: bold;">
-                                <th>Vendedor</th>
-                                <th>Equipo</th>
-                                <th>Agencia</th>
-                                <th>Objetivo</th>
-                                <th>Ventas Netas</th>
-                                <th>Estado</th>
-                                <th>Proyección</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
-            
-            window.radarGlobalData.forEach(v => {
+            let hojaDetalle = window.radarGlobalData.map(v => {
                 let esAtrasado = v.atraso > 0;
-                let colorFondo = esAtrasado ? '#fadbd8' : '#d5f5e3';
-                let colorTexto = esAtrasado ? '#c0392b' : '#27ae60';
-                let textoEstado = esAtrasado ? 'Atrasado' : 'Al Día';
+                let textoEstado = esAtrasado ? '🔴 Atrasado' : '🟢 Al Día';
                 
-                tablaHTML += `
-                    <tr>
-                        <td>${v.nombre}</td>
-                        <td>${v.equipo}</td>
-                        <td>${v.agencia}</td>
-                        <td>${v.objetivo}</td>
-                        <td>${v.netas}</td>
-                        <td style="background-color: ${colorFondo}; color: ${colorTexto}; font-weight: bold; text-align: center;">${textoEstado}</td>
-                        <td style="color: ${colorTexto}; font-weight: bold;">${v.proyeccionTexto}</td>
-                    </tr>
-                `;
+                return { 
+                    "Vendedor": v.nombre,
+                    "Equipo": v.equipo,
+                    "Agencia": v.agencia,
+                    "Objetivo": v.objetivo,
+                    "Ventas Netas": v.netas,
+                    "Estado (Color)": textoEstado,
+                    "Proyección": v.proyeccionTexto
+                };
             });
-            
-            tablaHTML += `</tbody></table></body></html>`;
-            
-            let blob = new Blob([tablaHTML], { type: 'application/vnd.ms-excel' });
-            let url = URL.createObjectURL(blob);
-            let a = document.createElement('a');
-            a.href = url;
-            a.download = `Radar_Corporativo_${campana.replace(/ /g, '_')}.xls`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(hojaDetalle), "Radar Corporativo");
+            XLSX.writeFile(wb, `Radar_Corporativo_${campana.replace(/ /g, '_')}.xlsx`);
         }
 
         // Iniciar
