@@ -547,8 +547,9 @@
         </div>
 
         <div class="card-equipos" style="margin-bottom: 25px; background: white; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-            <h3 style="background: #fff3f3; color: #e74c3c; margin: 0; padding: 15px 20px; font-size: 14px; text-transform: uppercase; border-bottom: 2px solid #fadbd8; border-radius: 15px 15px 0 0;">
-                <i class="fa-solid fa-triangle-exclamation"></i> Radar Corporativo: Vendedores en Riesgo
+            <h3 style="background: #fff3f3; color: #e74c3c; margin: 0; padding: 15px 20px; font-size: 14px; text-transform: uppercase; border-bottom: 2px solid #fadbd8; border-radius: 15px 15px 0 0; display: flex; justify-content: space-between; align-items: center;">
+                <span><i class="fa-solid fa-triangle-exclamation"></i> Radar Corporativo: Vendedores en Riesgo</span>
+                <button onclick="exportarRadarExcel()" style="background: #27ae60; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; text-transform: none;"><i class="fa-solid fa-file-excel"></i> Exportar a Excel</button>
             </h3>
             <ul id="listaRadarGerencia" style="list-style:none; padding:0; margin:0; color: #333; max-height: 400px; overflow-y: auto;">
                 <li><div style="padding: 20px; text-align: center; color: #777;"><i class="fa-solid fa-spinner fa-spin"></i> Cargando radar...</div></li>
@@ -1251,6 +1252,8 @@
                     return { nombre: p.nombre, equipo: nombreEq, agencia: nombreAg, netas: vts, objetivo: obj, atraso: atraso, proyeccion: proyeccion, proyeccionTexto: proyeccionTexto };
                 }).sort((a,b) => b.atraso - a.atraso); // Mayor atraso primero
                 
+                window.radarGlobalData = listaVendedores;
+                
                 document.getElementById('listaRadarGerencia').innerHTML = listaVendedores.map(v => {
                     let colorRiesgo = v.atraso > 0 ? '#e74c3c' : '#2ecc71';
                     let badge = v.atraso > 0 ? `<span style="background:#e74c3c; color:white; padding: 2px 6px; border-radius:4px; font-size:10px; font-weight:bold; margin-left:5px;">Atrasado</span>` : `<span style="background:#2ecc71; color:white; padding: 2px 6px; border-radius:4px; font-size:10px; font-weight:bold; margin-left:5px;">A Ritmo</span>`;
@@ -1306,6 +1309,60 @@
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(hojaDetalle), "Reporte Base de Datos");
             XLSX.writeFile(wb, `Base_Datos_Gerencial_${campanaStr.replace(/ /g, '_')}.xlsx`);
+        }
+
+        function exportarRadarExcel() {
+            if(!window.radarGlobalData) return alert("Los datos aún no se terminaron de procesar.");
+            const campana = window.datosGlobalesExcel ? window.datosGlobalesExcel.campanaStr : 'Campaña';
+            
+            let tablaHTML = `
+                <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+                <head><meta charset="utf-8"></head>
+                <body>
+                    <table border="1">
+                        <thead>
+                            <tr style="background-color: #34495e; color: white; font-weight: bold;">
+                                <th>Vendedor</th>
+                                <th>Equipo</th>
+                                <th>Agencia</th>
+                                <th>Objetivo</th>
+                                <th>Ventas Netas</th>
+                                <th>Estado</th>
+                                <th>Proyección</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            window.radarGlobalData.forEach(v => {
+                let esAtrasado = v.atraso > 0;
+                let colorFondo = esAtrasado ? '#fadbd8' : '#d5f5e3';
+                let colorTexto = esAtrasado ? '#c0392b' : '#27ae60';
+                let textoEstado = esAtrasado ? 'Atrasado' : 'Al Día';
+                
+                tablaHTML += `
+                    <tr>
+                        <td>${v.nombre}</td>
+                        <td>${v.equipo}</td>
+                        <td>${v.agencia}</td>
+                        <td>${v.objetivo}</td>
+                        <td>${v.netas}</td>
+                        <td style="background-color: ${colorFondo}; color: ${colorTexto}; font-weight: bold; text-align: center;">${textoEstado}</td>
+                        <td style="color: ${colorTexto}; font-weight: bold;">${v.proyeccionTexto}</td>
+                    </tr>
+                `;
+            });
+            
+            tablaHTML += `</tbody></table></body></html>`;
+            
+            let blob = new Blob([tablaHTML], { type: 'application/vnd.ms-excel' });
+            let url = URL.createObjectURL(blob);
+            let a = document.createElement('a');
+            a.href = url;
+            a.download = `Radar_Corporativo_${campana.replace(/ /g, '_')}.xls`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
         }
 
         // Iniciar
