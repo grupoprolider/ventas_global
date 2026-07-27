@@ -728,7 +728,7 @@
         }
 
         function abrirRanking() {
-            document.getElementById('iframeRanking').src = 'ranking_vendedores.html?mode=gerente&v=1784918528&campana=' + encodeURIComponent(campanaGlobal);
+            document.getElementById('iframeRanking').src = 'ranking_vendedores.html?mode=gerente&v=' + new Date().getTime() + '&campana=' + encodeURIComponent(campanaGlobal);
             document.getElementById('modalRanking').style.display = 'flex';
         }
 
@@ -1163,8 +1163,8 @@
                         let htmlVendedores = vendArray.map(v => `
                             <div style="display: flex; justify-content: space-between; padding: 5px 10px; border-bottom: 1px solid #f1f1f1; font-size: 11px;">
                                 <div style="width: 40%;">👤 ${v.nombre}</div>
-                                <div style="width: 15%; text-align: center;">Obj: <b>${v.objetivo}</b></div>
                                 <div style="width: 15%; text-align: center;">Vts: <b style="color:#2ecc71;">${v.netas}</b></div>
+                                <div style="width: 15%; text-align: center;">Obj: <b>${v.objetivo}</b></div>
                                 <div style="width: 15%; text-align: center;">Ent: <b>${v.entrevistas}</b></div>
                                 <div style="width: 15%; text-align: right; color:var(--gpl-petroleo);"><b>$${(v.monto/1000).toFixed(1)}k</b></div>
                             </div>
@@ -1183,8 +1183,8 @@
                                     <span class="eq-lider"><i class="fa-solid fa-crown" style="color:#f1c40f;"></i> ${eq.lider}</span>
                                 </div>
                                 <div class="eq-metrics" style="flex-wrap: wrap; justify-content: flex-end;">
-                                    <div><span style="color:#888; font-size:9px;">Obj</span><strong>${eq.objetivo}</strong></div>
                                     <div><span style="color:#888; font-size:9px;">Ventas</span><strong style="color:#2ecc71;">${eq.netas}</strong></div>
+                                    <div><span style="color:#888; font-size:9px;">Obj</span><strong>${eq.objetivo}</strong></div>
                                     <div><span style="color:#888; font-size:9px;">Entrev.</span><strong>${eq.entrevistas}</strong></div>
                                     <div><span style="color:#888; font-size:9px;">Factur.</span><strong style="color:var(--gpl-petroleo); font-family:monospace;">$${(eq.monto/1000).toFixed(1)}k</strong></div>
                                     <div style="background: ${colorProyEq}15; padding: 2px 4px; border-radius: 4px; border: 1px solid ${colorProyEq}; margin-left: 5px;"><span style="color:#888; font-size:9px;">Proy</span><strong style="color:${colorProyEq};">${proyEq} (${porcentajeEq}%)</strong></div>
@@ -1208,8 +1208,8 @@
                                 <i id="icon_${ag.id}" class="fa-solid fa-plus-circle" style="color:${ag.color}; font-size: 18px;"></i> ${ag.nombre}
                             </div>
                             <div class="ag-stats-row" style="flex-wrap: wrap;">
-                                <span>🎯 Obj: <b style="color:var(--gpl-petroleo);">${ag.objetivo}</b></span>
                                 <span>📈 Ventas: <b style="color:#2ecc71;">${ag.netas}</b></span>
+                                <span>🎯 Obj: <b style="color:var(--gpl-petroleo);">${ag.objetivo}</b></span>
                                 <span>🗣️ Entrev: <b>${ag.entrevistas}</b></span>
                                 <span>💰 <b style="color:var(--gpl-petroleo);">$${(ag.monto/1000).toFixed(1)}k</b></span>
                                 <span style="background: ${colorProyAgencia}20; border: 1px solid ${colorProyAgencia};">🔮 Proy: <b style="color:${colorProyAgencia};">${proyAgencia} (${porcentajeAgencia}%)</b></span>
@@ -1264,7 +1264,7 @@
                             <div style="font-size:11px; color:#777; margin-top:2px;">${v.equipo} • ${v.agencia}</div>
                         </div>
                         <div style="text-align:right;">
-                            <div style="font-size:12px; font-weight:bold; color:var(--gpl-petroleo);">Obj: ${v.objetivo} | Ventas: ${v.netas}</div>
+                            <div style="font-size:12px; font-weight:bold; color:var(--gpl-petroleo);">Ventas: ${v.netas} | Obj: ${v.objetivo}</div>
                             <div style="font-size:11px; color:${colorRiesgo}; margin-top:2px; font-weight:bold;">${v.proyeccionTexto}</div>
                         </div>
                     </li>
@@ -1323,8 +1323,8 @@
                     "Vendedor": v.nombre,
                     "Equipo": v.equipo,
                     "Agencia": v.agencia,
-                    "Objetivo": v.objetivo,
                     "Ventas Netas": v.netas,
+                    "Objetivo": v.objetivo,
                     "Estado (Color)": textoEstado,
                     "Proyección": v.proyeccionTexto
                 };

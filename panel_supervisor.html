@@ -578,7 +578,7 @@
         }
 
         function abrirRanking() {
-            document.getElementById('iframeRanking').src = 'ranking_vendedores.html';
+            document.getElementById('iframeRanking').src = 'ranking_vendedores.html?rol=supervisor&v=' + new Date().getTime();
             document.getElementById('modalRanking').style.display = 'flex';
         }
 
@@ -869,7 +869,7 @@
                             <div style="font-size:11px; color:#777; margin-top:2px;">${v.equipo}</div>
                         </div>
                         <div style="text-align:right;">
-                            <div style="font-size:12px; font-weight:bold; color:var(--gpl-petroleo);">Obj: ${v.objetivo} | Ventas: ${v.netas}</div>
+                            <div style="font-size:12px; font-weight:bold; color:var(--gpl-petroleo);">Ventas: ${v.netas} | Obj: ${v.objetivo}</div>
                             <div style="font-size:11px; color:${colorRiesgo}; margin-top:2px; font-weight:bold;">${v.proyeccionTexto}</div>
                         </div>
                     </div>
