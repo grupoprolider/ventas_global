@@ -1058,13 +1058,14 @@
                     }
                 });
 
-                // Inicializar Vendedores
+                // Inicializar Vendedores y Líderes
                 perfiles.forEach(p => {
-                    if (p.rol === 'Vendedor' && p.equipo_id) {
+                    if (p.equipo_id) {
                         let eq = equipos.find(e => e.id === p.equipo_id);
                         if (eq && mapAgenciasData[eq.agencia_id]) {
                             mapAgenciasData[eq.agencia_id].equipos[eq.id].vendedores[p.id] = {
                                 nombre: p.nombre,
+                                rol: p.rol || 'Vendedor',
                                 netas: 0,
                                 objetivo: p.objetivo_campana || 0,
                                 entrevistas: 0,
@@ -1162,7 +1163,7 @@
                         let vendArray = Object.values(eq.vendedores).sort((a,b) => b.netas - a.netas);
                         let htmlVendedores = vendArray.map(v => `
                             <div style="display: flex; justify-content: space-between; padding: 5px 10px; border-bottom: 1px solid #f1f1f1; font-size: 11px;">
-                                <div style="width: 40%;">👤 ${v.nombre}</div>
+                                <div style="width: 40%;">${v.rol.toLowerCase() === 'líder de asesores' ? '<i class="fa-solid fa-crown" style="color:var(--gpl-dorado);" title="Líder"></i>' : '👤'} ${v.nombre}</div>
                                 <div style="width: 15%; text-align: center;">Vts: <b style="color:#2ecc71;">${v.netas}</b></div>
                                 <div style="width: 15%; text-align: center;">Obj: <b>${v.objetivo}</b></div>
                                 <div style="width: 15%; text-align: center;">Ent: <b>${v.entrevistas}</b></div>
