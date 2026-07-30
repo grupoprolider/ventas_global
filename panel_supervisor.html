@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Líder de Sucursal - Grupo ProLíder</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         :root {
@@ -342,6 +343,37 @@
         }
         
         .empty-state { text-align: center; padding: 30px 20px; color: #777; font-weight: bold; font-size: 13px; }
+        .charts-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        @media (max-width: 900px) {
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        .chart-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            border-top: 4px solid var(--gpl-petroleo);
+        }
+        .chart-card h3 {
+            color: var(--gpl-petroleo);
+            margin: 0 0 15px 0;
+            font-size: 14px;
+            text-align: center;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        .chart-wrapper {
+            position: relative;
+            height: 250px;
+            width: 100%;
+        }
     </style>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#A42A68">
@@ -593,6 +625,23 @@
             }
         }
 
+        let chartInstBancos = null;
+        let chartInstBeneficios = null;
+
+        function normalizarBeneficio(txt) {
+            if (!txt) return 'No Especificado';
+            let t = txt.toUpperCase().trim();
+            if (t.includes('PROV') || t.includes('BUENOS AIRES') || t.includes('BAPRO')) return 'Empleados Pcia. BsAs';
+            if (t.includes('JUBILAD')) return 'Jubilados y Pensionados';
+            if (t.includes('DOCENT') || t.includes('MAE') || t.includes('PROF')) return 'Docentes';
+            if (t.includes('POLIC') || t.includes('SEGURIDAD') || t.includes('FUERZA')) return 'Fuerzas de Seguridad';
+            if (t.includes('SALUD') || t.includes('MEDIC') || t.includes('ENFERM') || t.includes('HOSPITAL')) return 'Salud Pública';
+            if (t.includes('MUNIC')) return 'Empleados Municipales';
+            if (t.includes('ADMIN') || t.includes('MINISTERIO') || t.includes('ESTADO')) return 'Administración Pública';
+            if (t.includes('PRIVAD') || t.includes('EMPRESA')) return 'Empleados Privados';
+            return 'Otros Beneficios';
+        }
+
         let campanaGlobal = '';
         const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
@@ -776,10 +825,14 @@
             });
 
             // Procesar ventas asignándolas a sus equipos correspondientes
+            let mapBancos = {};
+            let mapBeneficios = {};
+
             ventasAgencia.forEach(v => {
                 let vts = v.ventas_cerradas || 0;
                 let baj = v.bajas || 0;
                 let mnt = v.monto || 0;
+                let netas = vts - baj;
                 
                 totalAgenciaBrutas += vts;
                 totalAgenciaBajas += baj;
@@ -789,8 +842,15 @@
                 if (vendedor && mapEquipos[vendedor.equipo_id]) {
                     mapEquipos[vendedor.equipo_id].brutas += vts;
                     mapEquipos[vendedor.equipo_id].bajas += baj;
-                    mapEquipos[vendedor.equipo_id].netas += (vts - baj);
+                    mapEquipos[vendedor.equipo_id].netas += netas;
                     mapEquipos[vendedor.equipo_id].monto += mnt;
+                }
+
+                if (netas > 0) {
+                    let bco = v.medio_pago || 'No Especificado';
+                    let ben = normalizarBeneficio(v.beneficio);
+                    mapBancos[bco] = (mapBancos[bco] || 0) + netas;
+                    mapBeneficios[ben] = (mapBeneficios[ben] || 0) + netas;
                 }
             });
 
@@ -876,6 +936,25 @@
                 </li>
                 `;
             }).join('');
+
+            // Bancos Pie
+            if (chartInstBancos) chartInstBancos.destroy();
+            let lBco = Object.keys(mapBancos), dBco = Object.values(mapBancos);
+            const paletaColores = ['#3498db', '#e74c3c', '#f1c40f', '#2ecc71', '#9b59b6', '#e67e22', '#1abc9c', '#34495e', '#006779', '#A42A68', '#f39c12', '#d35400'];
+            chartInstBancos = new Chart(document.getElementById('chartBancos').getContext('2d'), {
+                type: 'pie',
+                data: { labels: lBco, datasets: [{ data: dBco, backgroundColor: paletaColores.slice(0, lBco.length), borderWidth: 2, borderColor: '#ffffff' }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } } }
+            });
+
+            // Beneficios Pie
+            if (chartInstBeneficios) chartInstBeneficios.destroy();
+            let lBen = Object.keys(mapBeneficios), dBen = Object.values(mapBeneficios);
+            chartInstBeneficios = new Chart(document.getElementById('chartBeneficios').getContext('2d'), {
+                type: 'pie',
+                data: { labels: lBen, datasets: [{ data: dBen, backgroundColor: paletaColores.slice(0, lBen.length).reverse(), borderWidth: 2, borderColor: '#ffffff' }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } } }
+            });
 
             // Llamar a cargar modulo de gestión
             cargarModuloGestion(equiposAgencia, integrantesAgencia, ventasAgencia);
