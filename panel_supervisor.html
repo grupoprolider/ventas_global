@@ -446,6 +446,21 @@
             </div>
         </div>
 
+        <div style="display: flex; gap: 15px; margin-top: 20px; flex-wrap: wrap; background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); border-left: 4px solid var(--gpl-dorado);">
+            <div style="flex: 1; min-width: 200px;">
+                <label style="font-size: 11px; font-weight: bold; color: #555; display: block; margin-bottom: 5px;">FILTRAR POR BANCO</label>
+                <select id="filtroBanco" onchange="renderizarGraficosSupervisor()" style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ddd; font-family: 'Poppins', sans-serif;">
+                    <option value="TODOS">-- Todos los Bancos --</option>
+                </select>
+            </div>
+            <div style="flex: 1; min-width: 200px;">
+                <label style="font-size: 11px; font-weight: bold; color: #555; display: block; margin-bottom: 5px;">FILTRAR POR BENEFICIO</label>
+                <select id="filtroBeneficio" onchange="renderizarGraficosSupervisor()" style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ddd; font-family: 'Poppins', sans-serif;">
+                    <option value="TODOS">-- Todos los Beneficios --</option>
+                </select>
+            </div>
+        </div>
+
         <div class="charts-container">
             <div class="chart-card">
                 <h3>Bancos Vendidos</h3>
@@ -870,8 +885,8 @@
             });
 
             // Procesar ventas asignándolas a sus equipos correspondientes
-            let mapBancos = {};
-            let mapBeneficios = {};
+            let setBancos = new Set();
+            let setBeneficios = new Set();
 
             ventasAgencia.forEach(v => {
                 let vts = v.ventas_cerradas || 0;
@@ -892,12 +907,19 @@
                 }
 
                 if (netas > 0) {
-                    let bco = normalizarBanco(v.medio_pago);
-                    let ben = normalizarBeneficio(v.beneficio);
-                    mapBancos[bco] = (mapBancos[bco] || 0) + netas;
-                    mapBeneficios[ben] = (mapBeneficios[ben] || 0) + netas;
+                    setBancos.add(normalizarBanco(v.medio_pago));
+                    setBeneficios.add(normalizarBeneficio(v.beneficio));
                 }
             });
+
+            // Llenar selects de filtros de gráficos
+            let selBanco = document.getElementById('filtroBanco');
+            selBanco.innerHTML = '<option value="TODOS">-- Todos los Bancos --</option>';
+            Array.from(setBancos).sort().forEach(b => selBanco.innerHTML += `<option value="${b}">${b}</option>`);
+
+            let selBen = document.getElementById('filtroBeneficio');
+            selBen.innerHTML = '<option value="TODOS">-- Todos los Beneficios --</option>';
+            Array.from(setBeneficios).sort().forEach(b => selBen.innerHTML += `<option value="${b}">${b}</option>`);
 
             let totalAgenciaNetas = totalAgenciaBrutas - totalAgenciaBajas;
             const dias = await getDiasHabiles();
@@ -982,6 +1004,36 @@
                 `;
             }).join('');
 
+            // Guardar ventas de agencia y renderizar graficos
+            window.globalVentasAgencia = ventasAgencia;
+            renderizarGraficosSupervisor();
+
+            // Llamar a cargar modulo de gestión
+            cargarModuloGestion(equiposAgencia, integrantesAgencia, ventasAgencia);
+        }
+
+        function renderizarGraficosSupervisor() {
+            if (!window.globalVentasAgencia) return;
+            const bcoFilter = document.getElementById('filtroBanco').value;
+            const benFilter = document.getElementById('filtroBeneficio').value;
+            
+            let mapBancos = {};
+            let mapBeneficios = {};
+
+            window.globalVentasAgencia.forEach(v => {
+                let bco = normalizarBanco(v.medio_pago);
+                let ben = normalizarBeneficio(v.beneficio);
+                
+                if (bcoFilter !== 'TODOS' && bco !== bcoFilter) return;
+                if (benFilter !== 'TODOS' && ben !== benFilter) return;
+
+                let netas = (v.ventas_cerradas || 0) - (v.bajas || 0);
+                if (netas > 0) {
+                    mapBancos[bco] = (mapBancos[bco] || 0) + netas;
+                    mapBeneficios[ben] = (mapBeneficios[ben] || 0) + netas;
+                }
+            });
+
             // Bancos Pie
             if (chartInstBancos) chartInstBancos.destroy();
             let lBco = Object.keys(mapBancos), dBco = Object.values(mapBancos);
@@ -1000,9 +1052,6 @@
                 data: { labels: lBen, datasets: [{ data: dBen, backgroundColor: paletaColores.slice(0, lBen.length).reverse(), borderWidth: 2, borderColor: '#ffffff' }] },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } } }
             });
-
-            // Llamar a cargar modulo de gestión
-            cargarModuloGestion(equiposAgencia, integrantesAgencia, ventasAgencia);
         }
 
         // FUNCIONES DE GESTIÓN DE SUCURSAL
