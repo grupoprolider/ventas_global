@@ -690,6 +690,15 @@
             if (error) {
                 alert("Error al actualizar: " + error.message);
             } else {
+                if (campo === 'objetivo_campana') {
+                    const hoy = new Date();
+                    const campanaActual = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
+                    await clienteSupabase.from('historial_objetivos').upsert({
+                        vendedor_id: id,
+                        campana: campanaActual,
+                        objetivo_ventas: val
+                    }, { onConflict: 'vendedor_id,campana' });
+                }
                 refrescarDatos();
             }
         }

@@ -644,17 +644,47 @@
         let chartInstBeneficios = null;
 
         function normalizarBeneficio(txt) {
-            if (!txt) return 'No Especificado';
-            let t = txt.toUpperCase().trim();
-            if (t.includes('PROV') || t.includes('BUENOS AIRES') || t.includes('BAPRO')) return 'Empleados Pcia. BsAs';
-            if (t.includes('JUBILAD')) return 'Jubilados y Pensionados';
-            if (t.includes('DOCENT') || t.includes('MAE') || t.includes('PROF')) return 'Docentes';
-            if (t.includes('POLIC') || t.includes('SEGURIDAD') || t.includes('FUERZA')) return 'Fuerzas de Seguridad';
-            if (t.includes('SALUD') || t.includes('MEDIC') || t.includes('ENFERM') || t.includes('HOSPITAL')) return 'Salud Pública';
-            if (t.includes('MUNIC')) return 'Empleados Municipales';
-            if (t.includes('ADMIN') || t.includes('MINISTERIO') || t.includes('ESTADO')) return 'Administración Pública';
-            if (t.includes('PRIVAD') || t.includes('EMPRESA')) return 'Empleados Privados';
-            return 'Otros Beneficios';
+            if (txt === null || txt === undefined) return 'Otro';
+            txt = String(txt);
+            if (txt.trim() === '') return 'Otro';
+            let nb = txt.toUpperCase().trim();
+            nb = nb.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); 
+            nb = nb.replace(/\uFFFD/g, "O");
+            
+            if(nb.includes("ASIGNACION") && nb.includes("HIJO")) return "Asignación Univ. por Hijo";
+            if(nb.includes("EMPLEADO") || nb.includes("FORMAL") || nb.includes("DEPENDENCIA") || nb.includes("PUBLICO") || nb.includes("PRIVADO")) return "Empleado Formal";
+            if(nb.includes("JUBILACION") && nb.includes("MAYOR")) return "Jubilación Mayor";
+            if(nb.includes("JUBILACION") && nb.includes("MENOR")) return "Jubilación Menor";
+            if(nb.includes("PENSION") && nb.includes("CONTRIBUTIVA")) return "Pensión no Contributiva";
+            if(nb.includes("MONOTRIBUTO") || nb.includes("MONOTRIBUTISTA") || nb.includes("AUTONOMO")) return "Monotributista / Autónomo";
+            if(nb.includes("PLAN SOCIAL") || nb.includes("POTENCIAR")) return "Planes Sociales";
+            if(nb.includes("OTRO")) return "Otros";
+            
+            return txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase();
+        }
+
+        function normalizarBanco(txt) {
+            if (txt === null || txt === undefined) return 'Otro';
+            txt = String(txt);
+            if (txt.trim() === '') return 'Otro';
+            let nb = txt.toUpperCase().trim();
+            nb = nb.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); 
+            nb = nb.replace(/\uFFFD/g, "O");
+            
+            if(nb.includes("NACION") || nb.includes("BNA")) return "Banco Nación";
+            if(nb.includes("PROVINCIA") || nb.includes("BAPRO")) return "Banco Provincia";
+            if(nb.includes("MACRO")) return "Banco Macro";
+            if(nb.includes("SANTANDER")) return "Santander";
+            if(nb.includes("GALICIA")) return "Galicia";
+            if(nb.includes("FRANCES") || nb.includes("BBVA")) return "BBVA";
+            if(nb.includes("PATAGONIA")) return "Banco Patagonia";
+            if(nb.includes("CREDICOOP")) return "Credicoop";
+            if(nb.includes("ICBC")) return "ICBC";
+            if(nb.includes("SUPERVIELLE")) return "Supervielle";
+            if(nb.includes("COLUMBIA")) return "Columbia";
+            if(nb.includes("MERCADO") && nb.includes("PAGO")) return "Mercado Pago";
+            
+            return txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase();
         }
 
         let campanaGlobal = '';
@@ -862,7 +892,7 @@
                 }
 
                 if (netas > 0) {
-                    let bco = v.medio_pago || 'No Especificado';
+                    let bco = normalizarBanco(v.medio_pago);
                     let ben = normalizarBeneficio(v.beneficio);
                     mapBancos[bco] = (mapBancos[bco] || 0) + netas;
                     mapBeneficios[ben] = (mapBeneficios[ben] || 0) + netas;
