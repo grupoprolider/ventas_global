@@ -599,7 +599,7 @@
                     const { data: allEquipos } = await clienteSupabase.from('equipos').select('id');
                     if (allPerfiles && allEquipos) {
                         let mapEquiposRank = {};
-                        allEquipos.forEach(e => mapEquiposRank[e.id] = { id: e.id, netas: 0 });
+                        allEquipos.forEach(e => mapEquiposRank[e.id] = { id: e.id, netas: 0, monto: 0 });
                         
                         let perfilesMap = {};
                         allPerfiles.forEach(p => { if (p.equipo_id) perfilesMap[p.id] = p.equipo_id; });
@@ -608,10 +608,11 @@
                             let eqId = perfilesMap[v.vendedor_id];
                             if (eqId && mapEquiposRank[eqId]) {
                                 mapEquiposRank[eqId].netas += ((v.ventas_cerradas || 0) - (v.bajas || 0));
+                                mapEquiposRank[eqId].monto += (v.monto || 0);
                             }
                         });
 
-                        let rankingEquipos = Object.values(mapEquiposRank).sort((a,b) => b.netas - a.netas);
+                        let rankingEquipos = Object.values(mapEquiposRank).sort((a,b) => b.netas - a.netas || b.monto - a.monto);
                         let myRank = rankingEquipos.findIndex(x => x.id === equipo.id) + 1;
                         if (myRank > 0) {
                             document.getElementById('txtPuesto').textContent = myRank;

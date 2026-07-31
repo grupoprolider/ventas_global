@@ -882,7 +882,7 @@
                     let todasVts = [];
                     let step = 1000, fromRow = 0;
                     while(true) {
-                        const { data } = await clienteSupabase.from('registro_ventas').select('vendedor_id, ventas_cerradas, bajas').eq('campana', campanaStr).order('id').range(fromRow, fromRow + step - 1);
+                        const { data } = await clienteSupabase.from('registro_ventas').select('vendedor_id, ventas_cerradas, bajas, monto').eq('campana', campanaStr).order('id').range(fromRow, fromRow + step - 1);
                         if(!data || data.length === 0) break;
                         todasVts = todasVts.concat(data);
                         if(data.length < step) break;
@@ -891,7 +891,7 @@
 
                     if (allAgencias && allEquipos && allPerfiles) {
                         let mapAgenciasRank = {};
-                        allAgencias.forEach(a => mapAgenciasRank[a.id] = { id: a.id, netas: 0 });
+                        allAgencias.forEach(a => mapAgenciasRank[a.id] = { id: a.id, netas: 0, monto: 0 });
                         
                         let vendedorToAgencia = {};
                         allPerfiles.forEach(i => {
@@ -903,10 +903,11 @@
                             let agId = vendedorToAgencia[v.vendedor_id];
                             if (agId && mapAgenciasRank[agId]) {
                                 mapAgenciasRank[agId].netas += ((v.ventas_cerradas || 0) - (v.bajas || 0));
+                                mapAgenciasRank[agId].monto += (v.monto || 0);
                             }
                         });
                         
-                        window.globalNationalRankingCache = Object.values(mapAgenciasRank).sort((a,b) => b.netas - a.netas);
+                        window.globalNationalRankingCache = Object.values(mapAgenciasRank).sort((a,b) => b.netas - a.netas || b.monto - a.monto);
                     }
                 }
                 

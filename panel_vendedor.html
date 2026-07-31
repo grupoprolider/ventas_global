@@ -707,24 +707,40 @@
 
                 // CÁLCULO DE PUESTO (RANKING)
                 try {
-                    const { data: allVentas } = await clienteSupabase.from('registro_ventas')
-                        .select('vendedor_id, ventas_cerradas, bajas')
-                        .eq('campana', campanaStr);
+                    let allVentas = [];
+                    let stepAll = 1000, fromRowAll = 0;
+                    while(true) {
+                        const { data } = await clienteSupabase.from('registro_ventas')
+                            .select('vendedor_id, ventas_cerradas, bajas, monto')
+                            .eq('campana', campanaStr)
+                            .order('id')
+                            .range(fromRowAll, fromRowAll + stepAll - 1);
+                        if(!data || data.length === 0) break;
+                        allVentas = allVentas.concat(data);
+                        if(data.length < stepAll) break;
+                        fromRowAll += stepAll;
+                    }
                     const { data: allPerfiles } = await clienteSupabase.from('perfiles')
-                        .select('id, nombre, rol')
+                        .select('id, rol, nombre')
                         .not('nombre', 'ilike', '%(BAJA)%');
                     
                     if (allVentas && allPerfiles) {
                         let mapVentas = {};
-                        allPerfiles.forEach(pf => mapVentas[pf.id] = { id: pf.id, nombre: pf.nombre, netas: 0 });
+                        allPerfiles.forEach(p => {
+                            if (p.rol === 'Vendedor' || p.rol === 'Lider de Equipo') {
+                                mapVentas[p.id] = { id: p.id, netas: 0, monto: 0 };
+                            }
+                        });
+
                         allVentas.forEach(v => {
                             if (mapVentas[v.vendedor_id]) {
                                 mapVentas[v.vendedor_id].netas += ((v.ventas_cerradas || 0) - (v.bajas || 0));
+                                mapVentas[v.vendedor_id].monto += (v.monto || 0);
                             }
                         });
                         let rankingNacional = Object.values(mapVentas)
                             .filter(v => v.netas >= 0)
-                            .sort((a,b) => b.netas - a.netas);
+                            .sort((a,b) => b.netas - a.netas || b.monto - a.monto);
                         
                         let myRank = rankingNacional.findIndex(x => x.id === id) + 1;
                         if (myRank > 0) {
