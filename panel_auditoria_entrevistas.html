@@ -249,6 +249,10 @@
                         <option value="TODOS">Todos los Estados</option>
                     </select>
                 </div>
+                <div class="filtro-item" style="display: flex; align-items: center; gap: 8px; margin-top: 25px;">
+                    <input type="checkbox" id="filtro_tel_valido" style="width: 16px; height: 16px; cursor: pointer;">
+                    <label for="filtro_tel_valido" style="margin: 0; cursor: pointer; color: #555;">Ocultar sin teléfono válido</label>
+                </div>
                 <div>
                     <button class="btn btn-filtrar" onclick="cargarAuditoriaEntrevistas()"><i class="fa-solid fa-search"></i> Buscar</button>
                 </div>
@@ -335,12 +339,25 @@
             window.datosExcel = data;
             
             const tbody = document.querySelector('#tabla_auditoria tbody');
-            if(!data || data.length === 0) {
+            
+            let hideInvalidPhone = document.getElementById('filtro_tel_valido').checked;
+            let dataFiltrada = data;
+            
+            if (hideInvalidPhone && data) {
+                dataFiltrada = data.filter(v => {
+                    let tel = v.telefono ? String(v.telefono).replace(/\D/g, '') : '';
+                    return tel.length >= 6;
+                });
+            }
+
+            if(!dataFiltrada || dataFiltrada.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No se encontraron resultados.</td></tr>';
                 return;
             }
             
-            tbody.innerHTML = data.map(v => {
+            window.datosExcel = dataFiltrada;
+            
+            tbody.innerHTML = dataFiltrada.map(v => {
                 let fecha = new Date(v.created_at).toLocaleString('es-AR');
                 let colorEstado = v.estado.toLowerCase().includes('ok') ? '#27ae60' : (v.estado.toLowerCase().includes('sin') ? '#e74c3c' : '#34495e');
                 
