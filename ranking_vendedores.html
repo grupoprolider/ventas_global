@@ -142,6 +142,13 @@
             <option value="30" selected>🏆 Top 30</option>
             <option value="10">🏆 Top 10</option>
         </select>
+        <div style="margin: 15px 0; padding: 10px; border-radius: 10px; display: inline-block; border: 1px solid rgba(255,255,255,0.2);">
+            <span style="font-size: 13px; font-weight: bold; margin-right: 10px; text-transform: uppercase;">Orden Principal:</span>
+            <select id="llaveOrdenamiento" onchange="cambiarLlaveOrdenamiento()" style="padding: 8px; font-size: 14px; font-weight: bold; border-radius: 8px; outline: none; border: 2px solid var(--gpl-dorado); background: transparent; color: inherit; cursor: pointer;">
+                <option value="neta">🏆 Por Ventas Netas</option>
+                <option value="ent">👥 Por Entrevistas</option>
+            </select>
+        </div>
         <button id="btnDescargarExcel" class="btn-excel" onclick="descargarExcelGerencial()">
             <i class="fa-solid fa-file-excel"></i> Descargar Reporte Excel Gerencial
         </button>
@@ -446,16 +453,32 @@
         let ordenActual = 'neta';
         let asc = false;
         
-        function ordenarVendedores(criterio) {
+        function cambiarLlaveOrdenamiento() {
+            let criterio = document.getElementById('llaveOrdenamiento').value;
+            ordenActual = criterio;
+            asc = false;
+            
+            // Si el selector top estaba en "Top 10" por ejemplo, tal vez se recorta la lista.
+            // La función ordenarVendedores() ordena los datos base y renderiza
+            ordenarVendedores(criterio, true);
+        }
+        
+        function ordenarVendedores(criterio, forceDesc = false) {
             if (!window.datosGlobalesReporte) return;
             let lista = window.datosGlobalesReporte.nacList;
             
-            if (ordenActual === criterio) {
-                asc = !asc; // Cambia el sentido
-            } else {
+            if (forceDesc) {
+                asc = false;
                 ordenActual = criterio;
-                asc = (criterio === 'nom' || criterio === 'prom'); // A-Z por defecto para nombre, y menor a mayor por promedio
+            } else {
+                if (ordenActual === criterio) {
+                    asc = !asc; // Cambia el sentido
+                } else {
+                    ordenActual = criterio;
+                    asc = (criterio === 'nom' || criterio === 'prom'); // A-Z por defecto para nombre, y menor a mayor por promedio
+                }
             }
+
             
             lista.sort((a, b) => {
                 if (criterio === 'nom') {

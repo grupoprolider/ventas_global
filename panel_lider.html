@@ -379,6 +379,19 @@
                 <div style="background: var(--gpl-borravino); color: white; padding: 4px 15px; border-radius: 12px; font-size: 11px; font-weight: 900; letter-spacing: 1px; display: inline-block; text-transform: uppercase;">PUESTO DE EQUIPO</div>
             </div>
         </div>
+        <div class="kpi-box" style="margin-bottom: 20px; border-radius: 15px; border: 1px solid #9b59b6; display: flex; justify-content: space-between; align-items: center; padding: 15px 30px; background: linear-gradient(135deg, rgba(155, 89, 182, 0.1) 0%, rgba(142, 68, 173, 0.2) 100%);">
+            <div style="display: flex; flex-direction: column; align-items: flex-start; text-align: left; gap: 8px;">
+                <span style="color:#9b59b6; font-size: 13px; font-weight: bold;"><i class="fa-solid fa-calendar-day"></i> Ventas Netas por Rango Específico</span>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <input type="date" id="inputFechaFiltroDesde" onchange="filtrarVentasPorDia()" title="Fecha Desde" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #9b59b6; background: rgba(255,255,255,0.8); color: #333; font-family: inherit; font-size: 13px; outline: none; font-weight: bold;">
+                    <input type="date" id="inputFechaFiltroHasta" onchange="filtrarVentasPorDia()" title="Fecha Hasta" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #9b59b6; background: rgba(255,255,255,0.8); color: #333; font-family: inherit; font-size: 13px; outline: none; font-weight: bold;">
+                    <select id="filtroVendedorDia" onchange="filtrarVentasPorDia()" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #9b59b6; background: rgba(255,255,255,0.8); color: #333; font-family: inherit; font-size: 13px; outline: none; font-weight: bold; max-width: 150px;">
+                        <option value="TODOS">Todos los Vendedores</option>
+                    </select>
+                </div>
+            </div>
+            <strong id="kpiVentasDia" style="color:#9b59b6; font-size: 36px; font-family: monospace;">-</strong>
+        </div>
 
         <div class="card-metricas">
             <h3><i class="fa-solid fa-chart-pie"></i> Rendimiento del Equipo - Campaña Actual</h3>
@@ -412,6 +425,13 @@
                     <strong id="totDias" style="color: #f39c12;">0</strong>
                 </div>
             </div>
+        </div>
+
+        <div class="card-equipos" style="margin-top: 20px; margin-bottom: 20px; border-top: 4px solid var(--gpl-dorado); background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+            <h3 style="margin: 0 0 15px 0; color: var(--gpl-petroleo); font-size: 16px; text-transform: uppercase;"><i class="fa-solid fa-list-check"></i> Registro de Entrevistas (Hoy)</h3>
+            <ul id="listaEntrevistasHoy" class="lista-equipos" style="list-style: none; padding: 0; margin: 0; max-height: 400px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px;">
+                <li><div class="empty-state" style="text-align:center; padding: 20px; color:#777;"><i class="fa-solid fa-spinner fa-spin"></i> Cargando entrevistas de hoy...</div></li>
+            </ul>
         </div>
 
         <div class="card-integrantes">
@@ -534,6 +554,36 @@
             cargarDatosLider(idSeguroURL);
         }
 
+        let globalIntegrantes = [];
+        let globalVentasEquipo = [];
+
+        function filtrarVentasPorDia() {
+            let fechaSelDesde = document.getElementById('inputFechaFiltroDesde').value;
+            let fechaSelHasta = document.getElementById('inputFechaFiltroHasta').value;
+            let vendedorId = document.getElementById('filtroVendedorDia')?.value || 'TODOS';
+
+            if (!fechaSelDesde || !fechaSelHasta) {
+                document.getElementById('kpiVentasDia').textContent = "-";
+                return;
+            }
+            let total = 0;
+            globalVentasEquipo.forEach(v => {
+                if (v.created_at) {
+                    let datePart = v.created_at.split('T')[0];
+                    if (datePart >= fechaSelDesde && datePart <= fechaSelHasta) {
+                        let match = true;
+                        if (vendedorId !== 'TODOS' && v.vendedor_id !== vendedorId) {
+                            match = false;
+                        }
+                        if (match) {
+                            total += (v.ventas_cerradas || 0) - (v.bajas || 0);
+                        }
+                    }
+                }
+            });
+            document.getElementById('kpiVentasDia').textContent = total;
+        }
+
         async function cargarDatosLider(idLider) {
             try {
                 // 1. Buscar perfil del líder
@@ -624,6 +674,18 @@
                 // Procesar ventas sólo del equipo
                 const ventasEquipo = (todasVentas || []).filter(v => idsIntegrantes.includes(v.vendedor_id));
                 
+                globalIntegrantes = integrantes;
+                globalVentasEquipo = ventasEquipo;
+                
+                let selVendDia = document.getElementById('filtroVendedorDia');
+                if (selVendDia) {
+                    selVendDia.innerHTML = '<option value="TODOS">Todos los Vendedores</option>' + integrantes.map(i => `<option value="${i.id}">${i.nombre}</option>`).join('');
+                    let hoyIso = new Date().toISOString().split('T')[0];
+                    document.getElementById('inputFechaFiltroDesde').value = hoyIso;
+                    document.getElementById('inputFechaFiltroHasta').value = hoyIso;
+                    filtrarVentasPorDia();
+                }
+                
                 ventasEquipo.forEach(v => {
                     let vts = v.ventas_cerradas || 0;
                     let baj = v.bajas || 0;
@@ -690,6 +752,57 @@
                         `;
                     }).join('');
                 }
+
+                // RENDERIZAR RANKING ENTREVISTAS HOY (LIDER)
+                (async () => {
+                    let entrevistasRow = [];
+                    let step = 1000, fromRow = 0;
+                    while (true) {
+                        const { data } = await clienteSupabase.from('registro_entrevistas').select('vendedor_id, created_at').eq('campana', campanaStr).range(fromRow, fromRow + step - 1);
+                        if (!data || data.length === 0) break;
+                        entrevistasRow = entrevistasRow.concat(data);
+                        if (data.length < step) break;
+                        fromRow += step;
+                    }
+                    
+                    let hoyStr = new Date().toISOString().split('T')[0];
+                    let mapEntrevistasHoy = {}; 
+
+                    entrevistasRow.forEach(ent => {
+                        if (ent.created_at && ent.created_at.split('T')[0] === hoyStr) {
+                            mapEntrevistasHoy[ent.vendedor_id] = (mapEntrevistasHoy[ent.vendedor_id] || 0) + 1;
+                        }
+                    });
+
+                    let grupoHoy = { nombre: equipo.nombre, vendedores: [] };
+                    integrantes.forEach(p => {
+                        if (p.rol === 'Vendedor' || p.rol === 'Lider de Equipo' || p.rol === 'Líder de Equipo' || p.rol === 'Líder de Equipos') {
+                            grupoHoy.vendedores.push({
+                                nombre: p.nombre,
+                                entrevistas: mapEntrevistasHoy[p.id] || 0
+                            });
+                        }
+                    });
+
+                    grupoHoy.vendedores.sort((a,b) => a.entrevistas - b.entrevistas);
+
+                    let htmlEntrevistasHoy = '';
+                    if (grupoHoy.vendedores.length === 0) {
+                        htmlEntrevistasHoy = `<li><div class="empty-state">No hay vendedores para mostrar.</div></li>`;
+                    } else {
+                        htmlEntrevistasHoy += `<h4 style="background: #eee; margin: 0; padding: 8px 15px; font-size: 11px; color: #555; text-transform: uppercase;">${grupoHoy.nombre}</h4>`;
+                        grupoHoy.vendedores.forEach(v => {
+                            let colorClass = v.entrevistas === 0 ? 'color: #e74c3c;' : 'color: #2ecc71;';
+                            htmlEntrevistasHoy += `
+                            <li style="padding: 12px 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 13px; font-weight: bold; color: #333;">${v.nombre}</span>
+                                <span style="${colorClass} font-weight: 900; font-size: 14px;">${v.entrevistas} Entr.</span>
+                            </li>`;
+                        });
+                    }
+                    let ulHoy = document.getElementById('listaEntrevistasHoy');
+                    if (ulHoy) ulHoy.innerHTML = htmlEntrevistasHoy;
+                })();
 
             } catch (error) {
                 console.error("Error al cargar datos del líder:", error);

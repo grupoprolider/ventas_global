@@ -430,6 +430,23 @@
             </select>
         </div>
 
+        <div class="kpi-box" style="margin-bottom: 20px; border-radius: 15px; border: 1px solid #9b59b6; display: flex; justify-content: space-between; align-items: center; padding: 15px 30px; background: linear-gradient(135deg, rgba(155, 89, 182, 0.1) 0%, rgba(142, 68, 173, 0.2) 100%);">
+            <div style="display: flex; flex-direction: column; align-items: flex-start; text-align: left; gap: 8px;">
+                <span style="color:#9b59b6; font-size: 13px; font-weight: bold;"><i class="fa-solid fa-calendar-day"></i> Ventas Netas por Rango Específico</span>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <input type="date" id="inputFechaFiltroDesde" onchange="filtrarVentasPorDia()" title="Fecha Desde" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #9b59b6; background: rgba(255,255,255,0.8); color: #333; font-family: inherit; font-size: 13px; outline: none; font-weight: bold;">
+                    <input type="date" id="inputFechaFiltroHasta" onchange="filtrarVentasPorDia()" title="Fecha Hasta" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #9b59b6; background: rgba(255,255,255,0.8); color: #333; font-family: inherit; font-size: 13px; outline: none; font-weight: bold;">
+                    <select id="filtroEquipoDia" onchange="actualizarVendedoresDia()" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #9b59b6; background: rgba(255,255,255,0.8); color: #333; font-family: inherit; font-size: 13px; outline: none; font-weight: bold; max-width: 150px;">
+                        <option value="TODOS">Todos los Equipos</option>
+                    </select>
+                    <select id="filtroVendedorDia" onchange="filtrarVentasPorDia()" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #9b59b6; background: rgba(255,255,255,0.8); color: #333; font-family: inherit; font-size: 13px; outline: none; font-weight: bold; max-width: 150px;">
+                        <option value="TODOS">Todos los Vendedores</option>
+                    </select>
+                </div>
+            </div>
+            <strong id="kpiVentasDia" style="color:#9b59b6; font-size: 36px; font-family: monospace;">-</strong>
+        </div>
+
         <div class="card-metricas">
             <h3><i class="fa-solid fa-chart-pie"></i> Rendimiento Global Agencia</h3>
             <div class="metricas-grid">
@@ -464,6 +481,13 @@
                     <strong id="totMonto">$0</strong>
                 </div>
             </div>
+        </div>
+
+        <div class="card-equipos" style="margin-top: 20px; border-top: 4px solid var(--gpl-dorado); background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+            <h3 style="margin: 0 0 15px 0; color: var(--gpl-petroleo); font-size: 16px; text-transform: uppercase;"><i class="fa-solid fa-list-check"></i> Registro de Entrevistas (Hoy)</h3>
+            <ul id="listaEntrevistasHoy" class="lista-equipos" style="list-style: none; padding: 0; margin: 0; max-height: 400px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px;">
+                <li><div class="empty-state" style="text-align:center; padding: 20px; color:#777;"><i class="fa-solid fa-spinner fa-spin"></i> Cargando entrevistas de hoy...</div></li>
+            </ul>
         </div>
 
         <div style="display: flex; gap: 15px; margin-top: 20px; flex-wrap: wrap; background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); border-left: 4px solid var(--gpl-dorado);">
@@ -772,6 +796,67 @@
         let globalVentas = [];
         let globalNetasEmpresa = 0;
 
+        function actualizarVendedoresDia() {
+            let equipoId = document.getElementById('filtroEquipoDia').value;
+            let selVend = document.getElementById('filtroVendedorDia');
+            selVend.innerHTML = '<option value="TODOS">Todos los Vendedores</option>';
+            
+            let vendedoresFiltrados = globalIntegrantes.filter(p => p.rol === 'Vendedor' || p.rol === 'Lider de Equipo' || p.rol === 'Líder de Equipo' || p.rol === 'Líder de Equipos');
+            
+            if (equipoId !== 'TODOS') {
+                vendedoresFiltrados = vendedoresFiltrados.filter(p => p.equipo_id === equipoId);
+            }
+            
+            vendedoresFiltrados.sort((a,b) => a.nombre.localeCompare(b.nombre)).forEach(v => {
+                selVend.innerHTML += `<option value="${v.id}">${v.nombre}</option>`;
+            });
+            filtrarVentasPorDia();
+        }
+
+        function filtrarVentasPorDia() {
+            let fechaSelDesde = document.getElementById('inputFechaFiltroDesde').value;
+            let fechaSelHasta = document.getElementById('inputFechaFiltroHasta').value;
+            let equipoId = document.getElementById('filtroEquipoDia')?.value || 'TODOS';
+            let vendedorId = document.getElementById('filtroVendedorDia')?.value || 'TODOS';
+
+            if (!fechaSelDesde || !fechaSelHasta) {
+                document.getElementById('kpiVentasDia').textContent = "-";
+                return;
+            }
+            let total = 0;
+            globalVentas.forEach(v => {
+                if (v.created_at) {
+                    let datePart = v.created_at.split('T')[0];
+                    if (datePart >= fechaSelDesde && datePart <= fechaSelHasta) {
+                        let match = true;
+                        
+                        if (vendedorId !== 'TODOS' && v.vendedor_id !== vendedorId) {
+                            match = false;
+                        } else if (equipoId !== 'TODOS') {
+                            let vendedor = globalIntegrantes.find(p => p.id === v.vendedor_id);
+                            if (vendedor) {
+                                if (vendedor.equipo_id !== equipoId) match = false;
+                            } else {
+                                match = false;
+                            }
+                        }
+                        
+                        // En panel supervisor, globalVentas solo contiene las ventas de su sucursal,
+                        // o bien iteramos sobre globalVentas que sí incluye todas, pero validamos que pertenezca a la sucursal.
+                        // Wait, let's verify if globalVentas has all sales or just branch sales.
+                        // I will add a check just in case it has all sales.
+                        let vendedorEnSucursal = globalIntegrantes.find(p => p.id === v.vendedor_id);
+                        if (!vendedorEnSucursal) match = false;
+                        
+                        if (match) {
+                            total += (v.ventas_cerradas || 0) - (v.bajas || 0);
+                        }
+                    }
+                }
+            });
+            document.getElementById('kpiVentasDia').textContent = total;
+        }
+
         async function cargarDatosSupervisor(idSupervisor, campanaStr) {
             try {
                 // 1. Buscar perfil del supervisor
@@ -922,6 +1007,15 @@
 
             // Filtrar equipos de esta agencia
             const equiposAgencia = globalEquipos.filter(e => e.agencia_id === idAgencia);
+            
+            let selEqDia = document.getElementById('filtroEquipoDia');
+            if (selEqDia) {
+                selEqDia.innerHTML = '<option value="TODOS">Todos los Equipos</option>' + equiposAgencia.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('');
+                let hoyIso = new Date().toISOString().split('T')[0];
+                document.getElementById('inputFechaFiltroDesde').value = hoyIso;
+                document.getElementById('inputFechaFiltroHasta').value = hoyIso;
+                actualizarVendedoresDia();
+            }
             
             if(equiposAgencia.length === 0) {
                 document.getElementById('listaEquipos').innerHTML = `<li><div class="empty-state">No hay equipos registrados en esta agencia.</div></li>`;
@@ -1081,7 +1175,68 @@
 
             // Llamar a cargar modulo de gestión
             cargarModuloGestion(equiposAgencia, integrantesAgencia, ventasAgencia);
+
+            // RENDERIZAR RANKING ENTREVISTAS HOY (SUPERVISOR)
+            (async () => {
+                const campanaAct = document.getElementById('selectCampana').value;
+                let entrevistasRow = [];
+                let step = 1000, fromRow = 0;
+                while (true) {
+                    const { data } = await clienteSupabase.from('registro_entrevistas').select('vendedor_id, created_at').eq('campana', campanaAct).range(fromRow, fromRow + step - 1);
+                    if (!data || data.length === 0) break;
+                    entrevistasRow = entrevistasRow.concat(data);
+                    if (data.length < step) break;
+                    fromRow += step;
+                }
+                
+                let hoyStr = new Date().toISOString().split('T')[0];
+                let mapEntrevistasHoy = {}; 
+
+                entrevistasRow.forEach(ent => {
+                    if (ent.created_at && ent.created_at.split('T')[0] === hoyStr) {
+                        mapEntrevistasHoy[ent.vendedor_id] = (mapEntrevistasHoy[ent.vendedor_id] || 0) + 1;
+                    }
+                });
+
+                let gruposHoy = {};
+                integrantesAgencia.forEach(p => {
+                    if (p.rol === 'Vendedor' || p.rol === 'Lider de Equipo' || p.rol === 'Líder de Equipo' || p.rol === 'Líder de Equipos') {
+                        let eq = equiposAgencia.find(e => e.id === p.equipo_id);
+                        if (eq) {
+                            if (!gruposHoy[eq.id]) gruposHoy[eq.id] = { nombre: eq.nombre, vendedores: [] };
+                            gruposHoy[eq.id].vendedores.push({
+                                nombre: p.nombre,
+                                entrevistas: mapEntrevistasHoy[p.id] || 0
+                            });
+                        }
+                    }
+                });
+
+                let listGruposHoy = Object.values(gruposHoy);
+                listGruposHoy.forEach(g => g.vendedores.sort((a,b) => a.entrevistas - b.entrevistas));
+                listGruposHoy.sort((a,b) => a.nombre.localeCompare(b.nombre));
+
+                let htmlEntrevistasHoy = '';
+                if (listGruposHoy.length === 0) {
+                    htmlEntrevistasHoy = `<li><div class="empty-state">No hay vendedores para mostrar.</div></li>`;
+                } else {
+                    listGruposHoy.forEach(g => {
+                        htmlEntrevistasHoy += `<h4 style="background: #eee; margin: 0; padding: 8px 15px; font-size: 11px; color: #555; text-transform: uppercase;">${g.nombre}</h4>`;
+                        g.vendedores.forEach(v => {
+                            let colorClass = v.entrevistas === 0 ? 'color: #e74c3c;' : 'color: #2ecc71;';
+                            htmlEntrevistasHoy += `
+                            <li style="padding: 12px 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 13px; font-weight: bold; color: #333;">${v.nombre}</span>
+                                <span style="${colorClass} font-weight: 900; font-size: 14px;">${v.entrevistas} Entr.</span>
+                            </li>`;
+                        });
+                    });
+                }
+                let ulHoy = document.getElementById('listaEntrevistasHoy');
+                if (ulHoy) ulHoy.innerHTML = htmlEntrevistasHoy;
+            })();
         }
+
 
         function renderizarGraficosSupervisor() {
             if (!window.globalVentasAgencia) return;

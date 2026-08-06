@@ -511,6 +511,14 @@
             </div>
         </div>
 
+        <div class="card-equipos" style="margin-top: 20px; margin-bottom: 20px; border-top: 4px solid var(--gpl-dorado); background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+            <h3 style="margin: 0 0 15px 0; color: var(--gpl-petroleo); font-size: 16px; text-transform: uppercase;"><i class="fa-solid fa-list-check"></i> Registro de Entrevistas (Hoy)</h3>
+            <ul id="listaEntrevistasHoy" class="lista-equipos" style="list-style: none; padding: 0; margin: 0; max-height: 400px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px;">
+                <li><div class="empty-state" style="text-align:center; padding: 20px; color:#777;"><i class="fa-solid fa-spinner fa-spin"></i> Cargando entrevistas de hoy...</div></li>
+            </ul>
+        </div>
+
+
         <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 15px; margin-bottom: 10px;">
             <select id="selectAgenciaGraficos" onchange="renderizarGraficos()" style="flex: 1; min-width: 200px; max-width: 300px; padding: 12px; border-radius: 8px; border: 2px solid var(--gpl-dorado); background: var(--fondo-oscuro); color: white; font-weight: bold; font-size: 14px; outline: none; cursor: pointer;">
                 <option value="TODAS">🌟 TODAS LAS AGENCIAS</option>
@@ -1157,14 +1165,18 @@
                 let entrevistasRow = [];
                 step = 1000; fromRow = 0;
                 while (true) {
-                    const { data } = await clienteSupabase.from('registro_entrevistas').select('vendedor_id, campana').eq('campana', campanaStr).range(fromRow, fromRow + step - 1);
+                    const { data } = await clienteSupabase.from('registro_entrevistas').select('vendedor_id, campana, created_at').eq('campana', campanaStr).range(fromRow, fromRow + step - 1);
                     if (!data || data.length === 0) break;
                     entrevistasRow = entrevistasRow.concat(data);
                     if (data.length < step) break;
                     fromRow += step;
                 }
                 
+                let hoyStr = new Date().toISOString().split('T')[0];
+                let mapEntrevistasHoy = {}; // Map vendedor_id -> count
+
                 entrevistasRow.forEach(ent => {
+                    // Contar para la campaña
                     let vendedor = perfiles.find(p => p.id === ent.vendedor_id);
                     if (vendedor) {
                         let eq = equipos.find(e => e.id === vendedor.equipo_id);
@@ -1180,7 +1192,54 @@
                             }
                         }
                     }
+
+                    // Contar para Hoy
+                    if (ent.created_at) {
+                        let datePart = ent.created_at.split('T')[0];
+                        if (datePart === hoyStr) {
+                            mapEntrevistasHoy[ent.vendedor_id] = (mapEntrevistasHoy[ent.vendedor_id] || 0) + 1;
+                        }
+                    }
                 });
+
+                // RENDERIZAR RANKING ENTREVISTAS HOY (GERENCIA)
+                let gruposHoy = {};
+                perfiles.forEach(p => {
+                    if (p.rol === 'Vendedor' || p.rol === 'Lider de Equipo' || p.rol === 'Líder de Equipo' || p.rol === 'Líder de Equipos') {
+                        let eq = equipos.find(e => e.id === p.equipo_id);
+                        if (eq) {
+                            if (!gruposHoy[eq.id]) gruposHoy[eq.id] = { nombre: eq.nombre, vendedores: [] };
+                            gruposHoy[eq.id].vendedores.push({
+                                nombre: p.nombre,
+                                entrevistas: mapEntrevistasHoy[p.id] || 0
+                            });
+                        }
+                    }
+                });
+
+                let listGruposHoy = Object.values(gruposHoy);
+                listGruposHoy.forEach(g => g.vendedores.sort((a,b) => a.entrevistas - b.entrevistas));
+                listGruposHoy.sort((a,b) => a.nombre.localeCompare(b.nombre));
+
+                let htmlEntrevistasHoy = '';
+                if (listGruposHoy.length === 0) {
+                    htmlEntrevistasHoy = `<li><div class="empty-state">No hay vendedores para mostrar.</div></li>`;
+                } else {
+                    listGruposHoy.forEach(g => {
+                        htmlEntrevistasHoy += `<h4 style="background: #eee; margin: 0; padding: 8px 15px; font-size: 11px; color: #555; text-transform: uppercase;">${g.nombre}</h4>`;
+                        g.vendedores.forEach(v => {
+                            let colorClass = v.entrevistas === 0 ? 'color: #e74c3c;' : 'color: #2ecc71;';
+                            htmlEntrevistasHoy += `
+                            <li style="padding: 12px 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 13px; font-weight: bold; color: #333;">${v.nombre}</span>
+                                <span style="${colorClass} font-weight: 900; font-size: 14px;">${v.entrevistas} Entr.</span>
+                            </li>`;
+                        });
+                    });
+                }
+                let ulHoy = document.getElementById('listaEntrevistasHoy');
+                if (ulHoy) ulHoy.innerHTML = htmlEntrevistasHoy;
+
 
                 // 4.1. Calcular días hábiles antes del desglose para usar proyecciones
                 const dias = await getDiasHabiles(campanaStr);
