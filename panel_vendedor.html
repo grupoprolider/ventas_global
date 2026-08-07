@@ -296,6 +296,28 @@
             transform: translateY(4px);
             box-shadow: none;
         }
+        
+        /* MODAL MOTIVACIONAL MATUTINO */
+        .modal-overlay-motd {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.75); z-index: 1000; justify-content: center; align-items: center;
+            backdrop-filter: blur(4px); padding: 15px; box-sizing: border-box;
+            animation: fadeIn 0.4s;
+        }
+        .modal-motd {
+            background: white; border-radius: 15px; padding: 25px 20px; text-align: center; max-width: 350px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); position: relative; border-top: 6px solid var(--gpl-dorado);
+            animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .modal-motd h2 { padding-right: 0; margin-bottom: 15px; font-size: 22px; }
+        .modal-motd p { font-size: 15px; line-height: 1.4; color: #555; margin-bottom: 20px; }
+        .modal-motd-icon { font-size: 40px; margin-bottom: 10px; }
+        .btn-cerrar-motd {
+            background: var(--gpl-petroleo); color: white; border: none; padding: 12px 20px; font-size: 14px;
+            font-weight: bold; border-radius: 10px; cursor: pointer; width: 100%; text-transform: uppercase;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(40px) scale(0.9); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
 
         /* MODAL (VENTANA FLOTANTE) DEL RANKING */
         .modal-overlay {
@@ -516,6 +538,16 @@
                     ✖</button>
             </div>
             <iframe id="iframeRanking" class="iframe-ranking" src=""></iframe>
+        </div>
+    </div>
+    
+    <!-- Modal Motivacional Matutino -->
+    <div id="modalMOTD" class="modal-overlay-motd">
+        <div class="modal-motd">
+            <div id="motdIcon" class="modal-motd-icon">🌟</div>
+            <h2 id="motdTitulo">¡Buen día!</h2>
+            <p id="motdTexto">Sincronizando información...</p>
+            <button class="btn-cerrar-motd" onclick="document.getElementById('modalMOTD').style.display='none'">¡A Vender!</button>
         </div>
     </div>
 
@@ -817,7 +849,53 @@
                         msj.style.color = '#a8d5e2';
                     }
                 }
+                
+                // Mostrar modal motivacional al terminar de calcular
+                mostrarMensajeMotivacional(totalVts, metaVentas, dias, atraso);
+                
             } catch (e) { console.error(e); }
+        }
+
+        function mostrarMensajeMotivacional(netas, objetivo, dias, atraso) {
+            if (!objetivo || objetivo <= 0) return; // Si no tiene meta fijada, no molestar
+            
+            const hoyStr = new Date().toLocaleDateString('es-AR');
+            const key = 'gpl_motd_' + vendedorActual.id + '_' + hoyStr;
+            
+            if (localStorage.getItem(key) === 'true') return; // Ya lo vio hoy
+            
+            const modal = document.getElementById('modalMOTD');
+            const titulo = document.getElementById('motdTitulo');
+            const texto = document.getElementById('motdTexto');
+            const icono = document.getElementById('motdIcon');
+            
+            const faltan = objetivo - netas;
+            const ritmoNecesario = Math.ceil(faltan / (dias.restantes || 1));
+            
+            if (faltan <= 0) {
+                icono.innerHTML = '🏆';
+                titulo.innerHTML = '¡Felicitaciones!';
+                titulo.style.color = '#2ecc71';
+                texto.innerHTML = `¡Ya alcanzaste tu meta de <b>${objetivo} ventas</b>!<br>Todo lo que sumes a partir de ahora es extra. ¡Seguí así!`;
+            } else if (faltan <= 3) {
+                icono.innerHTML = '🔥';
+                titulo.innerHTML = '¡Estás a un paso!';
+                titulo.style.color = '#f39c12';
+                texto.innerHTML = `Te faltan solo <b>${faltan} ventas</b> para alcanzar tu objetivo.<br>¡A meterle con todo que ya llegás!`;
+            } else if (atraso > 0) {
+                icono.innerHTML = '🚀';
+                titulo.innerHTML = '¡Acelera el ritmo!';
+                titulo.style.color = '#e74c3c';
+                texto.innerHTML = `Quedan <b>${dias.restantes} días hábiles</b> y te faltan <b>${faltan} ventas</b>.<br>Necesitás cerrar <b>${ritmoNecesario} ventas por día</b> para llegar a tu meta. ¡Vos podés!`;
+            } else {
+                icono.innerHTML = '🏃‍♂️';
+                titulo.innerHTML = '¡Venís a buen ritmo!';
+                titulo.style.color = '#3498db';
+                texto.innerHTML = `Faltan <b>${faltan} ventas</b> y quedan <b>${dias.restantes} días hábiles</b>.<br>Estás cumpliendo el ritmo diario ideal. ¡Mantené el enfoque y llegás sin problemas!`;
+            }
+            
+            modal.style.display = 'flex';
+            localStorage.setItem(key, 'true');
         }
 
         async function cambiarMiPin() {
