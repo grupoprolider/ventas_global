@@ -183,13 +183,15 @@
 
         <div class="seccion-acceso">
             <h3><i class="fa-solid fa-user"></i> Acceso Personal de Ventas</h3>
-            <select id="selectVendedor">
-                <option value="">-- Buscá tu Nombre --</option>
-            </select>
-            <input type="password" id="passVendedor" placeholder="Tu PIN de 4 dígitos">
-            <button onclick="ingresarVendedor()" id="btnIngresoVend" class="btn-entrar btn-vendedor">
-                <i class="fa-solid fa-right-to-bracket"></i> Ingresar a mi Panel
-            </button>
+            <form onsubmit="event.preventDefault(); ingresarVendedor();" style="margin: 0; padding: 0;">
+                <select id="selectVendedor" autocomplete="username">
+                    <option value="">-- Buscá tu Nombre --</option>
+                </select>
+                <input type="password" id="passVendedor" placeholder="Tu PIN de 4 dígitos" autocomplete="current-password">
+                <button type="submit" id="btnIngresoVend" class="btn-entrar btn-vendedor">
+                    <i class="fa-solid fa-right-to-bracket"></i> Ingresar a mi Panel
+                </button>
+            </form>
         </div>
 
         <div class="seccion-acceso" style="background: #fafffb; border-color: #c3e6cb;">
@@ -239,6 +241,10 @@
                         opt.textContent = p.nombre;
                         select.appendChild(opt);
                     });
+                    
+                    // Recuperar el último vendedor que inició sesión exitosamente
+                    const guardado = localStorage.getItem('ultimoVendedorId');
+                    if (guardado) select.value = guardado;
                 }
             } catch (err) {
                 console.error("Error cargando personal:", err.message);
@@ -261,6 +267,9 @@
                 if (error) throw error;
 
                 if (data.pin_acceso === pinIngresado) {
+                    // Guardar ID en localStorage para autocompletar la próxima vez
+                    localStorage.setItem('ultimoVendedorId', idVendedor);
+                    
                     const rol = (data.rol || '').toLowerCase();
                     if (rol === 'lider' || rol === 'líder' || rol === 'líder de asesores' || rol === 'lider de asesores') {
                         window.location.href = `panel_lider.html?id=${idVendedor}`;
