@@ -1077,6 +1077,7 @@
                         id: a.id,
                         nombre: a.nombre,
                         netas: 0,
+                        bajas: 0,
                         objetivo: 0,
                         entrevistas: 0,
                         monto: 0,
@@ -1093,6 +1094,7 @@
                             nombre: eq.nombre,
                             lider: lider,
                             netas: 0,
+                            bajas: 0,
                             objetivo: 0,
                             entrevistas: 0,
                             monto: 0,
@@ -1110,6 +1112,7 @@
                                 nombre: p.nombre,
                                 rol: p.rol || 'Vendedor',
                                 netas: 0,
+                                bajas: 0,
                                 objetivo: p.objetivo_campana || 0,
                                 entrevistas: 0,
                                 monto: 0
@@ -1139,20 +1142,24 @@
                         let eq = equipos.find(e => e.id === vendedor.equipo_id);
                         if (eq && mapAgenciasData[eq.agencia_id]) {
                             let netas = (v.ventas_cerradas || 0) - (v.bajas || 0);
+                            let bajas = v.bajas || 0;
                             let monto = v.monto || 0;
                             let entrevistas = v.entrevistas || 0;
                             
                             mapAgenciasData[eq.agencia_id].netas += netas;
+                            mapAgenciasData[eq.agencia_id].bajas += bajas;
                             mapAgenciasData[eq.agencia_id].monto += monto;
                             mapAgenciasData[eq.agencia_id].entrevistas += entrevistas;
                             
                             if(mapAgenciasData[eq.agencia_id].equipos[eq.id]) {
                                 mapAgenciasData[eq.agencia_id].equipos[eq.id].netas += netas;
+                                mapAgenciasData[eq.agencia_id].equipos[eq.id].bajas += bajas;
                                 mapAgenciasData[eq.agencia_id].equipos[eq.id].monto += monto;
                                 mapAgenciasData[eq.agencia_id].equipos[eq.id].entrevistas += entrevistas;
                                 
                                 if(mapAgenciasData[eq.agencia_id].equipos[eq.id].vendedores[vendedor.id]) {
                                     mapAgenciasData[eq.agencia_id].equipos[eq.id].vendedores[vendedor.id].netas += netas;
+                                    mapAgenciasData[eq.agencia_id].equipos[eq.id].vendedores[vendedor.id].bajas += bajas;
                                     mapAgenciasData[eq.agencia_id].equipos[eq.id].vendedores[vendedor.id].monto += monto;
                                     mapAgenciasData[eq.agencia_id].equipos[eq.id].vendedores[vendedor.id].entrevistas += entrevistas;
                                 }
@@ -1257,8 +1264,9 @@
                         let vendArray = Object.values(eq.vendedores).sort((a,b) => b.netas - a.netas);
                         let htmlVendedores = vendArray.map(v => `
                             <div style="display: flex; justify-content: space-between; padding: 5px 10px; border-bottom: 1px solid #f1f1f1; font-size: 11px;">
-                                <div style="width: 40%;">${v.rol.toLowerCase() === 'líder de asesores' ? '<i class="fa-solid fa-crown" style="color:var(--gpl-dorado);" title="Líder"></i>' : '👤'} ${v.nombre}</div>
-                                <div style="width: 15%; text-align: center;">Vts: <b style="color:#2ecc71;">${v.netas}</b></div>
+                                <div style="width: 30%;">${v.rol.toLowerCase() === 'líder de asesores' ? '<i class="fa-solid fa-crown" style="color:var(--gpl-dorado);" title="Líder"></i>' : '👤'} ${v.nombre}</div>
+                                <div style="width: 15%; text-align: center;">V.Netas: <b style="color:#2ecc71;">${v.netas}</b></div>
+                                <div style="width: 10%; text-align: center; color:#e74c3c;">Bajas: <b>${v.bajas}</b></div>
                                 <div style="width: 15%; text-align: center;">Obj: <b>${v.objetivo}</b></div>
                                 <div style="width: 15%; text-align: center;">Ent: <b>${v.entrevistas}</b></div>
                                 <div style="width: 15%; text-align: right; color:var(--gpl-petroleo);"><b>$${(v.monto/1000).toFixed(1)}k</b></div>
@@ -1278,7 +1286,8 @@
                                     <span class="eq-lider"><i class="fa-solid fa-crown" style="color:#f1c40f;"></i> ${eq.lider}</span>
                                 </div>
                                 <div class="eq-metrics" style="flex-wrap: wrap; justify-content: flex-end;">
-                                    <div><span style="color:#888; font-size:9px;">Ventas</span><strong style="color:#2ecc71;">${eq.netas}</strong></div>
+                                    <div><span style="color:#888; font-size:9px;">V. Netas</span><strong style="color:#2ecc71;">${eq.netas}</strong></div>
+                                    <div><span style="color:#888; font-size:9px;">Bajas</span><strong style="color:#e74c3c;">${eq.bajas}</strong></div>
                                     <div><span style="color:#888; font-size:9px;">Obj</span><strong>${eq.objetivo}</strong></div>
                                     <div><span style="color:#888; font-size:9px;">Entrev.</span><strong>${eq.entrevistas}</strong></div>
                                     <div><span style="color:#888; font-size:9px;">Factur.</span><strong style="color:var(--gpl-petroleo); font-family:monospace;">$${(eq.monto/1000).toFixed(1)}k</strong></div>
@@ -1303,7 +1312,8 @@
                                 <i id="icon_${ag.id}" class="fa-solid fa-plus-circle" style="color:${ag.color}; font-size: 18px;"></i> ${ag.nombre}
                             </div>
                             <div class="ag-stats-row" style="flex-wrap: wrap;">
-                                <span>📈 Ventas: <b style="color:#2ecc71;">${ag.netas}</b></span>
+                                <span>📈 V. Netas: <b style="color:#2ecc71;">${ag.netas}</b></span>
+                                <span>📉 Bajas: <b style="color:#e74c3c;">${ag.bajas}</b></span>
                                 <span>🎯 Obj: <b style="color:var(--gpl-petroleo);">${ag.objetivo}</b></span>
                                 <span>🗣️ Entrev: <b>${ag.entrevistas}</b></span>
                                 <span>💰 <b style="color:var(--gpl-petroleo);">$${(ag.monto/1000).toFixed(1)}k</b></span>
