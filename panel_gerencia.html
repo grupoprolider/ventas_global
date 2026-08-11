@@ -1402,17 +1402,22 @@
                 let eq = vend ? equipos.find(e => e.id === vend.equipo_id) : null;
                 let ag = eq ? agencias.find(a => a.id === eq.agencia_id) : null;
                 
+                let nombreVendedor = vend ? vend.nombre : "S/N";
+                if (v.es_anulada) {
+                    nombreVendedor += " (ANULADA)";
+                }
+                
                 return { 
                     "Fecha de Registro": new Date(v.created_at).toLocaleDateString('es-AR'), 
                     "Semana Informada": "Semana " + (v.semana || "-"), 
-                    "Vendedor/a": vend ? vend.nombre : "S/N", 
+                    "Vendedor/a": nombreVendedor, 
                     "Equipo": eq ? eq.nombre : "Sin Equipo", 
                     "Agencia": ag ? ag.nombre : "Sin Agencia",
                     "Vts Brutas": v.ventas_cerradas || 0, 
                     "Entrevistas Realizadas": v.entrevistas || 0, 
                     "Bajas Registradas": v.bajas || 0, 
                     "Ventas Netas": (v.ventas_cerradas || 0) - (v.bajas || 0),
-                    "Beneficio / Ocupación Cliente": v.beneficio || "No Especificado", 
+                    "Beneficio / Ocupación Cliente": v.es_anulada ? "[ANULADA] " + (v.beneficio || "") : (v.beneficio || "No Especificado"), 
                     "Banco / Medio de Pago": v.medio_pago || "No Especificado",
                     "Monto de Operación ($)": v.monto || 0
                 };
