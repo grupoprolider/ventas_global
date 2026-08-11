@@ -215,6 +215,13 @@
     </div>
 
     <script>
+        function obtenerFechaLocal(fechaParam) {
+            const d = fechaParam ? new Date(fechaParam) : new Date();
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
         const clienteSupabase = supabase.createClient('https://pumpwqyazqaxeeknrhyo.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1bXB3cXlhenFheGVla25yaHlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MjQ4ODEsImV4cCI6MjA5NDIwMDg4MX0.-AQZZYAt-uskDLUpbiafJXbHgW0lErf8bwEnk7eq1DE');
 
         window.datosGlobalesReporte = null;
@@ -582,7 +589,7 @@
                     nombrePestana = tabActiva.innerText.trim().replace(/\s+/g, '_').replace(/\./g, '');
                 }
                 
-                link.download = `Ranking_${nombrePestana}_ProLider_${new Date().toISOString().split('T')[0]}.png`;
+                link.download = `Ranking_${nombrePestana}_ProLider_${obtenerFechaLocal()}.png`;
                 link.href = dataURL;
                 link.click();
             } catch (err) {

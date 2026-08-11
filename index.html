@@ -213,15 +213,13 @@
 
         <div class="seccion-acceso">
             <h3><i class="fa-solid fa-user"></i> Acceso Personal de Ventas</h3>
-            <form onsubmit="event.preventDefault(); ingresarVendedor();" style="margin: 0; padding: 0;">
-                <select id="selectVendedor" autocomplete="username">
-                    <option value="">-- Buscá tu Nombre --</option>
-                </select>
-                <input type="password" id="passVendedor" placeholder="Tu PIN de 4 dígitos" autocomplete="current-password">
-                <button type="submit" id="btnIngresoVend" class="btn-entrar btn-vendedor">
-                    <i class="fa-solid fa-right-to-bracket"></i> Ingresar a mi Panel
-                </button>
-            </form>
+            <select id="selectVendedor">
+                <option value="">-- Buscá tu Nombre --</option>
+            </select>
+            <input type="password" id="passVendedor" placeholder="Tu PIN de 4 dígitos">
+            <button onclick="ingresarVendedor()" id="btnIngresoVend" class="btn-entrar btn-vendedor">
+                <i class="fa-solid fa-right-to-bracket"></i> Ingresar a mi Panel
+            </button>
         </div>
 
         <div class="seccion-acceso" style="background: #fafffb; border-color: #c3e6cb;">
@@ -238,15 +236,20 @@
             <button onclick="ingresarAdmin()" class="btn-entrar btn-admin">
                 <i class="fa-solid fa-shield-halved"></i> Control Maestro
             </button>
-            <button onclick="window.location.href='panel_auditoria_entrevistas.html'" class="btn-entrar" style="background:#8e44ad; color:white; margin-top:5px; box-shadow: 0 3px 10px rgba(142, 68, 173, 0.2);">
-                <i class="fa-solid fa-address-book"></i> Auditar Entrevistas
-            </button>
         </div>
 
         <div class="footer-txt">Grupo ProLíder Comercial</div>
     </div>
 
     <script>
+        function obtenerFechaLocal(fechaParam) {
+            const d = fechaParam ? new Date(fechaParam) : new Date();
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+        
         window.mapaVendedores = {};
         const clienteSupabase = supabase.createClient('https://pumpwqyazqaxeeknrhyo.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1bXB3cXlhenFheGVla25yaHlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MjQ4ODEsImV4cCI6MjA5NDIwMDg4MX0.-AQZZYAt-uskDLUpbiafJXbHgW0lErf8bwEnk7eq1DE');
 
@@ -273,10 +276,6 @@
                         select.appendChild(opt);
                         window.mapaVendedores[p.id] = p.nombre;
                     });
-                    
-                    // Recuperar el último vendedor que inició sesión exitosamente
-                    const guardado = localStorage.getItem('ultimoVendedorId');
-                    if (guardado) select.value = guardado;
                 }
             } catch (err) {
                 console.error("Error cargando personal:", err.message);
@@ -299,9 +298,6 @@
                 if (error) throw error;
 
                 if (data.pin_acceso === pinIngresado) {
-                    // Guardar ID en localStorage para autocompletar la próxima vez
-                    localStorage.setItem('ultimoVendedorId', idVendedor);
-                    
                     const rol = (data.rol || '').toLowerCase();
                     if (rol === 'lider' || rol === 'líder' || rol === 'líder de asesores' || rol === 'lider de asesores') {
                         window.location.href = `panel_lider.html?id=${idVendedor}`;
@@ -350,18 +346,31 @@
 
         async function cargarRankingDiario() {
             try {
-                const hoy = new Date();
-                hoy.setHours(0, 0, 0, 0);
-                const isoHoy = hoy.toISOString();
+                // Obtenemos la fecha en la zona horaria del vendedor
+                const hoyStr = obtenerFechaLocal();
                 
                 const [{ data: ventas }, { data: entrevistas }] = await Promise.all([
-                    clienteSupabase.from('registro_ventas').select('vendedor_id, ventas_cerradas').gte('created_at', isoHoy),
-                    clienteSupabase.from('registro_entrevistas').select('vendedor_id').gte('created_at', isoHoy)
+                    clienteSupabase.from('registro_ventas').select('vendedor_id, ventas_cerradas, created_at'),
+                    clienteSupabase.from('registro_entrevistas').select('vendedor_id, created_at')
                 ]);
 
                 let mapVentas = {}, mapEnt = {};
-                if (ventas) ventas.forEach(v => { if (v.ventas_cerradas > 0) mapVentas[v.vendedor_id] = (mapVentas[v.vendedor_id] || 0) + v.ventas_cerradas; });
-                if (entrevistas) entrevistas.forEach(e => { mapEnt[e.vendedor_id] = (mapEnt[e.vendedor_id] || 0) + 1; });
+                if (ventas) {
+                    ventas.forEach(v => {
+                        // Filtro de fecha en el cliente usando la zona horaria local
+                        if (v.ventas_cerradas > 0 && v.created_at && obtenerFechaLocal(v.created_at) === hoyStr) {
+                            mapVentas[v.vendedor_id] = (mapVentas[v.vendedor_id] || 0) + v.ventas_cerradas;
+                        }
+                    });
+                }
+                if (entrevistas) {
+                    entrevistas.forEach(e => {
+                        // Filtro de fecha en el cliente usando la zona horaria local
+                        if (e.created_at && obtenerFechaLocal(e.created_at) === hoyStr) {
+                            mapEnt[e.vendedor_id] = (mapEnt[e.vendedor_id] || 0) + 1;
+                        }
+                    });
+                }
                 
                 let arrVentas = Object.keys(mapVentas).map(id => ({ id, total: mapVentas[id] })).sort((a,b) => b.total - a.total);
                 let arrEntrevistas = Object.keys(mapEnt).map(id => ({ id, total: mapEnt[id] })).sort((a,b) => b.total - a.total);

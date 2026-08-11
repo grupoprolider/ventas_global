@@ -462,6 +462,13 @@
     </div>
 
     <script>
+        function obtenerFechaLocal(fechaParam) {
+            const d = fechaParam ? new Date(fechaParam) : new Date();
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
         const clienteSupabase = supabase.createClient('https://pumpwqyazqaxeeknrhyo.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1bXB3cXlhenFheGVla25yaHlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MjQ4ODEsImV4cCI6MjA5NDIwMDg4MX0.-AQZZYAt-uskDLUpbiafJXbHgW0lErf8bwEnk7eq1DE');
 
         let idSeguroURL = null;
@@ -514,7 +521,7 @@
             for (let d = new Date(fechaInicio); d <= fechaFin; d.setDate(d.getDate() + 1)) {
                 let day = d.getDay();
                 if (day !== 0 && day !== 6) {
-                    let dStr = d.toISOString().split('T')[0];
+                    let dStr = obtenerFechaLocal(d);
                     if (!feriadosArr.includes(dStr)) {
                         totales++;
                         if (d <= hoy) transcurridos++;
@@ -569,7 +576,7 @@
             let total = 0;
             globalVentasEquipo.forEach(v => {
                 if (v.created_at) {
-                    let datePart = v.created_at.split('T')[0];
+                    let datePart = obtenerFechaLocal(v.created_at);
                     if (datePart >= fechaSelDesde && datePart <= fechaSelHasta) {
                         let match = true;
                         if (vendedorId !== 'TODOS' && v.vendedor_id !== vendedorId) {
@@ -680,7 +687,7 @@
                 let selVendDia = document.getElementById('filtroVendedorDia');
                 if (selVendDia) {
                     selVendDia.innerHTML = '<option value="TODOS">Todos los Vendedores</option>' + integrantes.map(i => `<option value="${i.id}">${i.nombre}</option>`).join('');
-                    let hoyIso = new Date().toISOString().split('T')[0];
+                    let hoyIso = obtenerFechaLocal();
                     document.getElementById('inputFechaFiltroDesde').value = hoyIso;
                     document.getElementById('inputFechaFiltroHasta').value = hoyIso;
                     filtrarVentasPorDia();
@@ -765,11 +772,11 @@
                         fromRow += step;
                     }
                     
-                    let hoyStr = new Date().toISOString().split('T')[0];
+                    let hoyStr = obtenerFechaLocal();
                     let mapEntrevistasHoy = {}; 
 
                     entrevistasRow.forEach(ent => {
-                        if (ent.created_at && ent.created_at.split('T')[0] === hoyStr) {
+                        if (ent.created_at && obtenerFechaLocal(ent.created_at) === hoyStr) {
                             mapEntrevistasHoy[ent.vendedor_id] = (mapEntrevistasHoy[ent.vendedor_id] || 0) + 1;
                         }
                     });
