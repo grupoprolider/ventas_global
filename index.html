@@ -346,12 +346,17 @@
 
         async function cargarRankingDiario() {
             try {
-                // Obtenemos la fecha en la zona horaria del vendedor
+                // Obtenemos la fecha en la zona horaria del vendedor para el filtro de cliente
                 const hoyStr = obtenerFechaLocal();
                 
+                // Calculamos la medianoche local en UTC para optimizar la descarga de Supabase
+                const hoyLocal = new Date();
+                hoyLocal.setHours(0, 0, 0, 0);
+                const isoMidnight = hoyLocal.toISOString();
+                
                 const [{ data: ventas }, { data: entrevistas }] = await Promise.all([
-                    clienteSupabase.from('registro_ventas').select('vendedor_id, ventas_cerradas, created_at'),
-                    clienteSupabase.from('registro_entrevistas').select('vendedor_id, created_at')
+                    clienteSupabase.from('registro_ventas').select('vendedor_id, ventas_cerradas, created_at').gte('created_at', isoMidnight),
+                    clienteSupabase.from('registro_entrevistas').select('vendedor_id, created_at').gte('created_at', isoMidnight)
                 ]);
 
                 let mapVentas = {}, mapEnt = {};
