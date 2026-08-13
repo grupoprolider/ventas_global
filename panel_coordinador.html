@@ -636,6 +636,19 @@
                         if(data.length < step) break;
                         fromRow += step;
                     }
+                    let mapBajasNetas = {};
+                    ventas.forEach(v => {
+                        if (v.ventas_cerradas || v.bajas) {
+                            mapBajasNetas[v.vendedor_id] = (mapBajasNetas[v.vendedor_id] || 0) + (v.ventas_cerradas || 0) - (v.bajas || 0);
+                        }
+                    });
+                    globalIntegrantes.forEach(p => {
+                        if (p.nombre && p.nombre.includes('(BAJA)')) {
+                            let objAjustado = mapBajasNetas[p.id] || 0;
+                            if (objAjustado < 0) objAjustado = 0;
+                            p.objetivo_campana = objAjustado;
+                        }
+                    });
                     globalVentas = ventas;
                 }
 
