@@ -549,6 +549,7 @@
 
         let opcionesBeneficiosHTML = '<option value="">-- Seleccionar --</option>';
         let opcionesBancosHTML = '<option value="">-- Seleccionar --</option>';
+        
 
         async function init() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -558,6 +559,18 @@
                 alert("Acceso denegado. Por favor, ingresá desde el Portal principal de Grupo ProLíder.");
                 window.location.href = 'index.html';
                 return;
+            }
+
+            const { data: ests } = await clienteSupabase.from('opciones_estados_entrevista').select('*').order('nombre');
+            if (ests) opcionesEstadosHTML += ests.map(e => `<option value="${e.nombre}">${e.nombre}</option>`).join('');
+
+            document.querySelectorAll('.inputProsEstado').forEach(el => el.innerHTML = opcionesEstadosHTML);
+
+            if (new Date().getDate() === 16) {
+                const retCont = document.getElementById('retroactivoContenedor');
+                if (retCont) retCont.style.display = 'block';
+            }
+
             cargarDatosVendedor(idSeguroURL);
         }
 
