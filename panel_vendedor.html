@@ -558,21 +558,6 @@
                 alert("Acceso denegado. Por favor, ingresá desde el Portal principal de Grupo ProLíder.");
                 window.location.href = 'index.html';
                 return;
-            }
-
-            const { data: benfs } = await clienteSupabase.from('opciones_beneficios').select('*').order('nombre');
-            if (benfs) opcionesBeneficiosHTML += benfs.map(b => `<option value="${b.nombre}">${b.nombre}</option>`).join('');
-
-            const { data: bncs } = await clienteSupabase.from('opciones_bancos').select('*').order('nombre');
-            if (bncs) opcionesBancosHTML += bncs.map(b => `<option value="${b.nombre}">${b.nombre}</option>`).join('');
-            
-            document.querySelector('.inputBeneficio').innerHTML = opcionesBeneficiosHTML;
-            document.querySelector('.inputBanco').innerHTML = opcionesBancosHTML;
-
-            if (new Date().getDate() === 16) {
-                document.getElementById('retroactivoContenedor').style.display = 'block';
-            }
-
             cargarDatosVendedor(idSeguroURL);
         }
 
@@ -819,101 +804,68 @@
         }
 
         async function enviarProduccion() {
-            const ent = parseInt(document.getElementById('inputEntrevistas').value) || 0;
             const sem = document.getElementById('inputSemana').value;
+            const esRetro = document.getElementById('checkRetroactivo') && document.getElementById('checkRetroactivo').checked;
+            const hoy = new Date();
+            if (esRetro) hoy.setDate(hoy.getDate() - 1);
+            const campanaStr = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
             
-            const ventasElements = document.querySelectorAll('.venta-item');
-            let arrayVentas = [];
-            
-            for(let v of ventasElements) {
-                let beneficio = v.querySelector('.inputBeneficio').value;
-                let banco = v.querySelector('.inputBanco').value;
-                let monto = parseFloat(v.querySelector('.inputMonto').value) || 0;
+            const prospectosElements = document.querySelectorAll('.prospecto-item');
+            let arrayProspectos = [];
+            for(let p of prospectosElements) {
+                let nombre = p.querySelector('.inputProsNombre').value;
+                let dni = p.querySelector('.inputProsDni').value;
+                let telefono = p.querySelector('.inputProsTel').value;
+                let estado = p.querySelector('.inputProsEstado').value;
                 
-                // Si es la única cajita y está vacía, la ignoramos (asumimos que solo carga entrevistas)
-                if (ventasElements.length === 1 && beneficio === "" && banco === "" && monto === 0) {
-                    continue;
-                }
+                if (prospectosElements.length === 1 && nombre === "" && telefono === "") continue;
+                if (nombre === "" || telefono === "") return alert("Completá Nombre y Teléfono en todos los prospectos agregados.");
                 
-                if (beneficio === "" || banco === "") {
-                    alert("Por favor, seleccioná Beneficio y Banco en todas las ventas agregadas.");
-                    return;
-                }
-                
-                const esRetro = document.getElementById('checkRetroactivo') && document.getElementById('checkRetroactivo').checked;
-                const hoy = new Date();
-                if (esRetro) {
-                    hoy.setDate(hoy.getDate() - 1);
-                }
-                const campanaStr = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
-                
-                arrayVentas.push({
+                arrayProspectos.push({
                     vendedor_id: vendedorActual.id,
-                    ventas_cerradas: 1,
-                    entrevistas: arrayVentas.length === 0 ? ent : 0,
-                    monto: monto,
-                    semana: sem,
+                    nombre_apellido: nombre,
+                    dni: dni,
+                    telefono: telefono,
+                    estado: estado,
                     campana: campanaStr,
-                    beneficio: beneficio,
-                    medio_pago: banco
+                    semana: sem
                 });
             }
-            
-            if (arrayVentas.length === 0) {
-                if (ent > 0) {
-                    const esRetro = document.getElementById('checkRetroactivo') && document.getElementById('checkRetroactivo').checked;
-                    const hoy = new Date();
-                    if (esRetro) {
-                        hoy.setDate(hoy.getDate() - 1);
-                    }
-                    const campanaStr = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
-                    arrayVentas.push({
-                        vendedor_id: vendedorActual.id,
-                        ventas_cerradas: 0,
-                        entrevistas: ent,
-                        monto: 0,
-                        semana: sem,
-                        campana: campanaStr,
-                        beneficio: 'Ninguno (Solo Entrevistas)',
-                        medio_pago: 'No Aplica'
-                    });
-                } else {
-                    return alert("Debe cargar al menos una venta o registrar sus entrevistas diarias.");
-                }
-            }
+
+            if (arrayProspectos.length === 0) return alert("Debe cargar al menos un prospecto.");
 
             const btn = document.querySelector('.btn-enviar');
             btn.textContent = "SUBIENDO..."; btn.disabled = true;
 
-            const { error } = await clienteSupabase.from('registro_ventas').insert(arrayVentas);
+            const { error } = await clienteSupabase.from('registro_entrevistas').insert(arrayProspectos);
+            
+            btn.textContent = "SUBIR MIS ENTREVISTAS"; btn.disabled = false;
 
-            btn.textContent = "SUBIR MIS NÚMEROS"; btn.disabled = false;
-
-            if (error) {
-                alert("Error: " + error.message);
+            if (error) { 
+                alert("Error en prospectos: " + error.message); 
             } else {
-                alert("Producción cargada con éxito.");
-                document.getElementById('contenedorVentas').innerHTML = `
-                    <div class="venta-item" style="background: #f9f9f9; padding: 15px; border-radius: 10px; border: 1px solid #eee; margin-bottom: 15px; position: relative;">
+                alert("¡Entrevistas cargadas con éxito!");
+                document.getElementById('contenedorProspectos').innerHTML = `
+                    <div class="prospecto-item" style="background: #fdfbf7; padding: 15px; border-radius: 10px; border: 1px solid #eee; margin-bottom: 15px; position: relative;">
                         <div style="margin-bottom: 10px;">
-                            <label>Beneficio / Ocupación</label>
-                            <select class="inputBeneficio" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px;">${opcionesBeneficiosHTML}</select>
+                            <label>Nombre y Apellido</label>
+                            <input type="text" class="inputProsNombre" placeholder="Ej: Juan Pérez" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px; box-sizing: border-box;">
                         </div>
                         <div style="margin-bottom: 10px;">
-                            <label>Banco / Tarjeta</label>
-                            <select class="inputBanco" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px;">${opcionesBancosHTML}</select>
+                            <label>Teléfono</label>
+                            <input type="text" class="inputProsTel" placeholder="Ej: 3415551234" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px; box-sizing: border-box;">
+                        </div>
+                        <div style="margin-bottom: 10px;">
+                            <label>DNI (Opcional)</label>
+                            <input type="text" class="inputProsDni" placeholder="Ej: 30123456" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px; box-sizing: border-box;">
                         </div>
                         <div>
-                            <label>Importe Vendido ($)</label>
-                            <input type="number" class="inputMonto" placeholder="Ej: 89000" min="0" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px; box-sizing: border-box;">
+                            <label>Estado</label>
+                            <select class="inputProsEstado" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px;">${opcionesEstadosHTML}</select>
                         </div>
                     </div>
                 `;
-                document.getElementById('inputEntrevistas').value = '';
                 cargarDatosVendedor(idSeguroURL);
-                if (confirm("¡Carga exitosa! Tus números se actualizaron. ¿Querés ver cómo quedaste en el Ranking ahora mismo?")) {
-                    abrirRanking();
-                }
             }
         }
 
