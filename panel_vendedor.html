@@ -433,16 +433,7 @@
 
         <div class="card-carga">
             <form id="formVenta">
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label>Semana de Campaña</label>
-                    <select id="inputSemana" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px;">
-                        <option value="1">Semana 1</option>
-                        <option value="2">Semana 2</option>
-                        <option value="3">Semana 3</option>
-                        <option value="4">Semana 4</option>
-                        <option value="5">Semana 5</option>
-                    </select>
-                </div>
+                
                 
                 <div id="retroactivoContenedor" style="display: none; background: #fff3cd; padding: 10px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #ffeeba;">
                     <label style="cursor: pointer; display: flex; align-items: center; gap: 10px; color: #856404; font-weight: bold; font-size: 13px; margin: 0;">
@@ -817,7 +808,6 @@
         }
 
         async function enviarProduccion() {
-            const sem = document.getElementById('inputSemana').value;
             const esRetro = document.getElementById('checkRetroactivo') && document.getElementById('checkRetroactivo').checked;
             const hoy = new Date();
             if (esRetro) hoy.setDate(hoy.getDate() - 1);
@@ -840,8 +830,7 @@
                     dni: dni,
                     telefono: telefono,
                     estado: estado,
-                    campana: campanaStr,
-                    semana: sem
+                    campana: campanaStr
                 });
             }
 
