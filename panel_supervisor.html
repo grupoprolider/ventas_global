@@ -1351,7 +1351,7 @@
                     let det = v.ventas_cerradas > 0 ? `${v.ventas_cerradas} vts` : `Baja: ${v.bajas}`;
                     let btnAccion = esReversion ? 
                         `<span style="color:#ff6b6b; font-size:10px;"><i class="fa-solid fa-arrow-trend-down"></i> Reversión</span>` : 
-                        `<button onclick="darDeBajaVentaLocal('${v.id}')" style="background:#ff6b6b; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:10px; cursor:pointer; font-weight:bold;">BAJA</button>`;
+                        `-`;
 
                     return `<tr style="border-bottom: 1px solid #eee;">
                         <td style="padding: 5px;">${new Date(v.created_at).toLocaleDateString()}</td>
@@ -1460,32 +1460,6 @@
             
             if (error) return alert("Error al dar de baja: " + error.message);
             alert("¡Vendedor procesado como BAJA con éxito!");
-            location.reload();
-        }
-
-        async function darDeBajaVentaLocal(idVentaOriginal) {
-            if (!confirm("¿Confirmás la BAJA de esta venta? Se descontará del ranking de tu sucursal.")) return;
-
-            const { data: venta, error: errBusqueda } = await clienteSupabase.from('registro_ventas').select('*').eq('id', idVentaOriginal).single();
-            if (errBusqueda || !venta) return alert("Error al buscar la operación.");
-
-            let nombreSupervisor = document.getElementById('txtNombreSupervisor').textContent;
-
-            const payloadInsert = {
-                vendedor_id: venta.vendedor_id,
-                ventas_cerradas: 0,
-                entrevistas: 0,
-                bajas: venta.ventas_cerradas || 1,
-                monto: -(venta.monto || 0),
-                semana: venta.semana,
-                campana: venta.campana,
-                beneficio: `BAJA (por Líd. Sucursal: ${nombreSupervisor}) - Op orig. del ${new Date(venta.created_at).toLocaleDateString()}`,
-                medio_pago: 'Reversión'
-            };
-            const { error: errInsert } = await clienteSupabase.from('registro_ventas').insert([payloadInsert]);
-
-            if (errInsert) return alert("Error al registrar la baja: " + errInsert.message);
-            alert("¡Baja impactada correctamente!");
             location.reload();
         }
 

@@ -296,28 +296,6 @@
             transform: translateY(4px);
             box-shadow: none;
         }
-        
-        /* MODAL MOTIVACIONAL MATUTINO */
-        .modal-overlay-motd {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.75); z-index: 1000; justify-content: center; align-items: center;
-            backdrop-filter: blur(4px); padding: 15px; box-sizing: border-box;
-            animation: fadeIn 0.4s;
-        }
-        .modal-motd {
-            background: white; border-radius: 15px; padding: 25px 20px; text-align: center; max-width: 350px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); position: relative; border-top: 6px solid var(--gpl-dorado);
-            animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        .modal-motd h2 { padding-right: 0; margin-bottom: 15px; font-size: 22px; }
-        .modal-motd p { font-size: 15px; line-height: 1.4; color: #555; margin-bottom: 20px; }
-        .modal-motd-icon { font-size: 40px; margin-bottom: 10px; }
-        .btn-cerrar-motd {
-            background: var(--gpl-petroleo); color: white; border: none; padding: 12px 20px; font-size: 14px;
-            font-weight: bold; border-radius: 10px; cursor: pointer; width: 100%; text-transform: uppercase;
-        }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideUp { from { transform: translateY(40px) scale(0.9); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
 
         /* MODAL (VENTANA FLOTANTE) DEL RANKING */
         .modal-overlay {
@@ -403,30 +381,8 @@
         <div class="card-perfil" style="text-align: center; border-left: none; border-top: 5px solid var(--gpl-dorado);">
             <a href="index.html" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Salir</a>
             <img src="LOGO-gpl.png" alt="GPL" style="max-width: 140px; margin-bottom: 10px;">
-            <br>
-            <span class="badge-rol" style="margin-bottom: 5px; display: inline-block; background: var(--gpl-petroleo); color: white; padding: 4px 10px; border-radius: 15px; font-size: 11px; font-weight: bold;"><i class="fa-solid fa-user"></i> PANEL DE VENDEDOR</span>
-            <br>
-            <div id="txtEquipo" style="background: var(--gpl-borravino); color: white; padding: 4px 15px; border-radius: 20px; font-size: 11px; font-weight: 900; text-transform: uppercase; display: inline-block; margin-top: 8px; letter-spacing: 0.5px;">Sincronizando información...</div>
-            <h2 id="txtNombre" style="padding: 0; font-size: 24px; margin-top: 5px; margin-bottom: 10px; color: var(--gpl-petroleo);">Cargando...</h2>
-            
-            <div id="boxPuesto" style="display:none; margin-top: 15px; text-align: center;">
-                <div style="position: relative; display: inline-block; margin-bottom: 5px;">
-                    <svg width="70" height="70" viewBox="0 0 24 24" style="filter: drop-shadow(0 4px 8px rgba(218, 165, 32, 0.6));">
-                        <defs>
-                            <linearGradient id="gold-grad-v" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stop-color="#FFDF73" />
-                                <stop offset="25%" stop-color="#FFC000" />
-                                <stop offset="50%" stop-color="#FFA500" />
-                                <stop offset="100%" stop-color="#FF8C00" />
-                            </linearGradient>
-                        </defs>
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="url(#gold-grad-v)" stroke="#B8860B" stroke-width="0.5"/>
-                    </svg>
-                    <span id="txtPuesto" style="position: absolute; top: 46%; left: 50%; transform: translate(-50%, -50%); color: white; font-weight: 900; font-size: 24px; text-shadow: 1px 1px 4px rgba(0,0,0,0.8);"></span>
-                </div>
-                <br>
-                <div style="background: var(--gpl-borravino); color: white; padding: 4px 15px; border-radius: 12px; font-size: 11px; font-weight: 900; letter-spacing: 1px; display: inline-block; text-transform: uppercase;">PUESTO EN RANKING</div>
-            </div>
+            <h2 id="txtNombre" style="padding: 0; font-size: 20px;">Cargando...</h2>
+            <div id="txtEquipo" style="background: var(--gpl-dorado); color: white; padding: 4px 15px; border-radius: 20px; font-size: 11px; font-weight: 900; text-transform: uppercase; display: inline-block; margin-top: 8px; letter-spacing: 0.5px;">Sincronizando información...</div>
         </div>
 
         <div class="card-seguridad">
@@ -477,7 +433,7 @@
 
         <div class="card-carga">
             <form id="formVenta">
-                <div class="form-group" style="display: none; margin-bottom: 15px;">
+                <div class="form-group" style="margin-bottom: 15px;">
                     <label>Semana de Campaña</label>
                     <select id="inputSemana" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px;">
                         <option value="1">Semana 1</option>
@@ -494,43 +450,40 @@
                         Esta venta corresponde a la Campaña Anterior (Cerrada ayer)
                     </label>
                 </div>
-                
                 <h3 style="margin-top: 25px; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; color: #1e646e;">Cargar Entrevista</h3>
-                <div id="contenedorProspectos"></div>
-                <button type="button" onclick="agregarProspecto()" style="background: #eef2f5; color: #333; border: 1px solid #ccc; width: 100%; margin-bottom: 15px; border-radius: 6px; padding: 10px; cursor: pointer; font-weight: bold;">+ Agregar un Prospecto</button>
-                <button type="button" class="btn-enviar" onclick="enviarEntrevistas()" style="width: 100%; margin-bottom: 30px;">SUBIR ENTREVISTA</button>
-                
-                <h3 style="margin-top: 25px; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; color: #1e646e;">Cargar Venta/s</h3>
-                <div id="contenedorVentas">
-                    <div class="venta-item" style="background: #f9f9f9; padding: 15px; border-radius: 10px; border: 1px solid #eee; margin-bottom: 15px; position: relative;">
+                <div id="contenedorProspectos">
+                    <div class="prospecto-item" style="background: #fdfbf7; padding: 15px; border-radius: 10px; border: 1px solid #eee; margin-bottom: 15px; position: relative;">
                         <div style="margin-bottom: 10px;">
-                            <label>Beneficio / Ocupación</label>
-                            <select class="inputBeneficio" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px;"></select>
+                            <label>Nombre y Apellido</label>
+                            <input type="text" class="inputProsNombre" placeholder="Ej: Juan Pérez" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px; box-sizing: border-box;">
                         </div>
                         <div style="margin-bottom: 10px;">
-                            <label>Banco / Tarjeta</label>
-                            <select class="inputBanco" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px;"></select>
+                            <label>Teléfono</label>
+                            <input type="text" class="inputProsTel" placeholder="Ej: 3415551234" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px; box-sizing: border-box;">
+                        </div>
+                        <div style="margin-bottom: 10px;">
+                            <label>DNI (Opcional)</label>
+                            <input type="text" class="inputProsDni" placeholder="Ej: 30123456" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px; box-sizing: border-box;">
                         </div>
                         <div>
-                            <label>Importe Vendido ($) <small style="color: #d32f2f; font-weight: bold;">(SIN PUNTOS)</small></label>
-                            <input type="number" class="inputMonto" placeholder="Ej: 89000" min="0" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px; box-sizing: border-box;">
+                            <label>Estado</label>
+                            <select class="inputProsEstado" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px;"></select>
                         </div>
                     </div>
                 </div>
-
-                <button type="button" onclick="agregarVenta()" style="background: #eee; color: #333; border: 1px dashed #ccc; padding: 10px; width: 100%; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 15px;">+ Agregar otra venta</button>
-
-                <button type="button" class="btn-enviar" onclick="enviarProduccion()" style="width: 100%;">CARGAR MI VENTA</button>
+                <button type="button" onclick="agregarProspecto()" style="background: #eef2f5; color: #333; border: 1px solid #ccc; width: 100%; margin-bottom: 15px; border-radius: 6px; padding: 10px; cursor: pointer; font-weight: bold;">+ Agregar un Prospecto</button>
+                <!-- La carga de ventas fue movida al Admin -->
+                <button type="button" class="btn-enviar" onclick="enviarProduccion()" style="width: 100%;">Subir Mis Entrevistas</button>
             </form>
         </div>
-
+        
         <div class="card-carga" style="margin-top:20px; display: none;" id="seccionMisProspectos">
             <h3 style="margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">Mis Prospectos Recientes</h3>
             <p style="font-size:12px; color:#666;">Acá podés actualizar el estado de los prospectos que cargaste.</p>
             <div id="listaMisProspectos" style="margin-top:15px;">Cargando...</div>
         </div>
     </div>
-
+    
     <div id="modalRanking" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
@@ -540,25 +493,8 @@
             <iframe id="iframeRanking" class="iframe-ranking" src=""></iframe>
         </div>
     </div>
-    
-    <!-- Modal Motivacional Matutino -->
-    <div id="modalMOTD" class="modal-overlay-motd">
-        <div class="modal-motd">
-            <div id="motdIcon" class="modal-motd-icon">🌟</div>
-            <h2 id="motdTitulo">¡Buen día!</h2>
-            <p id="motdTexto">Sincronizando información...</p>
-            <button class="btn-cerrar-motd" onclick="document.getElementById('modalMOTD').style.display='none'">¡A Vender!</button>
-        </div>
-    </div>
 
     <script>
-        function obtenerFechaLocal(fechaParam) {
-            const d = fechaParam ? new Date(fechaParam) : new Date();
-            const year = d.getFullYear();
-            const month = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
         const clienteSupabase = supabase.createClient('https://pumpwqyazqaxeeknrhyo.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1bXB3cXlhenFheGVla25yaHlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MjQ4ODEsImV4cCI6MjA5NDIwMDg4MX0.-AQZZYAt-uskDLUpbiafJXbHgW0lErf8bwEnk7eq1DE');
 
         let vendedorActual = null;
@@ -590,7 +526,7 @@
             for (let d = new Date(fechaInicio); d <= fechaFin; d.setDate(d.getDate() + 1)) {
                 let day = d.getDay();
                 if (day !== 0 && day !== 6) {
-                    let dStr = obtenerFechaLocal(d);
+                    let dStr = d.toISOString().split('T')[0];
                     if (!feriadosArr.includes(dStr)) {
                         totales++;
                         if (d <= hoy) transcurridos++;
@@ -630,9 +566,6 @@
             const { data: bncs } = await clienteSupabase.from('opciones_bancos').select('*').order('nombre');
             if (bncs) opcionesBancosHTML += bncs.map(b => `<option value="${b.nombre}">${b.nombre}</option>`).join('');
             
-            const { data: estados } = await clienteSupabase.from('opciones_estados_entrevista').select('nombre').order('nombre');
-            if (estados) opcionesEstadosHTML = estados.map(e => `<option value="${e.nombre}">${e.nombre}</option>`).join('');
-
             document.querySelector('.inputBeneficio').innerHTML = opcionesBeneficiosHTML;
             document.querySelector('.inputBanco').innerHTML = opcionesBancosHTML;
 
@@ -641,7 +574,55 @@
             }
 
             cargarDatosVendedor(idSeguroURL);
-            agregarProspecto();
+        }
+
+        function agregarProspecto() {
+            const div = document.createElement('div');
+            div.className = 'prospecto-item';
+            div.style = 'background: #fdfbf7; padding: 15px; border-radius: 10px; border: 1px solid #eee; margin-bottom: 15px; position: relative;';
+            div.innerHTML = `
+                <button type="button" onclick="this.parentElement.remove()" style="position: absolute; top: 10px; right: 10px; background: #e74c3c; color: white; border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer; font-weight: bold;">X</button>
+                <div style="margin-bottom: 10px;">
+                    <label>Nombre y Apellido</label>
+                    <input type="text" class="inputProsNombre" placeholder="Ej: Juan Pérez" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px; box-sizing: border-box;">
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <label>Teléfono</label>
+                    <input type="text" class="inputProsTel" placeholder="Ej: 3415551234" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px; box-sizing: border-box;">
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <label>DNI (Opcional)</label>
+                    <input type="text" class="inputProsDni" placeholder="Ej: 30123456" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px; box-sizing: border-box;">
+                </div>
+                <div>
+                    <label>Estado</label>
+                    <select class="inputProsEstado" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px;">${opcionesEstadosHTML}</select>
+                </div>
+            `;
+            document.getElementById('contenedorProspectos').appendChild(div);
+        }
+        
+        async function cargarProspectosVendedor(idVend, campana) {
+            const { data } = await clienteSupabase.from('registro_entrevistas').select('*').eq('vendedor_id', idVend).eq('campana', campana).order('created_at', { ascending: false });
+            const div = document.getElementById('listaMisProspectos');
+            if(!data || data.length === 0) {
+                if(div) div.innerHTML = '<div style="text-align:center; padding:20px; color:#999; font-size:13px;">No tenés prospectos cargados en esta campaña.</div>';
+                return;
+            }
+            if(div) div.innerHTML = data.map(p => {
+                let selectHtml = `<select onchange="updateEstadoMiProspecto('${p.id}', this.value)" style="padding:5px; border-radius:4px; font-size:12px; width:100%; margin-top:5px;">${opcionesEstadosHTML.replace('value="' + p.estado + '"', 'value="' + p.estado + '" selected')}</select>`;
+                if(!opcionesEstadosHTML.includes('value="' + p.estado + '"')) selectHtml = selectHtml.replace('</select>', `<option value="${p.estado}" selected>${p.estado}</option></select>`);
+                
+                return `<div style="background:#f9f9f9; padding:10px; border-radius:6px; margin-bottom:10px; border:1px solid #eee; font-size:13px;">
+                    <div style="font-weight:bold; color:#333;">${p.nombre_apellido}</div>
+                    <div style="color:#666; margin-bottom:5px;"><i class="fa-solid fa-phone"></i> ${p.telefono} ${p.dni ? ' | DNI: ' + p.dni : ''}</div>
+                    <div>${selectHtml}</div>
+                </div>`;
+            }).join('');
+        }
+        
+        window.updateEstadoMiProspecto = async function(id, estado) {
+            await clienteSupabase.from('registro_entrevistas').update({ estado: estado }).eq('id', id);
         }
 
         function agregarVenta() {
@@ -659,43 +640,16 @@
                     <select class="inputBanco" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px;">${opcionesBancosHTML}</select>
                 </div>
                 <div>
-                    <label>Importe Vendido ($) <small style="color: #d32f2f; font-weight: bold;">(SIN PUNTOS)</small></label>
+                    <label>Importe Vendido ($)</label>
                     <input type="number" class="inputMonto" placeholder="Ej: 89000" min="0" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px; box-sizing: border-box;">
                 </div>
             `;
             document.getElementById('contenedorVentas').appendChild(div);
         }
 
-        function agregarProspecto() {
-            const div = document.createElement('div');
-            div.className = 'prospecto-item';
-            div.style.cssText = 'background: #fdfdfd; padding: 15px; border-radius: 10px; border: 1px dashed #bbb; margin-bottom: 15px; position: relative;';
-            const btnEliminar = document.querySelectorAll('.prospecto-item').length > 0 ? `<button type="button" onclick="this.parentElement.remove()" style="position: absolute; right: 10px; top: 10px; background: none; border: none; color: #c0392b; cursor: pointer; font-weight: bold; font-size: 16px;">✖</button>` : '';
-            div.innerHTML = `
-                ${btnEliminar}
-                <div style="margin-bottom: 5px;"><input type="text" class="inputProspectoNombre" placeholder="Nombre y Apellido"></div>
-                <div style="margin-bottom: 5px;"><input type="text" class="inputProspectoDNI" placeholder="DNI"></div>
-                <div style="margin-bottom: 5px;"><input type="text" class="inputProspectoTelefono" placeholder="Teléfono"></div>
-                <div><select class="inputProspectoEstado"><option value="">Seleccionar Estado</option>${opcionesEstadosHTML}</select></div>
-            `;
-            document.getElementById('contenedorProspectos').appendChild(div);
-        }
-
-        async function cargarProspectosVendedor(vendedor_id, campana) {
-            const { data } = await clienteSupabase.from('registro_entrevistas').select('*').eq('vendedor_id', vendedor_id).eq('campana', campana).order('created_at', { ascending: false });
-            const lista = document.getElementById('listaMisProspectos');
-            if (!data || data.length === 0) { lista.innerHTML = 'No tenés prospectos cargados este mes.'; return; }
-            lista.innerHTML = data.map(p => `
-                <div style="padding:10px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;">
-                    <div><strong>${p.nombre_apellido}</strong><br><small>${p.telefono}</small></div>
-                    <div style="font-weight:bold; font-size:12px; color:var(--gpl-borravino);">${p.estado}</div>
-                </div>
-            `).join('');
-        }
-
         async function cargarDatosVendedor(id) {
             try {
-                const { data: p, error } = await clienteSupabase.from('perfiles').select('*, equipos!perfiles_equipo_id_fkey(nombre, ver_prospectos)').eq('id', id).single();
+                const { data: p, error } = await clienteSupabase.from('perfiles').select('*, equipos!perfiles_equipo_id_fkey(nombre)').eq('id', id).single();
                 if (error || !p) {
                     alert("No se encontró el perfil. Volviendo al inicio.");
                     window.location.href = 'index.html';
@@ -725,7 +679,6 @@
                 let categoria = p.categoria || 'Senior';
                 let porcentaje = (categoria.toLowerCase() === 'senior') ? 30 : 20;
                 document.getElementById('txtCategoria').textContent = `${categoria.toUpperCase()} (${porcentaje}%)`;
-
                 const seccionMisProspectos = document.getElementById('seccionMisProspectos');
                 if (p.equipos && p.equipos.ver_prospectos) {
                     if (seccionMisProspectos) seccionMisProspectos.style.display = 'block';
@@ -743,52 +696,6 @@
                     if(data.length < step) break;
                     fromRow += step;
                 }
-
-                // CÁLCULO DE PUESTO (RANKING)
-                try {
-                    let allVentas = [];
-                    let stepAll = 1000, fromRowAll = 0;
-                    while(true) {
-                        const { data } = await clienteSupabase.from('registro_ventas')
-                            .select('vendedor_id, ventas_cerradas, bajas, monto')
-                            .eq('campana', campanaStr)
-                            .order('id')
-                            .range(fromRowAll, fromRowAll + stepAll - 1);
-                        if(!data || data.length === 0) break;
-                        allVentas = allVentas.concat(data);
-                        if(data.length < stepAll) break;
-                        fromRowAll += stepAll;
-                    }
-                    const { data: allPerfiles } = await clienteSupabase.from('perfiles')
-                        .select('id, rol, nombre')
-                        .not('nombre', 'ilike', '%(BAJA)%');
-                    
-                    if (allVentas && allPerfiles) {
-                        let mapVentas = {};
-                        allPerfiles.forEach(p => {
-                            if (p.rol === 'Vendedor' || p.rol === 'Lider de Equipo') {
-                                mapVentas[p.id] = { id: p.id, netas: 0, monto: 0 };
-                            }
-                        });
-
-                        allVentas.forEach(v => {
-                            if (mapVentas[v.vendedor_id]) {
-                                mapVentas[v.vendedor_id].netas += ((v.ventas_cerradas || 0) - (v.bajas || 0));
-                                mapVentas[v.vendedor_id].monto += (v.monto || 0);
-                            }
-                        });
-                        let rankingNacional = Object.values(mapVentas)
-                            .filter(v => v.netas >= 0)
-                            .sort((a,b) => b.netas - a.netas || b.monto - a.monto);
-                        
-                        let myRank = rankingNacional.findIndex(x => x.id === id) + 1;
-                        if (myRank > 0) {
-                            document.getElementById('txtPuesto').textContent = myRank;
-                            document.getElementById('boxPuesto').style.display = 'block';
-                        }
-                    }
-                } catch (e) { console.error("Error al calcular puesto", e); }
-
 
                 let totalMonto = 0, totalVts = 0;
                 let conteoBeneficios = {};
@@ -856,53 +763,7 @@
                         msj.style.color = '#a8d5e2';
                     }
                 }
-                
-                // Mostrar modal motivacional al terminar de calcular
-                mostrarMensajeMotivacional(totalVts, metaVentas, dias, atraso);
-                
             } catch (e) { console.error(e); }
-        }
-
-        function mostrarMensajeMotivacional(netas, objetivo, dias, atraso) {
-            if (!objetivo || objetivo <= 0) return; // Si no tiene meta fijada, no molestar
-            
-            const hoyStr = new Date().toLocaleDateString('es-AR');
-            const key = 'gpl_motd_' + vendedorActual.id + '_' + hoyStr;
-            
-            if (localStorage.getItem(key) === 'true') return; // Ya lo vio hoy
-            
-            const modal = document.getElementById('modalMOTD');
-            const titulo = document.getElementById('motdTitulo');
-            const texto = document.getElementById('motdTexto');
-            const icono = document.getElementById('motdIcon');
-            
-            const faltan = objetivo - netas;
-            const ritmoNecesario = Math.ceil(faltan / (dias.restantes || 1));
-            
-            if (faltan <= 0) {
-                icono.innerHTML = '🏆';
-                titulo.innerHTML = '¡Felicitaciones!';
-                titulo.style.color = '#2ecc71';
-                texto.innerHTML = `¡Ya alcanzaste tu meta de <b>${objetivo} ventas</b>!<br>Todo lo que sumes a partir de ahora es extra. ¡Seguí así!`;
-            } else if (faltan <= 3) {
-                icono.innerHTML = '🔥';
-                titulo.innerHTML = '¡Estás a un paso!';
-                titulo.style.color = '#f39c12';
-                texto.innerHTML = `Te faltan solo <b>${faltan} ventas</b> para alcanzar tu objetivo.<br>¡A meterle con todo que ya llegás!`;
-            } else if (atraso > 0) {
-                icono.innerHTML = '🚀';
-                titulo.innerHTML = '¡Acelera el ritmo!';
-                titulo.style.color = '#e74c3c';
-                texto.innerHTML = `Quedan <b>${dias.restantes} días hábiles</b> y te faltan <b>${faltan} ventas</b>.<br>Necesitás cerrar <b>${ritmoNecesario} ventas por día</b> para llegar a tu meta. ¡Vos podés!`;
-            } else {
-                icono.innerHTML = '🏃‍♂️';
-                titulo.innerHTML = '¡Venís a buen ritmo!';
-                titulo.style.color = '#3498db';
-                texto.innerHTML = `Faltan <b>${faltan} ventas</b> y quedan <b>${dias.restantes} días hábiles</b>.<br>Estás cumpliendo el ritmo diario ideal. ¡Mantené el enfoque y llegás sin problemas!`;
-            }
-            
-            modal.style.display = 'flex';
-            localStorage.setItem(key, 'true');
         }
 
         async function cambiarMiPin() {
@@ -957,92 +818,10 @@
             }
         }
 
-        async function enviarEntrevistas() {
-            const btn = document.querySelector('button[onclick="enviarEntrevistas()"]');
-            const oldText = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
-            btn.style.pointerEvents = 'none';
-
-            const itemsProspectos = document.querySelectorAll('.prospecto-item');
-            let arrayProspectos = [];
-            for (let item of itemsProspectos) {
-                const nombre = item.querySelector('.inputProspectoNombre').value;
-                const dni = item.querySelector('.inputProspectoDNI').value;
-                const telefono = item.querySelector('.inputProspectoTelefono').value;
-                const estado = item.querySelector('.inputProspectoEstado').value;
-                
-                if (nombre === "" && dni === "" && telefono === "" && estado === "") {
-                    continue; 
-                }
-
-                if (!nombre || !telefono || !estado) {
-                    alert("Por favor completá Nombre, Teléfono y Estado de todos los prospectos agregados, o eliminá los que no uses.");
-                    btn.innerHTML = oldText;
-                    btn.style.pointerEvents = 'auto';
-                    return;
-                }
-                const esRetro = document.getElementById('checkRetroactivo') && document.getElementById('checkRetroactivo').checked;
-                const hoy = new Date();
-                if (esRetro) hoy.setDate(hoy.getDate() - 1);
-                const campanaStr = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
-                
-                arrayProspectos.push({
-                    vendedor_id: vendedorActual.id,
-                    nombre_apellido: nombre,
-                    dni: dni,
-                    telefono: telefono,
-                    estado: estado,
-                    campana: campanaStr
-                });
-            }
-
-            if (arrayProspectos.length === 0) {
-                alert("No hay ninguna entrevista completada para subir.");
-                btn.innerHTML = oldText; btn.style.pointerEvents = 'auto'; return;
-            }
-
-            const { error: errP } = await clienteSupabase.from('registro_entrevistas').insert(arrayProspectos);
-            if (errP) {
-                alert("Error al guardar entrevistas: " + errP.message);
-                btn.innerHTML = oldText; btn.style.pointerEvents = 'auto'; return;
-            }
-
-            // Dummy sale para sumar entrevistas al ranking
-            const esRetro = document.getElementById('checkRetroactivo') && document.getElementById('checkRetroactivo').checked;
-            const hoy = new Date();
-            if (esRetro) hoy.setDate(hoy.getDate() - 1);
-            const campanaStr = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
-            
-            await clienteSupabase.from('registro_ventas').insert([{
-                vendedor_id: vendedorActual.id,
-                ventas_cerradas: 0,
-                entrevistas: arrayProspectos.length,
-                monto: 0,
-                semana: document.getElementById('inputSemana') ? document.getElementById('inputSemana').value : '1',
-                campana: campanaStr,
-                beneficio: 'Ninguno (Solo Entrevistas)',
-                medio_pago: 'No Aplica'
-            }]);
-
-            btn.innerHTML = oldText; btn.style.pointerEvents = 'auto';
-            alert("¡Entrevistas guardadas con éxito!");
-            
-            document.getElementById('contenedorProspectos').innerHTML = '';
-            agregarProspecto();
-            
-            cargarDatosVendedor(idSeguroURL);
-            if (confirm("¡Carga exitosa! Tus números se actualizaron. ¿Querés ver cómo quedaste en el Ranking ahora mismo?")) {
-                abrirRanking();
-            }
-        }
-
         async function enviarProduccion() {
-            const btn = document.querySelector('button[onclick="enviarProduccion()"]');
-            const oldText = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
-            btn.style.pointerEvents = 'none';
-
-            const sem = document.getElementById('inputSemana') ? document.getElementById('inputSemana').value : '1';
+            const ent = parseInt(document.getElementById('inputEntrevistas').value) || 0;
+            const sem = document.getElementById('inputSemana').value;
+            
             const ventasElements = document.querySelectorAll('.venta-item');
             let arrayVentas = [];
             
@@ -1051,25 +830,27 @@
                 let banco = v.querySelector('.inputBanco').value;
                 let monto = parseFloat(v.querySelector('.inputMonto').value) || 0;
                 
+                // Si es la única cajita y está vacía, la ignoramos (asumimos que solo carga entrevistas)
                 if (ventasElements.length === 1 && beneficio === "" && banco === "" && monto === 0) {
-                    alert("Debe completar los datos de la venta para subirla.");
-                    btn.innerHTML = oldText; btn.style.pointerEvents = 'auto'; return;
+                    continue;
                 }
                 
                 if (beneficio === "" || banco === "") {
-                    alert("Por favor, seleccioná Beneficio y Banco en todas las ventas.");
-                    btn.innerHTML = oldText; btn.style.pointerEvents = 'auto'; return;
+                    alert("Por favor, seleccioná Beneficio y Banco en todas las ventas agregadas.");
+                    return;
                 }
                 
                 const esRetro = document.getElementById('checkRetroactivo') && document.getElementById('checkRetroactivo').checked;
                 const hoy = new Date();
-                if (esRetro) hoy.setDate(hoy.getDate() - 1);
+                if (esRetro) {
+                    hoy.setDate(hoy.getDate() - 1);
+                }
                 const campanaStr = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
                 
                 arrayVentas.push({
                     vendedor_id: vendedorActual.id,
                     ventas_cerradas: 1,
-                    entrevistas: 0,
+                    entrevistas: arrayVentas.length === 0 ? ent : 0,
                     monto: monto,
                     semana: sem,
                     campana: campanaStr,
@@ -1077,38 +858,62 @@
                     medio_pago: banco
                 });
             }
-
-            if (arrayVentas.length > 0) {
-                const { error } = await clienteSupabase.from('registro_ventas').insert(arrayVentas);
-                if (error) {
-                    alert("Error al guardar ventas: " + error.message);
-                    btn.innerHTML = oldText; btn.style.pointerEvents = 'auto'; return;
+            
+            if (arrayVentas.length === 0) {
+                if (ent > 0) {
+                    const esRetro = document.getElementById('checkRetroactivo') && document.getElementById('checkRetroactivo').checked;
+                    const hoy = new Date();
+                    if (esRetro) {
+                        hoy.setDate(hoy.getDate() - 1);
+                    }
+                    const campanaStr = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
+                    arrayVentas.push({
+                        vendedor_id: vendedorActual.id,
+                        ventas_cerradas: 0,
+                        entrevistas: ent,
+                        monto: 0,
+                        semana: sem,
+                        campana: campanaStr,
+                        beneficio: 'Ninguno (Solo Entrevistas)',
+                        medio_pago: 'No Aplica'
+                    });
+                } else {
+                    return alert("Debe cargar al menos una venta o registrar sus entrevistas diarias.");
                 }
             }
 
-            btn.innerHTML = oldText; btn.style.pointerEvents = 'auto';
-            alert("¡Venta guardada con éxito!");
-            
-            document.getElementById('contenedorVentas').innerHTML = `
-                <div class="venta-item" style="background: #f9f9f9; padding: 15px; border-radius: 10px; border: 1px solid #eee; margin-bottom: 15px; position: relative;">
-                    <div style="margin-bottom: 10px;">
-                        <label>Beneficio / Ocupación</label>
-                        <select class="inputBeneficio" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px;">${opcionesBeneficiosHTML}</select>
+            const btn = document.querySelector('.btn-enviar');
+            btn.textContent = "SUBIENDO..."; btn.disabled = true;
+
+            const { error } = await clienteSupabase.from('registro_ventas').insert(arrayVentas);
+
+            btn.textContent = "SUBIR MIS NÚMEROS"; btn.disabled = false;
+
+            if (error) {
+                alert("Error: " + error.message);
+            } else {
+                alert("Producción cargada con éxito.");
+                document.getElementById('contenedorVentas').innerHTML = `
+                    <div class="venta-item" style="background: #f9f9f9; padding: 15px; border-radius: 10px; border: 1px solid #eee; margin-bottom: 15px; position: relative;">
+                        <div style="margin-bottom: 10px;">
+                            <label>Beneficio / Ocupación</label>
+                            <select class="inputBeneficio" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px;">${opcionesBeneficiosHTML}</select>
+                        </div>
+                        <div style="margin-bottom: 10px;">
+                            <label>Banco / Tarjeta</label>
+                            <select class="inputBanco" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px;">${opcionesBancosHTML}</select>
+                        </div>
+                        <div>
+                            <label>Importe Vendido ($)</label>
+                            <input type="number" class="inputMonto" placeholder="Ej: 89000" min="0" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px; box-sizing: border-box;">
+                        </div>
                     </div>
-                    <div style="margin-bottom: 10px;">
-                        <label>Banco / Tarjeta</label>
-                        <select class="inputBanco" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px;">${opcionesBancosHTML}</select>
-                    </div>
-                    <div>
-                        <label>Importe Vendido ($) <small style="color: #d32f2f; font-weight: bold;">(SIN PUNTOS)</small></label>
-                        <input type="number" class="inputMonto" placeholder="Ej: 89000" min="0" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px; box-sizing: border-box;">
-                    </div>
-                </div>
-            `;
-            
-            cargarDatosVendedor(idSeguroURL);
-            if (confirm("¡Carga exitosa! Tus números se actualizaron. ¿Querés ver cómo quedaste en el Ranking ahora mismo?")) {
-                abrirRanking();
+                `;
+                document.getElementById('inputEntrevistas').value = '';
+                cargarDatosVendedor(idSeguroURL);
+                if (confirm("¡Carga exitosa! Tus números se actualizaron. ¿Querés ver cómo quedaste en el Ranking ahora mismo?")) {
+                    abrirRanking();
+                }
             }
         }
 

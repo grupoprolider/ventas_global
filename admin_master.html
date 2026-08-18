@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Maestro GPL v3.0</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         :root {
@@ -242,7 +243,8 @@
         <li onclick="cambiarTab(3)"><i class="fa-solid fa-bullseye"></i> Metas</li>
         <li onclick="cambiarTab(4)"><i class="fa-solid fa-list-check"></i> Auditoría Ventas</li>
         
-        <li onclick="cambiarTab(5)"><i class="fa-solid fa-sliders"></i> Opciones</li>
+        <li onclick="cambiarTab(5)"><i class="fa-solid fa-file-import"></i> Importar Datos</li>
+        <li onclick="cambiarTab(6)"><i class="fa-solid fa-sliders"></i> Opciones</li>
         <li onclick="window.open('ranking_tv.html', '_blank')" style="border-left: 2px solid var(--gpl-dorado);"><i class="fa-solid fa-tv"></i> Transmitir en TV</li>
         <li onclick="window.location.href='index.html'" style="background: #e74c3c; color: white;"><i class="fa-solid fa-right-from-bracket"></i> Salir</li>
     </ul>
@@ -406,6 +408,18 @@
         </div>
 
         <div id="tab5" class="tab-content">
+            <div class="card-admin">
+                <h2>Importación Masiva de Ventas y Bajas (Excel)</h2>
+                <p style="color:#aaa; font-size:12px; margin-bottom:15px;">Formato soportado: .xlsx. Columnas obligatorias: <b>Vendedor, Fecha, id, Importe, estado, Beneficio, Entidad</b>.</p>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <input type="file" id="archivoImportacion" accept=".xlsx, .xls" style="max-width:300px; padding:5px; background: #111; color: white;">
+                    <button class="btn-save" onclick="procesarImportacion()" id="btnImportar"><i class="fa-solid fa-upload"></i> Procesar Excel</button>
+                </div>
+                <div id="resultadoImportacion" style="margin-top:20px; font-size:13px; color:#ddd; padding:15px; background:#1a1a1a; border-radius:5px; border:1px dashed #444; min-height:50px; white-space: pre-wrap;">Esperando archivo...</div>
+            </div>
+        </div>
+
+        <div id="tab6" class="tab-content">
             <div class="card-admin" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;">
                 <div>
                     <h3>Estados de Entrevista</h3>
@@ -913,6 +927,176 @@
             const { error } = await clienteSupabase.from(tabla).delete().eq('id', id); 
             if (error) alert("Error al borrar opción: " + error.message);
             cargarOpciones();
+        }
+
+        async function procesarImportacion() {
+            const fileInput = document.getElementById('archivoImportacion');
+            const resultDiv = document.getElementById('resultadoImportacion');
+            
+            if (!fileInput.files || fileInput.files.length === 0) {
+                return resultDiv.innerHTML = "<span style='color:#e74c3c;'>Por favor selecciona un archivo Excel (.xlsx).</span>";
+            }
+            
+            resultDiv.innerHTML = "Leyendo archivo... <i class='fa-solid fa-spinner fa-spin'></i>";
+            
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = async function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array', cellDates: true});
+                    
+                    const sheetName = workbook.SheetNames[0];
+                    const sheet = workbook.Sheets[sheetName];
+                    const json = XLSX.utils.sheet_to_json(sheet);
+                    
+                    if(json.length === 0) {
+                        return resultDiv.innerHTML = "<span style='color:#e74c3c;'>El archivo está vacío o no se pudo leer.</span>";
+                    }
+
+                    let procesadas = 0;
+                    let ignoradasVentas = 0;
+                    let bajasNuevas = 0;
+                    let errores = 0;
+                    let msjs = [];
+
+                    const { data: perfilesDB } = await clienteSupabase.from('perfiles').select('id, nombre, equipo_id');
+                    
+                    for(let i = 0; i < json.length; i++) {
+                        let row = json[i];
+                        
+                        let nomVendedor = row["Vendedor"];
+                        let fechaExcel = row["Fecha"];
+                        let nroSol = row["id"] ? String(row["id"]).trim() : null;
+                        let importe = parseFloat(row["Importe"]) || 0;
+                        let estadoStr = String(row["estado"] || "").toLowerCase();
+                        let beneficio = row["Beneficio"] || "";
+                        let entidad = row["Entidad"] || "N/A";
+                        
+                        if(!nomVendedor || !nroSol) {
+                            msjs.push(`Fila ${i+2}: Ignorada (falta Vendedor o ID de Solicitud).`);
+                            errores++;
+                            continue;
+                        }
+
+                        let vendMatch = perfilesDB.find(p => p.nombre.toLowerCase().trim() === String(nomVendedor).toLowerCase().trim());
+                        if(!vendMatch) {
+                            msjs.push(`Fila ${i+2}: Vendedor '${nomVendedor}' no encontrado en el sistema.`);
+                            errores++;
+                            continue;
+                        }
+
+                        let fechaDB = new Date();
+                        if (fechaExcel instanceof Date) {
+                            fechaDB = fechaExcel;
+                        } else if (typeof fechaExcel === 'string') {
+                            let p = fechaExcel.split('/');
+                            if(p.length === 3) {
+                                fechaDB = new Date(p[2], p[1]-1, p[0]);
+                            }
+                        }
+                        
+                        let dia = fechaDB.getDate();
+                        let mes = fechaDB.getMonth();
+                        let anio = fechaDB.getFullYear();
+                        let tMes = dia >= 16 ? mes + 1 : mes;
+                        let tAnio = anio;
+                        if(tMes > 11) { tMes = 0; tAnio++; }
+                        const nMeses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+                        let campanaCalculada = `Campaña ${nMeses[tMes]} ${tAnio}`;
+                        
+                        let esBaja = estadoStr.includes('baja') || estadoStr.includes('rechazad') || estadoStr.includes('anulad') || estadoStr.includes('caida');
+                        
+                        const { data: dbVenta } = await clienteSupabase.from('registro_ventas').select('*').eq('numero_solicitud', nroSol);
+                        let existe = dbVenta && dbVenta.length > 0;
+                        
+                        if (!esBaja) {
+                            if (existe) {
+                                ignoradasVentas++;
+                            } else {
+                                const objVenta = {
+                                    vendedor_id: vendMatch.id,
+                                    ventas_cerradas: 1,
+                                    entrevistas: 0,
+                                    bajas: 0,
+                                    monto: importe,
+                                    beneficio: beneficio,
+                                    medio_pago: entidad,
+                                    semana: 1,
+                                    campana: campanaCalculada,
+                                    es_anulada: false,
+                                    created_at: fechaDB.toISOString(),
+                                    numero_solicitud: nroSol
+                                };
+                                await clienteSupabase.from('registro_ventas').insert([objVenta]);
+                                procesadas++;
+                            }
+                        } else {
+                            if (!existe) {
+                                const objBaja = {
+                                    vendedor_id: vendMatch.id,
+                                    ventas_cerradas: 0,
+                                    entrevistas: 0,
+                                    bajas: 1,
+                                    monto: -importe,
+                                    beneficio: beneficio + " (BAJA/RECHAZO EXCEL)",
+                                    medio_pago: entidad,
+                                    semana: 1,
+                                    campana: campanaCalculada,
+                                    es_anulada: false,
+                                    created_at: fechaDB.toISOString(),
+                                    numero_solicitud: nroSol + "_BAJA"
+                                };
+                                await clienteSupabase.from('registro_ventas').insert([objBaja]);
+                                bajasNuevas++;
+                            } else {
+                                let orig = dbVenta[0];
+                                if(orig.es_anulada) {
+                                    ignoradasVentas++;
+                                } else {
+                                    const objContra = {
+                                        vendedor_id: orig.vendedor_id,
+                                        ventas_cerradas: 0,
+                                        entrevistas: 0,
+                                        bajas: orig.ventas_cerradas || 1,
+                                        monto: -(orig.monto || 0),
+                                        semana: orig.semana,
+                                        campana: orig.campana,
+                                        beneficio: orig.beneficio + " (ANULACIÓN EXCEL)",
+                                        medio_pago: orig.medio_pago,
+                                        es_anulada: false,
+                                        created_at: new Date().toISOString(),
+                                        numero_solicitud: nroSol + "_BAJA"
+                                    };
+                                    await clienteSupabase.from('registro_ventas').insert([objContra]);
+                                    await clienteSupabase.from('registro_ventas').update({ es_anulada: true }).eq('id', orig.id);
+                                    bajasNuevas++;
+                                }
+                            }
+                        }
+                    }
+
+                    resultDiv.innerHTML = `
+                        <h4 style="margin:0 0 10px 0; color:#2ecc71;">¡Proceso Terminado!</h4>
+                        <p style="margin:0;">Ventas nuevas registradas: <b>${procesadas}</b></p>
+                        <p style="margin:0;">Bajas/Anulaciones aplicadas: <b>${bajasNuevas}</b></p>
+                        <p style="margin:0;">Ventas/Bajas ignoradas (ya existían): <b>${ignoradasVentas}</b></p>
+                        <p style="margin:0; color:#e74c3c;">Errores (filas saltadas): <b>${errores}</b></p>
+                        <div style="margin-top:10px; max-height:150px; overflow-y:auto; font-size:11px; color:#aaa; line-height: 1.5;">
+                            ${msjs.join('<br>')}
+                        </div>
+                    `;
+                    
+                    refrescarDatos();
+
+                } catch(err) {
+                    console.error(err);
+                    resultDiv.innerHTML = "<span style='color:#e74c3c;'>Ocurrió un error al procesar el archivo. Revisa el formato de las columnas.</span><br>" + err.message;
+                }
+            };
+            
+            reader.readAsArrayBuffer(file);
         }
 
         refrescarDatos();
