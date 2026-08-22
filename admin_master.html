@@ -407,15 +407,1047 @@
             </div>
         </div>
 
-        <div id="tab5" class="tab-content">
+                <div id="tab5" class="tab-content">
             <div class="card-admin">
                 <h2>Importación Masiva de Ventas y Bajas (Excel)</h2>
                 <p style="color:#aaa; font-size:12px; margin-bottom:15px;">Formato soportado: .xlsx. Columnas obligatorias: <b>Vendedor, Fecha, id, Importe, estado, Beneficio, Entidad</b>.</p>
                 <div style="display:flex; gap:10px; align-items:center;">
                     <input type="file" id="archivoImportacion" accept=".xlsx, .xls" style="max-width:300px; padding:5px; background: #111; color: white;">
-                    <button class="btn-save" onclick="procesarImportacion()" id="btnImportar"><i class="fa-solid fa-upload"></i> Procesar Excel</button>
+                    <button class="btn-save" onclick="procesarImportacion()" id="btnImportar"><i class="fa-solid fa-eye"></i> Previsualizar Subida</button>
+                    <button class="btn-delete" onclick="revertirImportacion()" id="btnRevertir" style="background-color: #c0392b; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold;"><i class="fa-solid fa-undo"></i> Eliminar Archivo Subido</button>
                 </div>
                 <div id="resultadoImportacion" style="margin-top:20px; font-size:13px; color:#ddd; padding:15px; background:#1a1a1a; border-radius:5px; border:1px dashed #444; min-height:50px; white-space: pre-wrap;">Esperando archivo...</div>
+                <div id="accionImportacion" style="display:none; margin-top:15px;">
+                    <button class="btn-save" onclick="confirmarImportacion()" id="btnConfirmarImportacion" style="width: 100%; padding: 10px; font-size: 16px;"><i class="fa-solid fa-check"></i> Confirmar y Subir a Base de Datos</button>
+                </div>
+                <div id="accionRevertir" style="display:none; margin-top:15px;">
+                    <button class="btn-delete" onclick="confirmarReversion()" id="btnConfirmarReversion" style="width: 100%; padding: 10px; font-size: 16px; background-color: #c0392b; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;"><i class="fa-solid fa-trash"></i> Confirmar y Eliminar Registros de este Archivo</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab6" class="tab-content">
+            <div class="card-admin" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;">
+                <div>
+                    <h3>Estados de Entrevista</h3>
+                    <div class="form-row">
+                        <div><input type="text" id="opt_est" placeholder="Ej: Entrevista OK"></div>
+                        <button class="btn-add" onclick="addOpt('opciones_estados_entrevista', 'opt_est')">Añadir</button>
+                    </div>
+                    <ul id="lista_est" style="list-style:none; padding:0;"></ul>
+                </div>
+                <div>
+                    <h3>Beneficios / Ocupación</h3>
+                    <div class="form-row">
+                        <div><input type="text" id="opt_ben" placeholder="Ej: Pensionado"></div>
+                        <button class="btn-add" onclick="addOpt('opciones_beneficios', 'opt_ben')">Añadir</button>
+                    </div>
+                    <ul id="lista_ben" style="list-style:none; padding:0;"></ul>
+                </div>
+                <div>
+                    <h3>Bancos / Tarjetas</h3>
+                    <div class="form-row">
+                        <div><input type="text" id="opt_bnc" placeholder="Ej: Galicia"></div>
+                        <button class="btn-add" onclick="addOpt('opciones_bancos', 'opt_bnc')">Añadir</button>
+                    </div>
+                    <ul id="lista_bnc" style="list-style:none; padding:0;"></ul>
+                </div>
+                <div>
+                    <h3>Feriados (Fechas)</h3>
+                    <div class="form-row" style="margin-bottom: 10px;">
+                        <div><input type="date" id="opt_fer"></div>
+                        <button class="btn-add" onclick="addOpt('opciones_feriados', 'opt_fer')">Añadir</button>
+                    </div>
+                    <ul id="lista_fer" style="list-style:none; padding:0;"></ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const clienteSupabase = supabase.createClient('https://pumpwqyazqaxeeknrhyo.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1bXB3cXlhenFheGVla25yaHlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MjQ4ODEsImV4cCI6MjA5NDIwMDg4MX0.-AQZZYAt-uskDLUpbiafJXbHgW0lErf8bwEnk7eq1DE');
+
+        function cambiarTab(idx) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-tabs li').forEach(l => l.classList.remove('active'));
+            document.getElementById('tab' + idx).classList.add('active');
+            document.querySelectorAll('.nav-tabs li')[idx].classList.add('active');
+            refrescarDatos();
+        }
+
+        async function refrescarDatos() {
+            try {
+                async function fetchAll(table) {
+                    let allData = [];
+                    let s = 1000, f = 0;
+                    while (true) {
+                        const { data } = await clienteSupabase.from(table).select('*').order('nombre').range(f, f + s - 1);
+                        if (!data || data.length === 0) break;
+                        allData = allData.concat(data);
+                        if (data.length < s) break;
+                        f += s;
+                    }
+                    return allData;
+                }
+
+                const listaGente = await fetchAll('perfiles');
+                const listaAgs = await fetchAll('agencias');
+                const listaEqs = await fetchAll('equipos');
+
+                window.datosGlobalesMaster = { perfiles: listaGente, agencias: listaAgs, equipos: listaEqs };
+
+                const optionVacia = '<option value="">-- Seleccionar --</option>';
+                const comboGente = optionVacia + listaGente.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+                const comboCoordinadores = optionVacia + listaGente.filter(p => p.rol === 'Líder de Equipos').map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+
+                document.getElementById('ag_super').innerHTML = comboGente;
+                document.getElementById('eq_lider').innerHTML = comboGente;
+                document.getElementById('eq_coordinador').innerHTML = comboCoordinadores;
+                document.getElementById('obj_vendedor').innerHTML = comboGente;
+                document.getElementById('eq_agencia').innerHTML = optionVacia + listaAgs.map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
+
+                // Poblar filtros de personal y auditoría
+                document.getElementById('filtro_agencia_personal').innerHTML = '<option value="TODAS">Todas las Agencias</option>' + listaAgs.map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
+                document.getElementById('filtro_equipo_personal').innerHTML = '<option value="TODOS">Todos los Equipos</option>' + listaEqs.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('');
+                document.getElementById('filtro_vendedor_audit').innerHTML = '<option value="">Todos los vendedores</option>' + listaGente.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+
+                cargarAgencias(listaAgs, listaGente);
+                cargarEquipos(listaEqs, listaGente, listaAgs);
+                aplicarFiltrosPersonal();
+
+                globalGenteAudit = listaGente;
+                
+                cargarAuditoria();
+                cargarOpciones();
+            } catch (error) {
+                console.error("Error general al refrescar:", error);
+            }
+        }
+
+        function cargarAgencias(listaAgs, listaGente) {
+            const tbody = document.querySelector('#tabla_agencias tbody');
+            if (!listaAgs.length) return tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No hay agencias creadas.</td></tr>';
+            const supervisores = listaGente.filter(p => p.rol === 'Líder de Sucursal');
+            tbody.innerHTML = listaAgs.map(a => `<tr><td>${a.nombre}</td><td><select onchange="updateAgencia('${a.id}', 'supervisor_id', this.value)"><option value="">Sin Líder de Sucursal</option>${supervisores.map(p => `<option value="${p.id}" ${p.id === a.supervisor_id ? 'selected' : ''}>${p.nombre}</option>`).join('')}</select></td><td><input type="color" value="${a.color_hex}" onchange="cambiarColorAgencia('${a.id}', this.value)" style="border:none; padding:0; width:30px; height:30px; cursor:pointer; background:transparent;" title="Clic para cambiar color"></td><td><button class="btn-edit" onclick="renombrar('agencias', '${a.id}', '${a.nombre}')">Renombrar</button><button class="btn-del" onclick="borrar('agencias', '${a.id}')">Eliminar</button></td></tr>`).join('');
+        }
+
+        async function crearAgencia() {
+            const n = document.getElementById('ag_nombre').value.trim();
+            const s = document.getElementById('ag_super').value;
+            const c = document.getElementById('ag_color').value;
+            if (!n) return alert("Ingresá un nombre para la agencia");
+            const { error } = await clienteSupabase.from('agencias').insert([{ nombre: n, supervisor_id: s === "" ? null : s, color_hex: c }]);
+            if (error) alert("Error: " + error.message); else { document.getElementById('ag_nombre').value = ''; refrescarDatos(); }
+        }
+
+        function cargarEquipos(listaEqs, listaGente, listaAgs) {
+            const tbody = document.querySelector('#tabla_equipos tbody');
+            if (!listaEqs.length) return tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No hay equipos creados.</td></tr>';
+            
+            const coordinadores = listaGente.filter(p => p.rol === 'Líder de Equipos');
+            
+            tbody.innerHTML = listaEqs.map(e => `
+                <tr>
+                    <td>${e.nombre}</td>
+                    <td>
+                        <label style="display:flex; align-items:center; gap:5px;">
+                            <input type="checkbox" onchange="updateEquipoBoolean('${e.id}', 'ver_prospectos', this.checked)" ${e.ver_prospectos ? 'checked' : ''}> Ver Prospectos
+                        </label>
+                    </td>
+                    <td><select onchange="updateEquipo('${e.id}', 'lider_id', this.value)"><option value="">Sin Líder de Asesores</option>${listaGente.map(p => `<option value="${p.id}" ${p.id === e.lider_id ? 'selected' : ''}>${p.nombre}</option>`).join('')}</select></td>
+                    <td><select onchange="updateEquipo('${e.id}', 'coordinador_id', this.value)"><option value="">Sin Líder</option>${coordinadores.map(p => `<option value="${p.id}" ${p.id === e.coordinador_id ? 'selected' : ''}>${p.nombre}</option>`).join('')}</select></td>
+                    <td><select onchange="updateEquipo('${e.id}', 'agencia_id', this.value)"><option value="">Sin Agencia</option>${listaAgs.map(a => `<option value="${a.id}" ${a.id === e.agencia_id ? 'selected' : ''}>${a.nombre}</option>`).join('')}</select></td>
+                    <td><button class="btn-edit" onclick="renombrar('equipos', '${e.id}', '${e.nombre}')">Renombrar</button><button class="btn-del" onclick="borrar('equipos', '${e.id}')">Eliminar</button></td>
+                </tr>
+            `).join('');
+        }
+
+        async function reiniciarObjetivosMasivos() {
+            let metaBase = document.getElementById('obj_default_vts').value;
+            if (!metaBase || isNaN(metaBase) || metaBase <= 0) return alert("Por favor ingresá un valor de meta válido.");
+            
+            if (!confirm(`⚠️ ATENCIÓN: Esta acción va a resetear la meta de TODOS los vendedores a ${metaBase} ventas. \n¿Estás seguro de que querés iniciar los objetivos para esta nueva campaña?`)) return;
+
+            // Update perfiles activos a la metaBase
+            const { error: err1 } = await clienteSupabase.from('perfiles').update({ 
+                objetivo_campana: parseInt(metaBase)
+            }).not('nombre', 'ilike', '%(BAJA)%');
+            
+            // Update perfiles BAJA a 0
+            const { error: err2 } = await clienteSupabase.from('perfiles').update({ 
+                objetivo_campana: 0
+            }).ilike('nombre', '%(BAJA)%');
+
+            const error = err1 || err2;
+
+            if (!error) {
+                // Determinar campaña actual
+                const hoy = new Date();
+                const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+                let mIndex = hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth();
+                let y = hoy.getFullYear();
+                if (mIndex > 11) { mIndex = 0; y++; }
+                const campanaActual = `Campaña ${meses[mIndex]} ${y}`;
+
+                // Guardar en el historial
+                const { data: perfiles } = await clienteSupabase.from('perfiles').select('id, objetivo_campana');
+                if (perfiles) {
+                    const historial = perfiles.map(p => ({ vendedor_id: p.id, campana: campanaActual, objetivo_ventas: p.objetivo_campana || 0 }));
+                    await clienteSupabase.from('historial_objetivos').upsert(historial, { onConflict: 'vendedor_id,campana' });
+                }
+            }
+
+            if (error) {
+                alert("Error al reiniciar objetivos: " + error.message);
+                return;
+            }
+            
+            alert(`¡Éxito! Los objetivos de todos los asesores se han reiniciado a ${metaBase}.`);
+            refrescarDatos();
+        }
+
+        async function crearEquipo() {
+            const n = document.getElementById('eq_nombre').value.trim();
+            const l = document.getElementById('eq_lider').value;
+            const c = document.getElementById('eq_coordinador').value;
+            const a = document.getElementById('eq_agencia').value;
+            if (!n) return alert("Ingresá un nombre para el equipo");
+            const { error } = await clienteSupabase.from('equipos').insert([{ nombre: n, lider_id: l === "" ? null : l, coordinador_id: c === "" ? null : c, agencia_id: a === "" ? null : a }]);
+            if (error) alert("Error: " + error.message); else { document.getElementById('eq_nombre').value = ''; refrescarDatos(); }
+        }
+
+        async function updateEquipo(id, campo, valor) {
+            const valFin = valor === "" ? null : valor;
+            const { error } = await clienteSupabase.from('equipos').update({ [campo]: valFin }).eq('id', id);
+            if (error) alert("Error: " + error.message);
+            else refrescarDatos();
+        }
+
+        async function updateEquipoBoolean(id, campo, valor) {
+            const { error } = await clienteSupabase.from('equipos').update({ [campo]: valor }).eq('id', id);
+            if (error) alert("Error: " + error.message);
+        }
+
+        async function updateAgencia(id, campo, valor) {
+            const valFin = valor === "" ? null : valor;
+            const { error } = await clienteSupabase.from('agencias').update({ [campo]: valFin }).eq('id', id);
+            if (error) alert("Error: " + error.message);
+            else refrescarDatos();
+        }
+
+        function aplicarFiltrosPersonal() {
+            if (!window.datosGlobalesMaster) return;
+            const agFilter = document.getElementById('filtro_agencia_personal').value;
+            const eqFilter = document.getElementById('filtro_equipo_personal').value;
+            const estadoFilter = document.getElementById('filtro_estado_personal') ? document.getElementById('filtro_estado_personal').value : 'ACTIVOS';
+            
+            const { perfiles, agencias, equipos } = window.datosGlobalesMaster;
+            
+            let filtrados = perfiles.filter(p => {
+                let pEqId = p.equipo_id;
+                let pAgId = null;
+                if (pEqId) {
+                    let equipoObj = equipos.find(e => e.id === pEqId);
+                    if (equipoObj) pAgId = equipoObj.agencia_id;
+                }
+                
+                if (agFilter !== 'TODAS' && pAgId !== agFilter) return false;
+                if (eqFilter !== 'TODOS' && pEqId !== eqFilter) return false;
+                
+                const esBaja = p.nombre.includes('(BAJA)');
+                if (estadoFilter === 'ACTIVOS' && esBaja) return false;
+                if (estadoFilter === 'BAJAS' && !esBaja) return false;
+                
+                return true;
+            });
+            
+            cargarPersonal(filtrados, equipos);
+        }
+
+        function cargarPersonal(perfiles, equipos) {
+            const tbody = document.querySelector('#tabla_personal tbody');
+            tbody.innerHTML = perfiles.map(p => `<tr><td>${p.nombre}</td><td><select onchange="updatePerfil('${p.id}', 'equipo_id', this.value)"><option value="">Sin Equipo</option>${equipos.map(e => `<option value="${e.id}" ${e.id === p.equipo_id ? 'selected' : ''}>${e.nombre}</option>`).join('')}</select></td><td><select onchange="updatePerfil('${p.id}', 'rol', this.value)"><option value="Vendedor" ${p.rol === 'Vendedor' ? 'selected' : ''}>Vendedor</option><option value="Líder de Asesores" ${p.rol === 'Líder de Asesores' ? 'selected' : ''}>Líder de Asesores</option><option value="Líder de Equipos" ${p.rol === 'Líder de Equipos' ? 'selected' : ''}>Líder de Equipos</option><option value="Líder de Sucursal" ${p.rol === 'Líder de Sucursal' ? 'selected' : ''}>Líder de Sucursal</option></select></td><td><select onchange="updatePerfil('${p.id}', 'categoria', this.value)"><option value="Senior" ${p.categoria === 'Senior' ? 'selected' : ''}>Senior</option><option value="Junior" ${p.categoria === 'Junior' ? 'selected' : ''}>Junior</option></select></td><td><button class="btn-edit" onclick="renombrar('perfiles', '${p.id}', '${p.nombre}')">Renombrar</button><button class="btn-del" style="background-color: #f39c12;" onclick="darDeBajaPerfil('${p.id}', '${p.nombre}')">Baja Lógica</button><button class="btn-del" onclick="borrar('perfiles', '${p.id}')">Eliminar</button></td></tr>`).join('');
+        }
+
+        function calcularProrrateoObjetivo(metaBase = 18) {
+            const hoy = new Date();
+            let mesFin = hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth();
+            let anioFin = hoy.getFullYear();
+            if (mesFin > 11) { mesFin = 0; anioFin++; }
+            let mesInicio = hoy.getDate() >= 16 ? hoy.getMonth() : hoy.getMonth() - 1;
+            let anioInicio = hoy.getFullYear();
+            if (mesInicio < 0) { mesInicio = 11; anioInicio--; }
+            const inicioCampana = new Date(anioInicio, mesInicio, 16);
+            const finCampana = new Date(anioFin, mesFin, 15);
+            function getDiasHabiles(desde, hasta) {
+                let count = 0, cur = new Date(desde);
+                cur.setHours(0,0,0,0); let end = new Date(hasta); end.setHours(0,0,0,0);
+                while(cur <= end) { let day = cur.getDay(); if (day !== 0 && day !== 6) count++; cur.setDate(cur.getDate() + 1); }
+                return count;
+            }
+            const totales = getDiasHabiles(inicioCampana, finCampana);
+            const restantes = getDiasHabiles(hoy, finCampana);
+            if (restantes <= 0) return 0;
+            if (restantes >= totales) return metaBase;
+            return Math.round(metaBase * (restantes / totales));
+        }
+
+        async function crearPersonal() {
+            const n = document.getElementById('per_nombre').value.trim();
+            const r = document.getElementById('per_rol').value;
+            const c = document.getElementById('per_cat').value;
+            if (!n) return alert("Ingresá el nombre");
+            const objetivoAsignado = calcularProrrateoObjetivo(18);
+            const { error } = await clienteSupabase.from('perfiles').insert([{ 
+                nombre: n, rol: r, categoria: c, objetivo_campana: objetivoAsignado 
+            }]);
+            if (error) alert("Error: " + error.message); else { document.getElementById('per_nombre').value = ''; refrescarDatos(); }
+        }
+
+        async function updatePerfil(id, campo, valor) {
+            const val = valor === "" ? null : valor;
+            const { error } = await clienteSupabase.from('perfiles').update({ [campo]: val }).eq('id', id);
+            if (error) {
+                alert("Error al actualizar: " + error.message);
+            } else {
+                if (campo === 'objetivo_campana') {
+                    const hoy = new Date();
+                    const campanaActual = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
+                    await clienteSupabase.from('historial_objetivos').upsert({
+                        vendedor_id: id,
+                        campana: campanaActual,
+                        objetivo_ventas: val
+                    }, { onConflict: 'vendedor_id,campana' });
+                }
+                refrescarDatos();
+            }
+        }
+
+        async function guardarMetas() {
+            const id = document.getElementById('obj_vendedor').value;
+            const vts = parseInt(document.getElementById('obj_vts').value) || 0;
+            const monto = vts * 65000;
+            if (!id) return alert("Seleccioná un vendedor");
+            
+            const { error } = await clienteSupabase.from('perfiles').update({ objetivo_campana: vts, objetivo_monto: monto }).eq('id', id);
+            if (error) return alert("Error: " + error.message);
+            
+            const hoy = new Date();
+            const campanaActual = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
+            
+            await clienteSupabase.from('historial_objetivos').upsert({
+                vendedor_id: id,
+                campana: campanaActual,
+                objetivo_ventas: vts
+            }, { onConflict: 'vendedor_id,campana' });
+            
+            alert("¡Metas guardadas e impactadas en la campaña actual!");
+        }
+
+        let globalGenteAudit = [];
+
+        // --- SISTEMA DE AUDITORÍA Y ASIENTOS DE REVERSIÓN ---
+        async function cargarAuditoria() {
+            let fecha = document.getElementById('filtro_fecha_audit').value;
+            let vendedorId = document.getElementById('filtro_vendedor_audit').value;
+
+            const hoy = new Date();
+            const campanaActual = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
+
+            let query = clienteSupabase.from('registro_ventas').select('*').eq('campana', campanaActual).order('created_at', { ascending: false });
+
+            if (vendedorId) query = query.eq('vendedor_id', vendedorId);
+            if (fecha) {
+                query = query.gte('created_at', fecha + "T00:00:00").lte('created_at', fecha + "T23:59:59");
+                
+                let vtas = [];
+                let step = 1000, fromRow = 0;
+                let hasError = null;
+                while (true) {
+                    const { data, error } = await query.range(fromRow, fromRow + step - 1);
+                    if (error) { hasError = error; break; }
+                    if (!data || data.length === 0) break;
+                    vtas = vtas.concat(data);
+                    if (data.length < step) break;
+                    fromRow += step;
+                }
+                var error = hasError;
+                var data = vtas;
+            } else {
+                query = query.limit(100);
+                var { data, error } = await query;
+            }
+
+            if (error) {
+                console.error("Error cargando auditoría:", error);
+                return;
+            }
+
+            // Filtrar registros que sean pura entrevista (sin ventas ni bajas ni reversiones)
+            let datosReales = data.filter(v => (v.ventas_cerradas > 0) || (v.bajas > 0) || (v.monto < 0) || v.beneficio?.includes('BAJA'));
+
+            let tb = document.querySelector('#tabla_auditoria tbody');
+            if (!datosReales || datosReales.length === 0) {
+                tb.innerHTML = '<tr><td colspan="5" class="empty-state">No hay registros con esos filtros.</td></tr>';
+                return;
+            }
+
+            tb.innerHTML = datosReales.map(v => {
+                let nombreVendedor = globalGenteAudit.find(p => p.id === v.vendedor_id)?.nombre || 'Desconocido';
+                
+                let esReversion = v.monto < 0 || v.beneficio?.includes("BAJA");
+                let estiloFila = esReversion ? "background: #fff0f0;" : "";
+                
+                let btnAccion = '';
+                if (esReversion) {
+                    btnAccion = `<span style="color:#e74c3c; font-weight:bold; font-size:12px;"><i class="fa-solid fa-arrow-trend-down"></i> REVERSIÓN</span><br><span style="font-size:10px; color:#555;">${v.beneficio}</span>`;
+                } else if (v.es_anulada) {
+                    btnAccion = `<span style="color:#e74c3c; font-weight:bold; font-size:12px;"><i class="fa-solid fa-ban"></i> ANULADA</span>`;
+                } else {
+                    btnAccion = `<button class="btn-baja" onclick="darDeBajaVenta('${v.id}')"><i class="fa-solid fa-arrow-trend-down"></i> DAR DE BAJA</button>`;
+                }
+                
+                btnAccion += `<button style="background:#c0392b; color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer; margin-left: 10px;" onclick="eliminarVentaDB('${v.id}')" title="Eliminar definitivamente de la DB"><i class="fa-solid fa-trash"></i></button>`;
+
+
+                return `
+                    <tr style="${estiloFila}">
+                        <td>${v.created_at ? new Date(v.created_at).toLocaleDateString() : '-'}</td>
+                        <td>${nombreVendedor}</td>
+                        <td>${esReversion ? '-' + v.bajas : (v.ventas_cerradas || 0)}</td>
+                        <td>$${(v.monto || 0).toLocaleString()}</td>
+                        <td>${btnAccion}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function darDeBajaVenta(idVentaOriginal) {
+            if (!confirm("¿Confirmás la BAJA de esta operación? Se generará un asiento negativo automático para descontar la comisión y los puntos en el ranking.")) return;
+
+            const { data: venta, error: errBusqueda } = await clienteSupabase.from('registro_ventas').select('*').eq('id', idVentaOriginal).single();
+            if (errBusqueda || !venta) return alert("Error al buscar la operación.");
+
+            const payloadInsert = {
+                vendedor_id: venta.vendedor_id,
+                ventas_cerradas: 0,
+                entrevistas: 0,
+                bajas: venta.ventas_cerradas || 1,
+                monto: -(venta.monto || 0),
+                semana: venta.semana,
+                campana: venta.campana,
+                beneficio: `BAJA (por Admin Central) - Reversión de op orig. del ${new Date(venta.created_at).toLocaleDateString()}`,
+                medio_pago: 'Reversión'
+            };
+            const { error: errInsert } = await clienteSupabase.from('registro_ventas').insert([payloadInsert]);
+
+            if (errInsert) return alert("Error al registrar la baja: " + errInsert.message);
+
+            await clienteSupabase.from('registro_ventas').update({ es_anulada: true }).eq('id', idVentaOriginal);
+
+            alert("¡Baja impactada correctamente en los rankings!");
+            refrescarDatos();
+        }
+
+        async function eliminarVentaDB(idRegistro) {
+            if (!confirm("⚠️ ADVERTENCIA: Esta acción ELIMINARÁ FÍSICAMENTE el registro de la base de datos, como si nunca se hubiera cargado. No se descontará como baja. ¿Deseas borrarlo permanentemente?")) return;
+            const { error } = await clienteSupabase.from('registro_ventas').delete().eq('id', idRegistro);
+            if (error) return alert("Error al eliminar de la DB: " + error.message);
+            alert("Registro eliminado definitivamente.");
+            refrescarDatos();
+        }
+
+        async function renombrar(tabla, id, nombreActual) {
+            const nuevoNombre = prompt("Ingresá el nuevo nombre:", nombreActual);
+            if (nuevoNombre !== null && nuevoNombre.trim() !== '' && nuevoNombre !== nombreActual) {
+                if (confirm(`¿Confirmás cambiar el nombre "${nombreActual}" por "${nuevoNombre.trim()}"?`)) {
+                    const { error } = await clienteSupabase.from(tabla).update({ nombre: nuevoNombre.trim() }).eq('id', id);
+                    if (error) alert("Error al renombrar: " + error.message);
+                    else refrescarDatos();
+                }
+            }
+        }
+
+        async function darDeBajaPerfil(id, nombreActual) {
+            if (nombreActual.includes('(BAJA)')) {
+                return alert("Este perfil ya está dado de baja.");
+            }
+            if (!confirm(`¿Estás seguro de que querés marcar a ${nombreActual} como (BAJA) y dejarlo Sin Equipo?\nEsto ocultará su perfil de los radares activos.`)) return;
+            
+            const nuevoNombre = nombreActual + ' (BAJA)';
+            const { error } = await clienteSupabase.from('perfiles').update({ nombre: nuevoNombre, equipo_id: null }).eq('id', id);
+            
+            if (error) {
+                alert("Error al dar de baja: " + error.message);
+            } else {
+                refrescarDatos();
+            }
+        }
+
+        async function cambiarColorAgencia(id, nuevoColor) {
+            const { error } = await clienteSupabase.from('agencias').update({ color_hex: nuevoColor }).eq('id', id);
+            if (error) alert("Error al cambiar color: " + error.message);
+            else refrescarDatos(); // Refresca para que todos los datos actualizados viajen a donde corresponda
+        }
+
+        async function borrar(tabla, id) {
+            if (confirm("¿Estás seguro? Esta acción no se puede deshacer.")) {
+                const { error } = await clienteSupabase.from(tabla).delete().eq('id', id);
+                if (error) {
+                    if (error.message.includes("foreign key") || error.code === '23503') {
+                        alert("No se pudo eliminar a esta persona porque ya tiene ventas registradas en el sistema. \n\nPara darlo de baja, simplemente cámbiale el equipo a 'Sin Equipo' para que no aparezca en los radares de la nueva campaña.");
+                    } else {
+                        alert("Error al eliminar: " + error.message);
+                    }
+                } else {
+                    refrescarDatos();
+                }
+            }
+        }
+
+        async function cargarOpciones() {
+            const { data: benfs } = await clienteSupabase.from('opciones_beneficios').select('*').order('nombre');
+            if (benfs) document.getElementById('lista_ben').innerHTML = benfs.map(b => `<li style="padding:8px; border-bottom:1px solid #333; display:flex; justify-content:space-between;">${b.nombre} <button class="btn-del" onclick="borrarOpt('opciones_beneficios', '${b.id}')">X</button></li>`).join('');
+
+            const { data: bncs } = await clienteSupabase.from('opciones_bancos').select('*').order('nombre');
+            if (bncs) document.getElementById('lista_bnc').innerHTML = bncs.map(b => `<li style="padding:8px; border-bottom:1px solid #333; display:flex; justify-content:space-between;">${b.nombre} <button class="btn-del" onclick="borrarOpt('opciones_bancos', '${b.id}')">X</button></li>`).join('');
+
+            const { data: fers } = await clienteSupabase.from('opciones_feriados').select('*').order('nombre');
+            if (fers) document.getElementById('lista_fer').innerHTML = fers.map(b => `<li style="padding:8px; border-bottom:1px solid #333; display:flex; justify-content:space-between;">${b.nombre} <button class="btn-del" onclick="borrarOpt('opciones_feriados', '${b.id}')">X</button></li>`).join('');
+
+            const { data: ests } = await clienteSupabase.from('opciones_estados_entrevista').select('*').order('nombre');
+            if (ests) document.getElementById('lista_est').innerHTML = ests.map(b => `<li style="padding:8px; border-bottom:1px solid #333; display:flex; justify-content:space-between;">${b.nombre} <button class="btn-del" onclick="borrarOpt('opciones_estados_entrevista', '${b.id}')">X</button></li>`).join('');
+            
+            
+        }
+
+        async function addOpt(tabla, inputId) {
+            const val = document.getElementById(inputId).value;
+            if (!val) return;
+            const { error } = await clienteSupabase.from(tabla).insert([{ nombre: val }]);
+            if (error) alert("Error al añadir opción: " + error.message);
+            document.getElementById(inputId).value = ''; cargarOpciones();
+        }
+
+        async function borrarOpt(tabla, id) {
+            const { error } = await clienteSupabase.from(tabla).delete().eq('id', id); 
+            if (error) alert("Error al borrar opción: " + error.message);
+            cargarOpciones();
+        }
+
+        
+        window.operacionesExcelPendientes = [];
+        window.reversionesExcelPendientes = [];
+
+        async function procesarImportacion() {
+            const fileInput = document.getElementById('archivoImportacion');
+            const resultDiv = document.getElementById('resultadoImportacion');
+            const btnAccion = document.getElementById('accionImportacion');
+            const btnRevertir = document.getElementById('accionRevertir');
+            
+            btnAccion.style.display = 'none';
+            btnRevertir.style.display = 'none';
+            window.operacionesExcelPendientes = [];
+
+            if (!fileInput.files || fileInput.files.length === 0) {
+                return resultDiv.innerHTML = "<span style='color:#e74c3c;'>Por favor selecciona un archivo Excel (.xlsx).</span>";
+            }
+            
+            resultDiv.innerHTML = "Leyendo y analizando archivo (Previsualización)... <i class='fa-solid fa-spinner fa-spin'></i>";
+            
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = async function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array', cellDates: true});
+                    
+                    const sheetName = workbook.SheetNames[0];
+                    const sheet = workbook.Sheets[sheetName];
+                    const json = XLSX.utils.sheet_to_json(sheet);
+                    
+                    if(json.length === 0) {
+                        return resultDiv.innerHTML = "<span style='color:#e74c3c;'>El archivo está vacío o no se pudo leer.</span>";
+                    }
+
+                    let procesadas = 0;
+                    let ignoradasVentas = 0;
+                    let bajasNuevas = 0;
+                    let errores = 0;
+                    let msjs = [];
+
+                    const { data: perfilesDB } = await clienteSupabase.from('perfiles').select('id, nombre, equipo_id');
+                    
+                    for(let i = 0; i < json.length; i++) {
+                        let row = json[i];
+                        
+                        let nomVendedor = row["Vendedor"];
+                        let fechaExcel = row["Fecha"];
+                        let nroSol = row["id"] ? String(row["id"]).trim() : null;
+                        let importe = parseFloat(row["Importe"]) || 0;
+                        let estadoStr = String(row["estado"] || "").toLowerCase();
+                        let beneficio = row["Beneficio"] || "";
+                        let entidad = row["Entidad"] || "N/A";
+                        
+                        if(!nomVendedor || !nroSol) {
+                            msjs.push(\`Fila \${i+2}: Ignorada (falta Vendedor o ID de Solicitud).\`);
+                            errores++;
+                            continue;
+                        }
+
+                        let vendMatch = perfilesDB.find(p => p.nombre.toLowerCase().trim() === String(nomVendedor).toLowerCase().trim());
+                        if(!vendMatch) {
+                            msjs.push(\`Fila \${i+2}: Vendedor '\${nomVendedor}' no encontrado en el sistema.\`);
+                            errores++;
+                            continue;
+                        }
+
+                        let fechaDB = new Date();
+                        if (fechaExcel instanceof Date) {
+                            fechaDB = fechaExcel;
+                        } else if (typeof fechaExcel === 'string') {
+                            let p = fechaExcel.split('/');
+                            if(p.length === 3) {
+                                fechaDB = new Date(p[2], p[1]-1, p[0]);
+                            }
+                        }
+                        
+                        let dia = fechaDB.getDate();
+                        let mes = fechaDB.getMonth();
+                        let anio = fechaDB.getFullYear();
+                        let tMes = dia >= 16 ? mes + 1 : mes;
+                        let tAnio = anio;
+                        if(tMes > 11) { tMes = 0; tAnio++; }
+                        const nMeses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+                        let campanaCalculada = \`Campaña \${nMeses[tMes]} \${tAnio}\
+
+        <!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Maestro GPL v3.0</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --gpl-petroleo: #006779;
+            --gpl-dorado: #A42A68;
+            --gpl-borravino: #72224c;
+            --fondo-oscuro: #1a252c;
+            --celda-oscura: #23323c;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: var(--fondo-oscuro);
+            margin: 0;
+            padding: 0;
+            color: white;
+        }
+
+        .header-admin {
+            background: white;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 5px solid var(--gpl-dorado);
+        }
+
+        .header-admin img {
+            max-width: 150px;
+        }
+
+        .header-admin h1 {
+            color: var(--gpl-petroleo);
+            margin: 5px 0 0 0;
+            font-size: 20px;
+            text-transform: uppercase;
+            font-weight: 900;
+        }
+
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            background: #111;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            border-bottom: 1px solid #444;
+            overflow-x: auto;
+        }
+
+        .nav-tabs li {
+            padding: 15px 20px;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 12px;
+            color: #aaa;
+            border-bottom: 3px solid transparent;
+            white-space: nowrap;
+            transition: 0.2s;
+        }
+
+        .nav-tabs li:hover {
+            background: #222;
+            color: white;
+        }
+
+        .nav-tabs li.active {
+            color: var(--gpl-dorado);
+            border-bottom: 3px solid var(--gpl-dorado);
+            background: #1a252c;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card-admin {
+            background: var(--celda-oscura);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #444;
+            margin-bottom: 20px;
+        }
+
+        h3 {
+            color: var(--gpl-dorado);
+            margin-top: 0;
+            text-transform: uppercase;
+            font-size: 16px;
+            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th {
+            background: #111;
+            color: var(--gpl-dorado);
+            padding: 10px;
+            text-align: left;
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+
+        td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #333;
+            font-size: 13px;
+            vertical-align: middle;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            align-items: end;
+        }
+
+        label {
+            display: block;
+            font-size: 10px;
+            text-transform: uppercase;
+            color: #aaa;
+            margin-bottom: 5px;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #444;
+            background: #111;
+            color: white;
+        }
+
+        button {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 11px;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            filter: brightness(1.1);
+        }
+
+        .btn-add {
+            background: var(--gpl-dorado);
+            color: black;
+        }
+
+        .btn-baja {
+            background: #e74c3c;
+            color: white;
+            box-shadow: 0 2px 5px rgba(231, 76, 60, 0.3);
+        }
+
+        .btn-del {
+            background: #c0392b;
+            color: white;
+        }
+
+        /* Mantenido por si borras agencias */
+        .btn-save {
+            background: #27ae60;
+            color: white;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #777;
+            padding: 20px;
+            font-style: italic;
+        }
+    </style>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#A42A68">
+    <link rel="apple-touch-icon" href="LOGO-gpl.png">
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js');
+            });
+        }
+    </script>
+</head>
+
+<body>
+
+    <header class="header-admin">
+        <img src="LOGO-gpl.png" alt="GPL">
+        <h1>Centro de Mando Maestro</h1>
+    </header>
+
+    <ul class="nav-tabs" id="menuTabs">
+        <li onclick="cambiarTab(0)" class="active"><i class="fa-solid fa-building"></i> Agencias</li>
+        <li onclick="cambiarTab(1)"><i class="fa-solid fa-users-gear"></i> Equipos</li>
+        <li onclick="cambiarTab(2)"><i class="fa-solid fa-user-tie"></i> Personal</li>
+        <li onclick="cambiarTab(3)"><i class="fa-solid fa-bullseye"></i> Metas</li>
+        <li onclick="cambiarTab(4)"><i class="fa-solid fa-list-check"></i> Auditoría Ventas</li>
+        
+        <li onclick="cambiarTab(5)"><i class="fa-solid fa-file-import"></i> Importar Datos</li>
+        <li onclick="cambiarTab(6)"><i class="fa-solid fa-sliders"></i> Opciones</li>
+        <li onclick="window.open('ranking_tv.html', '_blank')" style="border-left: 2px solid var(--gpl-dorado);"><i class="fa-solid fa-tv"></i> Transmitir en TV</li>
+        <li onclick="window.location.href='index.html'" style="background: #e74c3c; color: white;"><i class="fa-solid fa-right-from-bracket"></i> Salir</li>
+    </ul>
+
+    <div class="container">
+
+        <div id="tab0" class="tab-content active">
+            <div class="card-admin">
+                <h3>Nueva Agencia</h3>
+                <div class="form-row">
+                    <div><label>Nombre Agencia</label><input type="text" id="ag_nombre"></div>
+                    <div><label>Líder de Sucursal</label><select id="ag_super"></select></div>
+                    <div><label>Color Hex</label><input type="color" id="ag_color" value="#0a3a46"></div>
+                    <button class="btn-add" onclick="crearAgencia()">Crear Agencia</button>
+                </div>
+                <table id="tabla_agencias">
+                    <thead>
+                        <tr>
+                            <th>Agencia</th>
+                            <th>Líder de Sucursal</th>
+                            <th>Color</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tab1" class="tab-content">
+            <div class="card-admin">
+                <h3>Nuevo Equipo</h3>
+                <div class="form-row">
+                    <div><label>Nombre Equipo</label><input type="text" id="eq_nombre"></div>
+                    <div><label>Líder de Asesores</label><select id="eq_lider"></select></div>
+                    <div><label>Líder de Equipos</label><select id="eq_coordinador"></select></div>
+                    <div><label>Agencia</label><select id="eq_agencia"></select></div>
+                    <button class="btn-add" onclick="crearEquipo()">Crear Equipo</button>
+                </div>
+                <table id="tabla_equipos">
+                    <thead>
+                        <tr>
+                            <th>Nombre del Equipo</th>
+                            <th>Habilitar "Mis Prospectos"</th>
+                            <th>Líder de Asesores</th>
+                            <th>Líder de Equipos</th>
+                            <th>Agencia / Sucursal</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tab2" class="tab-content">
+            <div class="card-admin" style="border-left: 5px solid #2ecc71;">
+                <h3>Nuevo Ingreso (Alta de Personal)</h3>
+                <div class="form-row">
+                    <div><label>Nombre Completo</label><input type="text" id="per_nombre" placeholder="Ej: Juan Pérez">
+                    </div>
+                    <div>
+                        <label>Rol Inicial</label>
+                        <select id="per_rol">
+                            <option value="Vendedor">Vendedor</option>
+                            <option value="Líder de Asesores">Líder de Asesores</option>
+                            <option value="Líder de Equipos">Líder de Equipos</option>
+                            <option value="Líder de Sucursal">Líder de Sucursal</option>
+                            <option value="Gerente">Gerente Comercial</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Categoría</label>
+                        <select id="per_cat">
+                            <option value="Senior">Senior (30%)</option>
+                            <option value="Junior">Junior (20%)</option>
+                        </select>
+                    </div>
+                    <button class="btn-save" onclick="crearPersonal()">Dar de Alta</button>
+                </div>
+            </div>
+
+            <div class="card-admin">
+                <h3>Gestión y Asignación de Equipos</h3>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <select id="filtro_estado_personal" onchange="aplicarFiltrosPersonal()" style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Poppins', sans-serif; font-weight: bold;">
+                        <option value="ACTIVOS">Solo Activos</option>
+                        <option value="BAJAS">Solo Bajas</option>
+                        <option value="TODOS">Todos (Activos y Bajas)</option>
+                    </select>
+                    <select id="filtro_agencia_personal" onchange="aplicarFiltrosPersonal()" style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Poppins', sans-serif; font-weight: bold;">
+                        <option value="TODAS">Todas las Agencias</option>
+                    </select>
+                    <select id="filtro_equipo_personal" onchange="aplicarFiltrosPersonal()" style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Poppins', sans-serif; font-weight: bold;">
+                        <option value="TODOS">Todos los Equipos</option>
+                    </select>
+                </div>
+                <table id="tabla_personal">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Equipo</th>
+                            <th>Rol</th>
+                            <th>Categoría</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tab3" class="tab-content">
+            <div class="card-admin">
+                <h3>Objetivos de Campaña (Individual)</h3>
+                <div class="form-row">
+                    <div><label>Vendedor/a</label><select id="obj_vendedor"></select></div>
+                    <div><label>Meta Ventas</label><input type="number" id="obj_vts"></div>
+                    <div style="display:none;"><label>Meta Importe ($)</label><input type="number" id="obj_monto"></div>
+                    <button class="btn-save" onclick="guardarMetas()">Actualizar</button>
+                </div>
+            </div>
+            
+            <div class="card-admin" style="margin-top: 20px; border-left: 5px solid #e74c3c;">
+                <h3><i class="fa-solid fa-rotate"></i> Reinicio Masivo de Objetivos (Nueva Campaña)</h3>
+                <p style="font-size: 13px; color: #555;">Utilizá esta opción al inicio de una nueva campaña para resetear los objetivos de <b>todos los asesores</b> al valor por defecto.</p>
+                <div class="form-row" style="align-items: flex-end;">
+                    <div><label>Meta por Defecto (Ventas)</label><input type="number" id="obj_default_vts" value="18" style="width: 150px; font-weight: bold; font-size: 16px; text-align: center;"></div>
+                    <button class="btn-save" style="background-color: #e74c3c;" onclick="reiniciarObjetivosMasivos()">Reiniciar Todos los Objetivos</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab4" class="tab-content">
+            <div class="card-admin">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                    <h3 style="margin: 0;">Auditoría de Ventas</h3>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <input type="date" id="filtro_fecha_audit" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc;">
+                        <select id="filtro_vendedor_audit" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc; max-width: 200px;">
+                            <option value="">Todos los vendedores</option>
+                        </select>
+                        <button onclick="cargarAuditoria()" style="padding: 5px 15px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;"><i class="fa-solid fa-search"></i> Filtrar</button>
+                    </div>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table id="tabla_auditoria">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Vendedor</th>
+                                <th>Vts / Bajas</th>
+                                <th>Importe</th>
+                                <th>Estado / Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+                <div id="tab5" class="tab-content">
+            <div class="card-admin">
+                <h2>Importación Masiva de Ventas y Bajas (Excel)</h2>
+                <p style="color:#aaa; font-size:12px; margin-bottom:15px;">Formato soportado: .xlsx. Columnas obligatorias: <b>Vendedor, Fecha, id, Importe, estado, Beneficio, Entidad</b>.</p>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <input type="file" id="archivoImportacion" accept=".xlsx, .xls" style="max-width:300px; padding:5px; background: #111; color: white;">
+                    <button class="btn-save" onclick="procesarImportacion()" id="btnImportar"><i class="fa-solid fa-eye"></i> Previsualizar Subida</button>
+                    <button class="btn-delete" onclick="revertirImportacion()" id="btnRevertir" style="background-color: #c0392b; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold;"><i class="fa-solid fa-undo"></i> Eliminar Archivo Subido</button>
+                </div>
+                <div id="resultadoImportacion" style="margin-top:20px; font-size:13px; color:#ddd; padding:15px; background:#1a1a1a; border-radius:5px; border:1px dashed #444; min-height:50px; white-space: pre-wrap;">Esperando archivo...</div>
+                <div id="accionImportacion" style="display:none; margin-top:15px;">
+                    <button class="btn-save" onclick="confirmarImportacion()" id="btnConfirmarImportacion" style="width: 100%; padding: 10px; font-size: 16px;"><i class="fa-solid fa-check"></i> Confirmar y Subir a Base de Datos</button>
+                </div>
+                <div id="accionRevertir" style="display:none; margin-top:15px;">
+                    <button class="btn-delete" onclick="confirmarReversion()" id="btnConfirmarReversion" style="width: 100%; padding: 10px; font-size: 16px; background-color: #c0392b; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;"><i class="fa-solid fa-trash"></i> Confirmar y Eliminar Registros de este Archivo</button>
+                </div>
             </div>
         </div>
 
