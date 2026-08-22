@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Maestro GPL v3.0</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         :root {
@@ -241,10 +242,10 @@
         <li onclick="cambiarTab(2)"><i class="fa-solid fa-user-tie"></i> Personal</li>
         <li onclick="cambiarTab(3)"><i class="fa-solid fa-bullseye"></i> Metas</li>
         <li onclick="cambiarTab(4)"><i class="fa-solid fa-list-check"></i> Auditoría</li>
-        <li onclick="cambiarTab(5)"><i class="fa-solid fa-sliders"></i> Opciones</li>
+        <li onclick="cambiarTab(5)"><i class="fa-solid fa-file-import"></i> IMPORTAR DATOS</li>
+        <li onclick="cambiarTab(6)"><i class="fa-solid fa-sliders"></i> Opciones</li>
         <li onclick="window.open('ranking_tv.html', '_blank')" style="border-left: 2px solid var(--gpl-dorado);"><i class="fa-solid fa-tv"></i> Transmitir en TV</li>
-        <li onclick="window.location.href='index.html'" style="background: #e74c3c; color: white;"><i class="fa-solid fa-right-from-bracket"></i> Salir</li>
-    </ul>
+        <li onclick="window.location.href='index.html'" style="background: #e74c3c; color: white;"><i class="fa-solid fa-right-from-bracket"></i> Salir</li></ul>
 
     <div class="container">
 
@@ -903,6 +904,325 @@
 
         refrescarDatos();
     </script>
-</body>
+<script>
+        window.operacionesExcelPendientes = [];
+        window.reversionesExcelPendientes = [];
 
-</html>
+        async function procesarImportacion() {
+            const fileInput = document.getElementById('archivoImportacion');
+            const resultDiv = document.getElementById('resultadoImportacion');
+            const btnAccion = document.getElementById('accionImportacion');
+            const btnRevertir = document.getElementById('accionRevertir');
+            
+            btnAccion.style.display = 'none';
+            btnRevertir.style.display = 'none';
+            window.operacionesExcelPendientes = [];
+
+            if (!fileInput.files || fileInput.files.length === 0) {
+                return resultDiv.innerHTML = "<span style='color:#e74c3c;'>Por favor selecciona un archivo Excel (.xlsx).</span>";
+            }
+            
+            resultDiv.innerHTML = "Leyendo y analizando archivo (Previsualización)... <i class='fa-solid fa-spinner fa-spin'></i>";
+            
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = async function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array', cellDates: true});
+                    
+                    const sheetName = workbook.SheetNames[0];
+                    const sheet = workbook.Sheets[sheetName];
+                    const json = XLSX.utils.sheet_to_json(sheet);
+                    
+                    if(json.length === 0) {
+                        return resultDiv.innerHTML = "<span style='color:#e74c3c;'>El archivo está vacío o no se pudo leer.</span>";
+                    }
+
+                    let procesadas = 0;
+                    let ignoradasVentas = 0;
+                    let bajasNuevas = 0;
+                    let errores = 0;
+                    let msjs = [];
+
+                    const { data: perfilesDB } = await clienteSupabase.from('perfiles').select('id, nombre, equipo_id');
+                    
+                    for(let i = 0; i < json.length; i++) {
+                        let row = json[i];
+                        
+                        let nomVendedor = row["Vendedor"];
+                        let fechaExcel = row["Fecha"];
+                        let nroSol = row["id"] ? String(row["id"]).trim() : null;
+                        let importe = parseFloat(row["Importe"]) || 0;
+                        let estadoStr = String(row["estado"] || "").toLowerCase();
+                        let beneficio = row["Beneficio"] || "";
+                        let entidad = row["Entidad"] || "N/A";
+                        
+                        if(!nomVendedor || !nroSol) {
+                            msjs.push("Fila " + (i+2) + ": Ignorada (falta Vendedor o ID de Solicitud).");
+                            errores++;
+                            continue;
+                        }
+
+                        let vendMatch = perfilesDB.find(p => p.nombre.toLowerCase().trim() === String(nomVendedor).toLowerCase().trim());
+                        if(!vendMatch) {
+                            msjs.push("Fila " + (i+2) + ": Vendedor '" + nomVendedor + "' no encontrado en el sistema.");
+                            errores++;
+                            continue;
+                        }
+
+                        let fechaDB = new Date();
+                        if (fechaExcel instanceof Date) {
+                            fechaDB = fechaExcel;
+                        } else if (typeof fechaExcel === 'string') {
+                            let p = fechaExcel.split('/');
+                            if(p.length === 3) {
+                                fechaDB = new Date(p[2], p[1]-1, p[0]);
+                            }
+                        }
+                        
+                        let dia = fechaDB.getDate();
+                        let mes = fechaDB.getMonth();
+                        let anio = fechaDB.getFullYear();
+                        let tMes = dia >= 16 ? mes + 1 : mes;
+                        let tAnio = anio;
+                        if(tMes > 11) { tMes = 0; tAnio++; }
+                        const nMeses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+                        let campanaCalculada = "Campaña " + nMeses[tMes] + " " + tAnio;
+                        
+                        let esBaja = estadoStr.includes('baja') || estadoStr.includes('rechazad') || estadoStr.includes('anulad') || estadoStr.includes('caida');
+                        
+                        const { data: dbVenta } = await clienteSupabase.from('registro_ventas').select('*').eq('numero_solicitud', nroSol);
+                        let existe = dbVenta && dbVenta.length > 0;
+                        
+                        if (!esBaja) {
+                            if (existe) {
+                                ignoradasVentas++;
+                            } else {
+                                const objVenta = {
+                                    vendedor_id: vendMatch.id,
+                                    ventas_cerradas: 1,
+                                    entrevistas: 0,
+                                    bajas: 0,
+                                    monto: importe,
+                                    beneficio: beneficio,
+                                    medio_pago: entidad,
+                                    semana: 1,
+                                    campana: campanaCalculada,
+                                    es_anulada: false,
+                                    created_at: fechaDB.toISOString(),
+                                    numero_solicitud: nroSol
+                                };
+                                window.operacionesExcelPendientes.push({ tipo: 'insert', data: objVenta });
+                                procesadas++;
+                            }
+                        } else {
+                            if (!existe) {
+                                const objBaja = {
+                                    vendedor_id: vendMatch.id,
+                                    ventas_cerradas: 0,
+                                    entrevistas: 0,
+                                    bajas: 1,
+                                    monto: -importe,
+                                    beneficio: beneficio + " (BAJA/RECHAZO EXCEL)",
+                                    medio_pago: entidad,
+                                    semana: 1,
+                                    campana: campanaCalculada,
+                                    es_anulada: false,
+                                    created_at: fechaDB.toISOString(),
+                                    numero_solicitud: nroSol + "_BAJA"
+                                };
+                                window.operacionesExcelPendientes.push({ tipo: 'insert', data: objBaja });
+                                bajasNuevas++;
+                            } else {
+                                let orig = dbVenta[0];
+                                if(orig.es_anulada) {
+                                    ignoradasVentas++;
+                                } else {
+                                    const objContra = {
+                                        vendedor_id: orig.vendedor_id,
+                                        ventas_cerradas: 0,
+                                        entrevistas: 0,
+                                        bajas: orig.ventas_cerradas || 1,
+                                        monto: -(orig.monto || 0),
+                                        semana: orig.semana,
+                                        campana: orig.campana,
+                                        beneficio: orig.beneficio + " (ANULACIÓN EXCEL)",
+                                        medio_pago: orig.medio_pago,
+                                        es_anulada: false,
+                                        created_at: new Date().toISOString(),
+                                        numero_solicitud: nroSol + "_BAJA"
+                                    };
+                                    window.operacionesExcelPendientes.push({ tipo: 'insert', data: objContra });
+                                    window.operacionesExcelPendientes.push({ tipo: 'update', id: orig.id, data: { es_anulada: true } });
+                                    bajasNuevas++;
+                                }
+                            }
+                        }
+                    }
+
+                    resultDiv.innerHTML = "<h4 style='margin:0 0 10px 0; color:#f39c12;'>Previsualización de Subida</h4><p style='margin:0;'>Ventas nuevas listas para registrar: <b>" + procesadas + "</b></p><p style='margin:0;'>Bajas/Anulaciones listas para aplicar: <b>" + bajasNuevas + "</b></p><p style='margin:0; color:#aaa;'>Ventas/Bajas ignoradas (ya existían): <b>" + ignoradasVentas + "</b></p><p style='margin:0; color:#e74c3c;'>Errores (filas saltadas): <b>" + errores + "</b></p><div style='margin-top:10px; max-height:150px; overflow-y:auto; font-size:11px; color:#aaa; line-height: 1.5;'>" + msjs.join('<br>') + "</div>";
+                    
+                    if (window.operacionesExcelPendientes.length > 0) {
+                        btnAccion.style.display = 'block';
+                    }
+
+                } catch(err) {
+                    console.error(err);
+                    resultDiv.innerHTML = "<span style='color:#e74c3c;'>Ocurrió un error al procesar el archivo. Revisa el formato de las columnas.</span><br>" + err.message;
+                }
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+
+        async function confirmarImportacion() {
+            const btnAccion = document.getElementById('accionImportacion');
+            const resultDiv = document.getElementById('resultadoImportacion');
+            const btnOriginal = btnAccion.innerHTML;
+            
+            btnAccion.innerHTML = "<button class='btn-save' style='width: 100%; padding: 10px; font-size: 16px; opacity: 0.7;' disabled><i class='fa-solid fa-spinner fa-spin'></i> Subiendo a Base de Datos...</button>";
+            
+            try {
+                for (let op of window.operacionesExcelPendientes) {
+                    if (op.tipo === 'insert') {
+                        await clienteSupabase.from('registro_ventas').insert([op.data]);
+                    } else if (op.tipo === 'update') {
+                        await clienteSupabase.from('registro_ventas').update(op.data).eq('id', op.id);
+                    }
+                }
+                
+                resultDiv.innerHTML = "<h4 style='margin:0 0 10px 0; color:#2ecc71;'>¡Subida Exitosa!</h4><p style='margin:0;'>Se registraron " + window.operacionesExcelPendientes.length + " operaciones en la base de datos.</p>";
+                window.operacionesExcelPendientes = [];
+                btnAccion.style.display = 'none';
+                refrescarDatos();
+            } catch (err) {
+                console.error(err);
+                alert("Error al subir a la base de datos: " + err.message);
+                btnAccion.innerHTML = btnOriginal;
+            }
+        }
+
+        async function revertirImportacion() {
+            const fileInput = document.getElementById('archivoImportacion');
+            const resultDiv = document.getElementById('resultadoImportacion');
+            const btnAccion = document.getElementById('accionImportacion');
+            const btnRevertir = document.getElementById('accionRevertir');
+            
+            btnAccion.style.display = 'none';
+            btnRevertir.style.display = 'none';
+            window.reversionesExcelPendientes = [];
+
+            if (!fileInput.files || fileInput.files.length === 0) {
+                return resultDiv.innerHTML = "<span style='color:#e74c3c;'>Para eliminar/revertir, selecciona el archivo Excel original que subiste mal.</span>";
+            }
+            
+            resultDiv.innerHTML = "Analizando archivo para buscar registros a eliminar... <i class='fa-solid fa-spinner fa-spin'></i>";
+            
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = async function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array', cellDates: true});
+                    
+                    const sheetName = workbook.SheetNames[0];
+                    const sheet = workbook.Sheets[sheetName];
+                    const json = XLSX.utils.sheet_to_json(sheet);
+                    
+                    let idsBuscados = [];
+                    for(let i = 0; i < json.length; i++) {
+                        let nroSol = json[i]["id"] ? String(json[i]["id"]).trim() : null;
+                        if (nroSol) {
+                            idsBuscados.push(nroSol);
+                            idsBuscados.push(nroSol + "_BAJA");
+                        }
+                    }
+
+                    if (idsBuscados.length === 0) {
+                        return resultDiv.innerHTML = "<span style='color:#e74c3c;'>No se encontraron IDs de solicitud en el archivo.</span>";
+                    }
+
+                    // Remove duplicates
+                    idsBuscados = [...new Set(idsBuscados)];
+                    
+                    let encontradosParaEliminar = 0;
+                    let origArestaurar = [];
+
+                    // Buscar registros en BD que coincidan con los IDs del Excel
+                    const { data: registrosEliminar } = await clienteSupabase
+                        .from('registro_ventas')
+                        .select('id, numero_solicitud, es_anulada')
+                        .in('numero_solicitud', idsBuscados);
+                    
+                    if (registrosEliminar && registrosEliminar.length > 0) {
+                        for (let reg of registrosEliminar) {
+                            window.reversionesExcelPendientes.push({ tipo: 'delete', id: reg.id });
+                            encontradosParaEliminar++;
+                            
+                            // Si estamos eliminando un "_BAJA", debemos buscar la original y quitarle el "es_anulada = true"
+                            if (reg.numero_solicitud.endsWith('_BAJA')) {
+                                let origNro = reg.numero_solicitud.replace('_BAJA', '');
+                                origArestaurar.push(origNro);
+                            }
+                        }
+
+                        if (origArestaurar.length > 0) {
+                            // Buscar las originales para des-anularlas
+                            const { data: originales } = await clienteSupabase
+                                .from('registro_ventas')
+                                .select('id, numero_solicitud')
+                                .in('numero_solicitud', origArestaurar);
+                            
+                            if (originales && originales.length > 0) {
+                                for (let orig of originales) {
+                                    window.reversionesExcelPendientes.push({ tipo: 'update', id: orig.id, data: { es_anulada: false } });
+                                }
+                            }
+                        }
+                        
+                        resultDiv.innerHTML = "<h4 style='margin:0 0 10px 0; color:#e74c3c;'>¡Atención! Previsualización de Eliminación</h4><p style='margin:0;'>Registros encontrados en Base de Datos: <b>" + encontradosParaEliminar + "</b></p><p style='margin:0; font-size: 12px; color: #aaa; margin-top: 10px;'>Si confirmas, se eliminarán permanentemente todas las ventas y bajas asociadas a los IDs de este archivo. Si este archivo había generado anulaciones, las ventas originales volverán a estar activas.</p>";
+                        btnRevertir.style.display = 'block';
+                    } else {
+                        resultDiv.innerHTML = "<span style='color:#f39c12;'>No se encontraron ventas ni bajas en la base de datos que coincidan con este archivo. (Ya fueron eliminadas o nunca se subieron).</span>";
+                    }
+
+                } catch(err) {
+                    console.error(err);
+                    resultDiv.innerHTML = "<span style='color:#e74c3c;'>Ocurrió un error al leer el archivo.</span><br>" + err.message;
+                }
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+        async function confirmarReversion() {
+            const btnRevertir = document.getElementById('accionRevertir');
+            const resultDiv = document.getElementById('resultadoImportacion');
+            const btnOriginal = btnRevertir.innerHTML;
+            
+            btnRevertir.innerHTML = "<button class='btn-delete' style='width: 100%; padding: 10px; font-size: 16px; opacity: 0.7;' disabled><i class='fa-solid fa-spinner fa-spin'></i> Eliminando registros...</button>";
+            
+            try {
+                for (let op of window.reversionesExcelPendientes) {
+                    if (op.tipo === 'delete') {
+                        await clienteSupabase.from('registro_ventas').delete().eq('id', op.id);
+                    } else if (op.tipo === 'update') {
+                        await clienteSupabase.from('registro_ventas').update(op.data).eq('id', op.id);
+                    }
+                }
+                
+                resultDiv.innerHTML = "<h4 style='margin:0 0 10px 0; color:#2ecc71;'>¡Eliminación Exitosa!</h4><p style='margin:0;'>Se borraron los registros correctamente.</p>";
+                window.reversionesExcelPendientes = [];
+                btnRevertir.style.display = 'none';
+                refrescarDatos();
+            } catch (err) {
+                console.error(err);
+                alert("Error al eliminar en la base de datos: " + err.message);
+                btnRevertir.innerHTML = btnOriginal;
+            }
+        }
+
+</script>
+</body>
