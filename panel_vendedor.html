@@ -593,12 +593,23 @@
         
         async function cargarProspectosVendedor(idVend, campana) {
             const { data } = await clienteSupabase.from('registro_entrevistas').select('*').eq('vendedor_id', idVend).eq('campana', campana).order('created_at', { ascending: false });
+            
+            // Filtrar prospectos "reales" (mínimo 9 dígitos en el teléfono)
+            let prospectosReales = [];
+            if (data) {
+                prospectosReales = data.filter(p => {
+                    if (!p.telefono) return false;
+                    const digitCount = p.telefono.replace(/\\D/g, '').length;
+                    return digitCount >= 9;
+                });
+            }
+
             const div = document.getElementById('listaMisProspectos');
-            if(!data || data.length === 0) {
-                if(div) div.innerHTML = '<div style="text-align:center; padding:20px; color:#999; font-size:13px;">No tenés prospectos cargados en esta campaña.</div>';
+            if(prospectosReales.length === 0) {
+                if(div) div.innerHTML = '<div style="text-align:center; padding:20px; color:#999; font-size:13px;">No tenés prospectos válidos (con celular real) cargados en esta campaña.</div>';
                 return;
             }
-            if(div) div.innerHTML = data.map(p => {
+            if(div) div.innerHTML = prospectosReales.map(p => {
                 let selectHtml = `<select onchange="updateEstadoMiProspecto('${p.id}', this.value)" style="padding:5px; border-radius:4px; font-size:12px; width:100%; margin-top:5px;">${opcionesEstadosHTML.replace('value="' + p.estado + '"', 'value="' + p.estado + '" selected')}</select>`;
                 if(!opcionesEstadosHTML.includes('value="' + p.estado + '"')) selectHtml = selectHtml.replace('</select>', `<option value="${p.estado}" selected>${p.estado}</option></select>`);
                 
