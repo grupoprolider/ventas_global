@@ -638,7 +638,7 @@
 
         async function cargarDatosVendedor(id) {
             try {
-                const { data: p, error } = await clienteSupabase.from('perfiles').select('*, equipos!perfiles_equipo_id_fkey(nombre)').eq('id', id).single();
+                const { data: p, error } = await clienteSupabase.from('perfiles').select('*, equipos!perfiles_equipo_id_fkey(nombre, ver_prospectos)').eq('id', id).single();
                 if (error || !p) {
                     alert("No se encontró el perfil. Volviendo al inicio.");
                     window.location.href = 'index.html';
