@@ -115,11 +115,19 @@
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-        <a href="index.html" class="btn-volver"><i class="fa-solid fa-arrow-left"></i> Volver al Inicio</a>
-        <button onclick="exportarExcel()" style="background:#27ae60; color:white; border:none; padding:10px 15px; border-radius:5px; font-weight:bold; cursor:pointer;"><i class="fa-solid fa-file-excel"></i> Descargar Excel</button>
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <a href="index.html" class="btn-volver" style="margin-bottom:0;"><i class="fa-solid fa-arrow-left"></i> Volver al Inicio</a>
+        
+        <div style="display:flex; gap:10px; align-items:center;">
+            <select id="filtroAgencia" onchange="cargarData()" style="padding:10px; border-radius:5px; border:1px solid #ddd; font-size:14px; outline:none; cursor:pointer;">
+                <option value="todas">Todas las Sucursales</option>
+            </select>
+            <button onclick="exportarExcel()" style="background:#27ae60; color:white; border:none; padding:10px 15px; border-radius:5px; font-weight:bold; cursor:pointer;"><i class="fa-solid fa-file-excel"></i> Descargar Excel</button>
+            <button onclick="exportarPNG()" style="background:var(--gpl-dorado); color:white; border:none; padding:10px 15px; border-radius:5px; font-weight:bold; cursor:pointer;"><i class="fa-solid fa-image"></i> Descargar PNG</button>
+        </div>
     </div>
     
     <div class="header">
@@ -139,6 +147,20 @@
         const clienteSupabase = supabase.createClient('https://pumpwqyazqaxeeknrhyo.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1bXB3cXlhenFheGVla25yaHlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MjQ4ODEsImV4cCI6MjA5NDIwMDg4MX0.-AQZZYAt-uskDLUpbiafJXbHgW0lErf8bwEnk7eq1DE');
 
         
+        
+        function exportarPNG() {
+            let tableCont = document.getElementById("contenedor-tabla");
+            if (!tableCont) return alert("No hay datos para exportar.");
+            
+            // Backup the display of buttons if we had any inside, but here the container just holds the table.
+            html2canvas(tableCont, { scale: 2 }).then(canvas => {
+                let link = document.createElement("a");
+                link.download = "Seguimiento_" + document.getElementById('titulo-campana').innerText.trim() + ".png";
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+            });
+        }
+
         function exportarExcel() {
             let table = document.getElementById("tabla-seguimiento");
             if (!table) return alert("No hay datos para exportar.");
@@ -172,9 +194,21 @@
                 }
 
                 // Traer catálogos
-                const { data: perfiles } = await clienteSupabase.from('perfiles').select('id, nombre, equipo_id, rol');
+                                const { data: perfiles } = await clienteSupabase.from('perfiles').select('id, nombre, equipo_id, rol');
                 const { data: equipos } = await clienteSupabase.from('equipos').select('id, nombre, agencia_id');
                 const { data: agencias } = await clienteSupabase.from('agencias').select('id, nombre, color_hex');
+                
+                // Poblar filtro de agencias si est vaco
+                let selectAgencia = document.getElementById('filtroAgencia');
+                if (selectAgencia && selectAgencia.options.length <= 1) {
+                    agencias.forEach(a => {
+                        let opt = document.createElement('option');
+                        opt.value = a.id;
+                        opt.textContent = a.nombre;
+                        selectAgencia.appendChild(opt);
+                    });
+                }
+
 
                 // Traer todas las ventas (paginadas) para no perder ninguna
                 let earliestDate = new Date(semanas[0].fecha_inicio + 'T00:00:00');
@@ -202,52 +236,79 @@
                 }
 
                 // Función auxiliar para saber las ventas netas de un vendedor en una semana específica
+                
+                // Funciones auxiliares
                 const getVentasEnSemana = (vendedorId, fechaIniStr, fechaFinStr) => {
                     let dIni = new Date(fechaIniStr + 'T00:00:00');
                     let dFin = new Date(fechaFinStr + 'T23:59:59');
-                    
                     let vts = ventas.filter(v => v.vendedor_id === vendedorId);
-                    let vtsEnRango = vts.filter(v => {
-                        let d = new Date(v.created_at);
-                        return d >= dIni && d <= dFin;
-                    });
-                    
+                    let vtsEnRango = vts.filter(v => { let d = new Date(v.created_at); return d >= dIni && d <= dFin; });
+                    return vtsEnRango.reduce((sum, v) => sum + Number(v.ventas_cerradas || 0) - Number(v.bajas || 0), 0);
+                };
+                
+                const getVentasEnDia = (vendedorId, fechaStr) => {
+                    let dIni = new Date(fechaStr + 'T00:00:00');
+                    let dFin = new Date(fechaStr + 'T23:59:59');
+                    let vts = ventas.filter(v => v.vendedor_id === vendedorId);
+                    let vtsEnRango = vts.filter(v => { let d = new Date(v.created_at); return d >= dIni && d <= dFin; });
                     return vtsEnRango.reduce((sum, v) => sum + Number(v.ventas_cerradas || 0) - Number(v.bajas || 0), 0);
                 };
 
-                // Agrupar vendedores por Agencia -> Equipo
+                // Calcular dias por semana
+                let diasPorSemana = {};
+                semanas.forEach(sem => {
+                    let current = new Date(sem.fecha_inicio + 'T00:00:00');
+                    let end = new Date(sem.fecha_fin + 'T00:00:00');
+                    let dias = [];
+                    while(current <= end) {
+                        dias.push(current.toISOString().split('T')[0]); // YYYY-MM-DD
+                        current.setDate(current.getDate() + 1);
+                    }
+                    diasPorSemana[sem.id] = dias;
+                });
+
                 let matrixHtml = '<table id="tabla-seguimiento"><thead><tr><th>SUCURSAL</th><th>ASESOR/A</th><th>EQUIPO</th>';
                 semanas.forEach(sem => {
-                    matrixHtml += '<th class="th-semana">' + sem.nombre_semana + '<br><small>(Obj: ' + sem.objetivo + ')</small></th>';
+                    // Crear THs ocultos para cada dia
+                    let dNames = ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'];
+                    diasPorSemana[sem.id].forEach(dStr => {
+                        let objD = new Date(dStr + 'T00:00:00');
+                        matrixHtml += '<th class="day-col-'+sem.id+'" style="display:none; background:#d4c49d;">'+dNames[objD.getDay()]+'<br><small>'+dStr.substring(8,10)+'/'+dStr.substring(5,7)+'</small></th>';
+                    });
+                    matrixHtml += '<th class="th-semana" style="cursor:pointer;" onclick="toggleSemana(\'' + sem.id + '\')">' + sem.nombre_semana + ' <i id="icon-sem-'+sem.id+'" class="fa-solid fa-square-plus"></i><br><small>(Obj: ' + sem.objetivo + ')</small></th>';
                 });
                 matrixHtml += '<th class="th-totales">Ventas Totales</th><th class="th-totales">Monto Vendido</th></tr></thead><tbody>';
 
                 let totalesAgencia = { ventas: 0, monto: 0 };
                 let currentAgenciaId = null;
 
-                // Ordenar equipos por agencia
-                equipos.sort((a,b) => {
+                                equipos.sort((a,b) => {
                     let nomA = agencias.find(x => x.id === a.agencia_id)?.nombre || '';
                     let nomB = agencias.find(x => x.id === b.agencia_id)?.nombre || '';
                     return nomA.localeCompare(nomB) || a.nombre.localeCompare(b.nombre);
                 });
 
+                let filtroAgenciaId = document.getElementById('filtroAgencia') ? document.getElementById('filtroAgencia').value : 'todas';
+
                 equipos.forEach(eq => {
+                    if (filtroAgenciaId !== 'todas' && eq.agencia_id !== filtroAgenciaId) return;
+
                     let agencia = agencias.find(a => a.id === eq.agencia_id);
                     let nombreAgencia = agencia ? agencia.nombre : 'Desconocida';
                     
                     let vendsEquipo = perfiles.filter(p => p.equipo_id === eq.id && p.rol === 'Vendedor');
-                    if(vendsEquipo.length === 0) return; // Skip empty teams
+                    if(vendsEquipo.length === 0) return;
 
                     let totalEqVentas = 0;
                     let totalEqMonto = 0;
                     let semTotals = Array(semanas.length).fill(0);
+                    let dayEqTotals = {}; 
+                    semanas.forEach(sem => { dayEqTotals[sem.id] = Array(diasPorSemana[sem.id].length).fill(0); });
 
                     let agColor = agencia && agencia.color_hex ? agencia.color_hex : '#ddd';
                     let tdStyle = 'border: 2px solid ' + agColor + ';';
                     
                     vendsEquipo.forEach(v => {
-                        // Calcular totales del vendedor en general
                         let misVentas = ventas.filter(vent => vent.vendedor_id === v.id);
                         let miTotalVentas = misVentas.reduce((sum, vent) => sum + Number(vent.ventas_cerradas || 0) - Number(vent.bajas || 0), 0);
                         let miTotalMonto = misVentas.reduce((sum, vent) => sum + Number(vent.monto || 0), 0);
@@ -260,7 +321,6 @@
                         matrixHtml += '<td class="td-asesor" style="'+tdStyle+'">' + v.nombre + '</td>';
                         matrixHtml += '<td style="'+tdStyle+'">' + eq.nombre + '</td>';
 
-                        // Semanas
                         semanas.forEach((sem, idx) => {
                             let vNetas = getVentasEnSemana(v.id, sem.fecha_inicio, sem.fecha_fin);
                             semTotals[idx] += vNetas;
@@ -270,6 +330,12 @@
                             else if (vNetas >= sem.objetivo) colorClass = 'color-green';
                             else if (vNetas > 0) colorClass = 'color-yellow';
                             
+                            // Celdas diarias
+                            diasPorSemana[sem.id].forEach((dStr, dIdx) => {
+                                let vDia = getVentasEnDia(v.id, dStr);
+                                dayEqTotals[sem.id][dIdx] += vDia;
+                                matrixHtml += '<td class="day-col-'+sem.id+'" style="display:none; '+tdStyle+' font-size:12px; color:#555;">' + (vDia > 0 ? vDia : '-') + '</td>';
+                            });
                             matrixHtml += '<td class="obj-cell ' + colorClass + '" style="'+tdStyle+'">' + vNetas + '</td>';
                         });
 
@@ -282,6 +348,10 @@
                     matrixHtml += '<tr class="row-equipo-total">';
                     matrixHtml += '<td colspan="3" style="text-align:center; ' + tdStyle + ' border-top:none;">TOTAL EQUIPO ' + eq.nombre.toUpperCase() + '</td>';
                     semanas.forEach((sem, idx) => {
+                        diasPorSemana[sem.id].forEach((dStr, dIdx) => {
+                             let vTot = dayEqTotals[sem.id][dIdx];
+                             matrixHtml += '<td class="day-col-'+sem.id+'" style="display:none; '+tdStyle+' border-top:none; font-size:12px; color:#ccc;">' + (vTot > 0 ? vTot : '-') + '</td>';
+                        });
                         matrixHtml += '<td style="' + tdStyle + ' border-top:none;">' + semTotals[idx] + '</td>';
                     });
                     matrixHtml += '<td style="' + tdStyle + ' border-top:none;">' + totalEqVentas + '</td>';
@@ -297,7 +367,19 @@
             }
         }
 
+        
+        window.toggleSemana = function(id) {
+            let cols = document.querySelectorAll('.day-col-' + id);
+            let icon = document.getElementById('icon-sem-' + id);
+            let isHidden = cols[0].style.display === 'none';
+            cols.forEach(c => c.style.display = isHidden ? 'table-cell' : 'none');
+            if(icon) {
+                icon.className = isHidden ? 'fa-solid fa-square-minus' : 'fa-solid fa-square-plus';
+            }
+        };
+
         window.onload = cargarData;
+
     </script>
 </body>
 </html>
