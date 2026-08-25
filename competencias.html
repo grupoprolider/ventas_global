@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Competencias GPL</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --gpl-petroleo: #006779;
+            --gpl-dorado: #A42A68;
+            --fondo-oscuro: #121a1f;
+        }
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background: #f4f6f8;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: var(--gpl-dorado);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+            font-size: 32px;
+            margin-top: 10px;
+        }
+        .competencia-card {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .comp-titulo {
+            font-size: 24px;
+            color: var(--gpl-petroleo);
+            margin-bottom: 5px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding-bottom: 10px;
+            font-weight: bold;
+        }
+        .comp-fechas {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        .ranking-item {
+            display: flex;
+            align-items: center;
+            background: #f8f9fa; border: 1px solid #eee;
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+            border-left: 3px solid transparent;
+        }
+        .ranking-item:first-child { border-left-color: #c99f18; }
+        .ranking-item:nth-child(2) { border-left-color: #bdc3c7; }
+        .ranking-item:nth-child(3) { border-left-color: #cd7f32; }
+
+        .ranking-item .posicion {
+            font-size: 24px;
+            font-weight: bold;
+            width: 40px;
+            text-align: center;
+            z-index: 2;
+        }
+        .pos-1 { color: #c99f18; }
+        .pos-2 { color: #bdc3c7; }
+        .pos-3 { color: #cd7f32; }
+        .ranking-item .nombre {
+            flex-grow: 1;
+            font-size: 18px;
+            padding-left: 15px;
+            z-index: 2;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .ranking-item .puntaje {
+            font-size: 22px;
+            font-weight: bold;
+            color: #2ecc71;
+            z-index: 2;
+        }
+        .barra-progreso {
+            position: absolute;
+            top: 0; left: 0; height: 100%;
+            background: linear-gradient(90deg, rgba(164,42,104,0.4) 0%, rgba(0,103,121,0.4) 100%);
+            z-index: 1;
+            transition: width 1s ease-in-out;
+            width: 0%; /* starts at 0 for animation */
+        }
+        .btn-volver {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #666;
+            text-decoration: none;
+            font-size: 14px;
+            background: rgba(0,0,0,0.05);
+            padding: 8px 15px;
+            border-radius: 20px;
+        }
+        .btn-volver:hover { background: rgba(0,0,0,0.1); color: #333; }
+    </style>
+</head>
+<body>
+
+    <a href="index.html" class="btn-volver"><i class="fa-solid fa-arrow-left"></i> Volver al Inicio</a>
+
+    <div class="header">
+        <img src="LOGO-gpl.png" alt="GPL" style="max-height: 80px;">
+        <h1>🏆 ARENAS DE COMPETENCIA</h1>
+        <p style="color:#aaa;">Resultados y clasificaciones en vivo</p>
+    </div>
+
+    <div id="contenedorCompetencias">
+        <div style="text-align:center;"><i class="fa-solid fa-spinner fa-spin fa-3x"></i><br><br>Cargando datos de combate...</div>
+    </div>
+
+    <script>
+        const clienteSupabase = supabase.createClient('https://pumpwqyazqaxeeknrhyo.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1bXB3cXlhenFheGVla25yaHlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MjQ4ODEsImV4cCI6MjA5NDIwMDg4MX0.-AQZZYAt-uskDLUpbiafJXbHgW0lErf8bwEnk7eq1DE');
+
+        
+        async function cargarData() {
+            try {
+                await _cargarData();
+            } catch (err) {
+                document.getElementById('contenedorCompetencias').innerHTML = '<div style="color:red; text-align:center;">ERROR: ' + err.message + '</div>';
+            }
+        }
+        async function _cargarData() {
+            // Traer competencias activas
+            const { data: competencias } = await clienteSupabase
+                .from('competencias')
+                .select('*')
+                .eq('estado', 'activa')
+                .order('created_at', {ascending: false});
+
+            const contenedor = document.getElementById('contenedorCompetencias');
+
+            if (!competencias || competencias.length === 0) {
+                contenedor.innerHTML = '<div style="text-align:center; color:#aaa; font-size:18px; margin-top:50px;"><i class="fa-solid fa-peace" style="font-size:40px; margin-bottom:15px; color:#555;"></i><br>No hay competencias activas en este momento.</div>';
+                return;
+            }
+
+            // Traer catálogos
+            const { data: vendedores } = await clienteSupabase.from('perfiles').select('id, nombre, equipo_id');
+            const { data: equipos } = await clienteSupabase.from('equipos').select('id, nombre, agencia_id');
+            const { data: agencias } = await clienteSupabase.from('agencias').select('id, nombre');
+                        let earliestDate = null;
+            let latestDate = null;
+            
+            competencias.forEach(comp => {
+                let dIn = new Date(comp.fecha_inicio + 'T00:00:00');
+                let dOut = new Date(comp.fecha_fin + 'T23:59:59');
+                if (!earliestDate || dIn < earliestDate) earliestDate = dIn;
+                if (!latestDate || dOut > latestDate) latestDate = dOut;
+            });
+            
+            let ventas = [];
+            if (earliestDate && latestDate) {
+                let fromStr = earliestDate.toISOString();
+                let toStr = latestDate.toISOString();
+                
+                let page = 0;
+                let pageSize = 1000;
+                let hasMore = true;
+                
+                while(hasMore) {
+                    const { data: vPage } = await clienteSupabase
+                        .from('registro_ventas')
+                        .select('vendedor_id, monto, created_at, es_anulada, ventas_cerradas, bajas')
+                        .eq('es_anulada', false)
+                        .gte('created_at', fromStr)
+                        .lte('created_at', toStr)
+                        .range(page * pageSize, (page + 1) * pageSize - 1);
+                        
+                    if (vPage && vPage.length > 0) {
+                        ventas = ventas.concat(vPage);
+                        if (vPage.length < pageSize) {
+                            hasMore = false;
+                        } else {
+                            page++;
+                        }
+                    } else {
+                        hasMore = false;
+                    }
+                }
+            }
+
+            let htmlFinal = '';
+
+            for (let comp of competencias) {
+                let fInicio = new Date(comp.fecha_inicio + 'T00:00:00');
+                let fFin = new Date(comp.fecha_fin + 'T23:59:59');
+
+                let ventasPeriodo = ventas.filter(v => {
+                    let d = new Date(v.created_at);
+                    return d >= fInicio && d <= fFin;
+                });
+
+                let participantesData = [];
+
+                if (comp.tipo === 'vendedores') {
+                    participantesData = comp.participantes.map(id => {
+                        let vend = vendedores.find(v => v.id == id);
+                        let vtsVend = ventasPeriodo.filter(v => v.vendedor_id == id);
+                        let monto = vtsVend.reduce((sum, v) => sum + Number(v.monto || 0), 0);
+                        let ventasNetas = vtsVend.reduce((sum, v) => sum + Number(v.ventas_cerradas || 0) - Number(v.bajas || 0), 0);
+                        return { nombre: vend ? vend.nombre : 'Desconocido', total: ventasNetas, monto: monto };
+                    });
+                } else if (comp.tipo === 'equipos') {
+                    participantesData = comp.participantes.map(id => {
+                        let eq = equipos.find(e => e.id == id);
+                        let vendsEquipo = vendedores.filter(v => v.equipo_id == id).map(v => v.id);
+                        let vtsEq = ventasPeriodo.filter(v => vendsEquipo.includes(v.vendedor_id));
+                        let monto = vtsEq.reduce((sum, v) => sum + Number(v.monto || 0), 0);
+                        let ventasNetas = vtsEq.reduce((sum, v) => sum + Number(v.ventas_cerradas || 0) - Number(v.bajas || 0), 0);
+                        return { nombre: eq ? eq.nombre : 'Desconocido', total: ventasNetas, monto: monto };
+                    });
+                } else if (comp.tipo === 'sucursales') {
+                    participantesData = comp.participantes.map(id => {
+                        let ag = agencias.find(a => a.id == id);
+                        let eqsAgencia = equipos.filter(e => e.agencia_id == id).map(e => e.id);
+                        let vendsAgencia = vendedores.filter(v => eqsAgencia.includes(v.equipo_id)).map(v => v.id);
+                        let vtsAg = ventasPeriodo.filter(v => vendsAgencia.includes(v.vendedor_id));
+                        let monto = vtsAg.reduce((sum, v) => sum + Number(v.monto || 0), 0);
+                        let ventasNetas = vtsAg.reduce((sum, v) => sum + Number(v.ventas_cerradas || 0) - Number(v.bajas || 0), 0);
+                        return { nombre: ag ? ag.nombre : 'Desconocido', total: ventasNetas, monto: monto };
+                    });
+                }
+
+                // Ordenar por total descendente
+                participantesData.sort((a,b) => b.total !== a.total ? b.total - a.total : b.monto - a.monto);
+
+                let maxTotal = participantesData.length > 0 ? participantesData[0].total : 0;
+                if(maxTotal === 0) maxTotal = 1; // avoid div by zero
+
+                let dInStr = comp.fecha_inicio.split('-').reverse().join('/');
+                let dOutStr = comp.fecha_fin.split('-').reverse().join('/');
+
+                let txtTipo = comp.tipo === 'vendedores' ? 'Batalla de Vendedores' : (comp.tipo === 'equipos' ? 'Guerra de Equipos' : 'Guerra de Sucursales');
+
+                let htmlComp = `<div class="competencia-card">
+                    <div class="comp-titulo"><i class="fa-solid fa-fire" style="color:#e74c3c;"></i> ${comp.titulo}</div>
+                    <div class="comp-fechas">
+                        <span style="display:inline-block; margin-right:15px; color:var(--gpl-dorado);"><i class="fa-solid fa-users"></i> ${txtTipo}</span>
+                        <span><i class="fa-regular fa-calendar"></i> ${dInStr} al ${dOutStr}</span>
+                    </div>
+                    <div>`;
+
+                participantesData.forEach((p, idx) => {
+                    let pos = idx + 1;
+                    let posClass = pos === 1 ? 'pos-1' : pos === 2 ? 'pos-2' : pos === 3 ? 'pos-3' : '';
+                    let pct = Math.min(100, Math.round((p.total / maxTotal) * 100));
+
+                    htmlComp += `
+                        <div class="ranking-item">
+                            <div class="barra-progreso" data-width="${pct}%"></div>
+                            <div class="posicion ${posClass}">#${pos}</div>
+                            <div class="nombre">${p.nombre}</div>
+                            <div class="puntaje" style="display:flex; flex-direction:column; align-items:flex-end;">
+                                <span style="font-size:24px; color:var(--gpl-petroleo); font-weight: 900;">${p.total} Vts</span>
+                                <span style="font-size:12px; color:#999; font-weight:normal;">${p.monto.toLocaleString('es-AR')}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                htmlComp += `</div></div>`;
+                htmlFinal += htmlComp;
+            }
+
+            contenedor.innerHTML = htmlFinal;
+
+            // Trigger animation
+            setTimeout(() => {
+                document.querySelectorAll('.barra-progreso').forEach(el => {
+                    el.style.width = el.getAttribute('data-width');
+                });
+            }, 100);
+        }
+
+        window.onload = cargarData;
+    </script>
+</body>
+</html>

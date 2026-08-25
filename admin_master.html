@@ -244,8 +244,10 @@
         <li onclick="cambiarTab(4)"><i class="fa-solid fa-list-check"></i> Auditoría</li>
         <li onclick="cambiarTab(5)"><i class="fa-solid fa-file-import"></i> IMPORTAR DATOS</li>
         <li onclick="cambiarTab(6)"><i class="fa-solid fa-sliders"></i> Opciones</li>
+        <li onclick="cambiarTab(7)"><i class="fa-solid fa-trophy"></i> Competencias</li>
         <li onclick="window.open('ranking_tv.html', '_blank')" style="border-left: 2px solid var(--gpl-dorado);"><i class="fa-solid fa-tv"></i> Transmitir en TV</li>
-        <li onclick="window.location.href='index.html'" style="background: #e74c3c; color: white;"><i class="fa-solid fa-right-from-bracket"></i> Salir</li></ul>
+        <li onclick="window.location.href='index.html'" style="background: #e74c3c; color: white;"><i class="fa-solid fa-right-from-bracket"></i> Salir</li>
+    </ul>
 
     <div class="container">
 
@@ -463,6 +465,58 @@
                 </div>
             </div>
         </div>
+
+        <div id="tab7" class="tab-content">
+            <div class="card-admin">
+                <h2>Crear Nueva Competencia</h2>
+                <div class="form-row" style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <div style="flex: 2;">
+                        <label style="display:block; margin-bottom:5px; color:#aaa; font-size:12px;">Título de la Competencia</label>
+                        <input type="text" id="comp_titulo" placeholder="Ej: Pelea de Gallos">
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="display:block; margin-bottom:5px; color:#aaa; font-size:12px;">Tipo de Enfrentamiento</label>
+                        <select id="comp_tipo" onchange="cargarParticipantesCompetencia()">
+                            <option value="vendedores">Vendedores vs Vendedores</option>
+                            <option value="equipos">Equipos vs Equipos</option>
+                            <option value="sucursales">Sucursales vs Sucursales</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row" style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <div style="flex: 1;">
+                        <label style="display:block; margin-bottom:5px; color:#aaa; font-size:12px;">Fecha de Inicio</label>
+                        <input type="date" id="comp_inicio">
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="display:block; margin-bottom:5px; color:#aaa; font-size:12px;">Fecha de Fin</label>
+                        <input type="date" id="comp_fin">
+                    </div>
+                </div>
+                <label style="display:block; margin-bottom:5px; color:#aaa; font-size:12px;">Seleccionar Participantes:</label>
+                <div id="comp_participantes" style="background: #111; padding: 10px; border-radius: 5px; border: 1px solid #333; max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; margin-bottom: 20px;">
+                </div>
+                <button class="btn-save" onclick="guardarCompetencia()" style="width: 100%; padding: 12px; font-size: 16px;"><i class="fa-solid fa-trophy"></i> Iniciar Competencia</button>
+            </div>
+            <div class="card-admin">
+                <h2>Competencias Activas e Historial</h2>
+                <div style="overflow-x: auto;">
+                    <table class="data-table" id="tabla_competencias">
+                        <thead>
+                            <tr>
+                                <th>Título</th>
+                                <th>Tipo</th>
+                                <th>Participantes</th>
+                                <th>Período</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -474,6 +528,9 @@
             document.getElementById('tab' + idx).classList.add('active');
             document.querySelectorAll('.nav-tabs li')[idx].classList.add('active');
             refrescarDatos();
+        cargarCompetencias();
+        cargarParticipantesCompetencia();
+        cargarOpciones();
         }
 
         async function refrescarDatos() {
@@ -903,8 +960,37 @@
         }
 
         refrescarDatos();
-    </script>
-<script>
+    
+// Opciones JS
+        async function cargarOpciones() {
+            const { data: benfs } = await clienteSupabase.from('opciones_beneficios').select('*').order('nombre');
+            if (benfs) document.getElementById('lista_ben').innerHTML = benfs.map(b => `<li style="padding:8px; border-bottom:1px solid #333; display:flex; justify-content:space-between;">${b.nombre} <button class="btn-del" onclick="borrarOpt('opciones_beneficios', '${b.id}')">X</button></li>`).join('');
+
+            const { data: bncs } = await clienteSupabase.from('opciones_bancos').select('*').order('nombre');
+            if (bncs) document.getElementById('lista_bnc').innerHTML = bncs.map(b => `<li style="padding:8px; border-bottom:1px solid #333; display:flex; justify-content:space-between;">${b.nombre} <button class="btn-del" onclick="borrarOpt('opciones_bancos', '${b.id}')">X</button></li>`).join('');
+
+            const { data: fers } = await clienteSupabase.from('opciones_feriados').select('*').order('nombre');
+            if (fers) document.getElementById('lista_fer').innerHTML = fers.map(b => `<li style="padding:8px; border-bottom:1px solid #333; display:flex; justify-content:space-between;">${b.nombre} <button class="btn-del" onclick="borrarOpt('opciones_feriados', '${b.id}')">X</button></li>`).join('');
+
+            const { data: ests } = await clienteSupabase.from('opciones_estados_entrevista').select('*').order('nombre');
+            if (ests) document.getElementById('lista_est').innerHTML = ests.map(b => `<li style="padding:8px; border-bottom:1px solid #333; display:flex; justify-content:space-between;">${b.nombre} <button class="btn-del" onclick="borrarOpt('opciones_estados_entrevista', '${b.id}')">X</button></li>`).join('');
+        }
+
+        async function addOpt(tabla, inputId) {
+            const val = document.getElementById(inputId).value;
+            if (!val) return;
+            const { error } = await clienteSupabase.from(tabla).insert([{ nombre: val }]);
+            if (error) alert("Error al añadir opción: " + error.message);
+            document.getElementById(inputId).value = ''; cargarOpciones();
+        }
+
+        async function borrarOpt(tabla, id) {
+            const { error } = await clienteSupabase.from(tabla).delete().eq('id', id); 
+            if (error) alert("Error al borrar opción: " + error.message);
+            cargarOpciones();
+        }
+
+// Excel JS
         window.operacionesExcelPendientes = [];
         window.reversionesExcelPendientes = [];
 
@@ -989,7 +1075,7 @@
                         let tAnio = anio;
                         if(tMes > 11) { tMes = 0; tAnio++; }
                         const nMeses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-                        let campanaCalculada = "Campaña " + nMeses[tMes] + " " + tAnio;
+                        let campanaCalculada = `Campaña ${nMeses[tMes]} ${tAnio}`;
                         
                         let esBaja = estadoStr.includes('baja') || estadoStr.includes('rechazad') || estadoStr.includes('anulad') || estadoStr.includes('caida');
                         
@@ -1162,7 +1248,6 @@
                             window.reversionesExcelPendientes.push({ tipo: 'delete', id: reg.id });
                             encontradosParaEliminar++;
                             
-                            // Si estamos eliminando un "_BAJA", debemos buscar la original y quitarle el "es_anulada = true"
                             if (reg.numero_solicitud.endsWith('_BAJA')) {
                                 let origNro = reg.numero_solicitud.replace('_BAJA', '');
                                 origArestaurar.push(origNro);
@@ -1170,7 +1255,6 @@
                         }
 
                         if (origArestaurar.length > 0) {
-                            // Buscar las originales para des-anularlas
                             const { data: originales } = await clienteSupabase
                                 .from('registro_ventas')
                                 .select('id, numero_solicitud')
@@ -1224,5 +1308,101 @@
             }
         }
 
+// Competencias JS
+        async function cargarParticipantesCompetencia() {
+            const tipo = document.getElementById('comp_tipo').value;
+            const container = document.getElementById('comp_participantes');
+            container.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Cargando...';
+            
+            let tabla = '';
+            if(tipo === 'vendedores') tabla = 'perfiles';
+            else if(tipo === 'equipos') tabla = 'equipos';
+            else if(tipo === 'sucursales') tabla = 'agencias';
+            
+            const { data } = await clienteSupabase.from(tabla).select('id, nombre').order('nombre');
+            if(data) {
+                let checkBoxes = '';
+                data.forEach(item => {
+                    checkBoxes += `<label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #ddd; padding: 8px 10px; background: #1a1a1a; border-radius: 4px; font-size: 13px; margin: 0; justify-content: flex-start; border: 1px solid #222;">
+                                <input type="checkbox" value="${item.id}" class="chk-participante" style="margin:0; width: auto; flex-shrink: 0;"> <span style="text-align:left; font-weight:normal; margin-left: 10px;">${item.nombre}</span>
+                            </label>`;
+                });
+                container.innerHTML = checkBoxes;
+            }
+        }
+
+        async function guardarCompetencia() {
+            const titulo = document.getElementById('comp_titulo').value;
+            const tipo = document.getElementById('comp_tipo').value;
+            const inicio = document.getElementById('comp_inicio').value;
+            const fin = document.getElementById('comp_fin').value;
+            
+            const chks = document.querySelectorAll('.chk-participante:checked');
+            let participantesIds = Array.from(chks).map(c => c.value);
+            
+            if(!titulo || !inicio || !fin || participantesIds.length < 2) {
+                return alert("Completá título, fechas y seleccioná al menos 2 participantes.");
+            }
+            
+            const { error } = await clienteSupabase.from('competencias').insert([{
+                titulo: titulo,
+                tipo: tipo,
+                participantes: participantesIds,
+                fecha_inicio: inicio,
+                fecha_fin: fin,
+                estado: 'activa'
+            }]);
+            
+            if(error) alert("Error: " + error.message);
+            else {
+                alert("¡Competencia iniciada!");
+                document.getElementById('comp_titulo').value = '';
+                cargarCompetencias();
+            }
+        }
+
+        async function cargarCompetencias() {
+            const { data } = await clienteSupabase.from('competencias').select('*').order('created_at', {ascending: false});
+            const tbody = document.querySelector('#tabla_competencias tbody');
+            if(!data || data.length === 0) return tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No hay competencias registradas.</td></tr>';
+            
+            let filas = '';
+            data.forEach(c => {
+                let badge = c.estado === 'activa' ? '<span style="background:#2ecc71; color:white; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:bold;">ACTIVA</span>' : '<span style="background:#7f8c8d; color:white; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:bold;">FINALIZADA</span>';
+                
+                let actBtn = c.estado === 'activa' ? `<button class="btn-edit" onclick="cambiarEstadoCompetencia('${c.id}', 'finalizada')" title="Finalizar"><i class="fa-solid fa-flag-checkered"></i></button>` : `<button class="btn-save" onclick="cambiarEstadoCompetencia('${c.id}', 'activa')" title="Reactivar"><i class="fa-solid fa-play"></i></button>`;
+                
+                let dfIn = c.fecha_inicio.split('-').reverse().join('/');
+                let dfOut = c.fecha_fin.split('-').reverse().join('/');
+
+                filas += `<tr>
+                    <td style="font-weight:bold;">${c.titulo}</td>
+                    <td style="text-transform: capitalize;">${c.tipo}</td>
+                    <td>${c.participantes.length} competidores</td>
+                    <td>${dfIn} al ${dfOut}</td>
+                    <td>${badge}</td>
+                    <td>
+                        ${actBtn}
+                        <button class="btn-delete" onclick="borrarCompetencia('${c.id}')"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            });
+            tbody.innerHTML = filas;
+        }
+
+        async function cambiarEstadoCompetencia(id, nuevoEstado) {
+            await clienteSupabase.from('competencias').update({estado: nuevoEstado}).eq('id', id);
+            cargarCompetencias();
+        }
+
+        async function borrarCompetencia(id) {
+            if(confirm("¿Seguro de borrar esta competencia?")) {
+                await clienteSupabase.from('competencias').delete().eq('id', id);
+                cargarCompetencias();
+            }
+        }
+
 </script>
 </body>
+
+</html>
