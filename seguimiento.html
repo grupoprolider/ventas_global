@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Seguimiento Comercial - GPL</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --gpl-petroleo: #006779;
+            --gpl-dorado: #A42A68;
+            --fondo-oscuro: #121a1f;
+        }
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background: #f4f6f8;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header img {
+            max-width: 150px;
+        }
+        .header h1 {
+            color: var(--gpl-petroleo);
+            font-size: 28px;
+            margin-top: 10px;
+            text-transform: uppercase;
+        }
+        .btn-volver {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #666;
+            text-decoration: none;
+            font-size: 14px;
+            background: rgba(0,0,0,0.05);
+            padding: 8px 15px;
+            border-radius: 20px;
+        }
+        .btn-volver:hover { background: rgba(0,0,0,0.1); color: #333; }
+        
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            background: #fff;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 1px solid #ddd;
+        }
+        
+        th, td {
+            padding: 8px 5px; /* Compact padding */
+            text-align: center;
+            border: 1px solid #ddd; /* Borders added */
+            font-size: 13px;
+        }
+
+        th {
+            background-color: var(--gpl-dorado);
+            color: white;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .header-sucursal {
+            background-color: var(--gpl-petroleo) !important;
+            color: white;
+            width: 10%; /* Compact width */
+        }
+
+        .text-left {
+            text-align: left;
+            padding-left: 10px;
+            white-space: nowrap; /* Prevent names from wrapping */
+            width: 20%;
+        }
+        
+        .obj-cell {
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        /* Paler colors */
+        .color-green { background-color: #8fdfaa; color: #1e5c33; }
+        .color-yellow { background-color: #fdec98; color: #6d5b00; }
+        .color-red { background-color: #f8ad9d; color: #7a1d13; }
+        
+        .row-equipo-total td {
+            background-color: var(--gpl-petroleo);
+            color: white;
+            font-weight: bold;
+        }
+        .row-equipo-total td:first-child {
+            text-align: center !important;
+        }
+        .table-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .row-sucursal-total {
+            background: var(--gpl-petroleo);
+            color: white;
+            font-weight: bold;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <a href="index.html" class="btn-volver"><i class="fa-solid fa-arrow-left"></i> Volver al Inicio</a>
+        <button onclick="exportarExcel()" style="background:#27ae60; color:white; border:none; padding:10px 15px; border-radius:5px; font-weight:bold; cursor:pointer;"><i class="fa-solid fa-file-excel"></i> Descargar Excel</button>
+    </div>
+    
+    <div class="header">
+        <img src="LOGO-gpl.png" alt="Grupo Pro Líder">
+        <h1><i class="fa-solid fa-table-list"></i> Tablero de Seguimiento Semanal</h1>
+        <h2 id="titulo-campana" style="color:#666; font-size:18px; margin-top:5px;">Cargando...</h2>
+    </div>
+
+    <div class="table-container" id="contenedor-tabla">
+        <div style="text-align:center; padding:50px; color:#aaa; font-size:18px;">
+            <i class="fa-solid fa-spinner fa-spin" style="font-size:40px; margin-bottom:15px; color:#555;"></i><br>
+            Cargando auditoría comercial...
+        </div>
+    </div>
+
+    <script>
+        const clienteSupabase = supabase.createClient('https://pumpwqyazqaxeeknrhyo.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1bXB3cXlhenFheGVla25yaHlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MjQ4ODEsImV4cCI6MjA5NDIwMDg4MX0.-AQZZYAt-uskDLUpbiafJXbHgW0lErf8bwEnk7eq1DE');
+
+        
+        function exportarExcel() {
+            let table = document.getElementById("tabla-seguimiento");
+            if (!table) return alert("No hay datos para exportar.");
+            let wb = XLSX.utils.table_to_book(table, {sheet:"Seguimiento"});
+            XLSX.writeFile(wb, "Seguimiento_Semanal_" + document.getElementById('titulo-campana').innerText.trim() + ".xlsx");
+        }
+
+        async function cargarData() {
+            try {
+                // Calcular campaña actual
+                
+                // Traer todas las semanas
+                const { data: todasSemanas } = await clienteSupabase
+                    .from('semanas_config')
+                    .select('*')
+                    .order('fecha_inicio', { ascending: true });
+
+                let semanas = [];
+                let campanaActual = 'Sin Campaña';
+                if (todasSemanas && todasSemanas.length > 0) {
+                    // Agrupar por la campaña que tiene la semana más reciente o actual
+                    // Simplemente tomamos la campaña de la última semana configurada
+                    campanaActual = todasSemanas[todasSemanas.length - 1].campana;
+                    semanas = todasSemanas.filter(s => s.campana === campanaActual);
+                }
+
+                document.getElementById('titulo-campana').innerText = campanaActual;
+                if (!semanas || semanas.length === 0) {
+                    document.getElementById('contenedor-tabla').innerHTML = '<div style="text-align:center; padding:50px; color:#aaa; font-size:18px;">No hay semanas configuradas para ' + campanaActual + ' aún. El administrador debe configurarlas en el panel Maestro.</div>';
+                    return;
+                }
+
+                // Traer catálogos
+                const { data: perfiles } = await clienteSupabase.from('perfiles').select('id, nombre, equipo_id, rol');
+                const { data: equipos } = await clienteSupabase.from('equipos').select('id, nombre, agencia_id');
+                const { data: agencias } = await clienteSupabase.from('agencias').select('id, nombre, color_hex');
+
+                // Traer todas las ventas (paginadas) para no perder ninguna
+                let earliestDate = new Date(semanas[0].fecha_inicio + 'T00:00:00');
+                let latestDate = new Date(semanas[semanas.length - 1].fecha_fin + 'T23:59:59');
+                
+                let ventas = [];
+                let fromStr = earliestDate.toISOString();
+                let toStr = latestDate.toISOString();
+                
+                let page = 0; let pageSize = 1000; let hasMore = true;
+                while(hasMore) {
+                    const { data: vPage } = await clienteSupabase
+                        .from('registro_ventas')
+                        .select('vendedor_id, monto, created_at, es_anulada, ventas_cerradas, bajas')
+                        .eq('es_anulada', false)
+                        .gte('created_at', fromStr)
+                        .lte('created_at', toStr)
+                        .range(page * pageSize, (page + 1) * pageSize - 1);
+                        
+                    if (vPage && vPage.length > 0) {
+                        ventas = ventas.concat(vPage);
+                        if (vPage.length < pageSize) hasMore = false;
+                        else page++;
+                    } else hasMore = false;
+                }
+
+                // Función auxiliar para saber las ventas netas de un vendedor en una semana específica
+                const getVentasEnSemana = (vendedorId, fechaIniStr, fechaFinStr) => {
+                    let dIni = new Date(fechaIniStr + 'T00:00:00');
+                    let dFin = new Date(fechaFinStr + 'T23:59:59');
+                    
+                    let vts = ventas.filter(v => v.vendedor_id === vendedorId);
+                    let vtsEnRango = vts.filter(v => {
+                        let d = new Date(v.created_at);
+                        return d >= dIni && d <= dFin;
+                    });
+                    
+                    return vtsEnRango.reduce((sum, v) => sum + Number(v.ventas_cerradas || 0) - Number(v.bajas || 0), 0);
+                };
+
+                // Agrupar vendedores por Agencia -> Equipo
+                let matrixHtml = '<table id="tabla-seguimiento"><thead><tr><th>SUCURSAL</th><th>ASESOR/A</th><th>EQUIPO</th>';
+                semanas.forEach(sem => {
+                    matrixHtml += '<th class="th-semana">' + sem.nombre_semana + '<br><small>(Obj: ' + sem.objetivo + ')</small></th>';
+                });
+                matrixHtml += '<th class="th-totales">Ventas Totales</th><th class="th-totales">Monto Vendido</th></tr></thead><tbody>';
+
+                let totalesAgencia = { ventas: 0, monto: 0 };
+                let currentAgenciaId = null;
+
+                // Ordenar equipos por agencia
+                equipos.sort((a,b) => {
+                    let nomA = agencias.find(x => x.id === a.agencia_id)?.nombre || '';
+                    let nomB = agencias.find(x => x.id === b.agencia_id)?.nombre || '';
+                    return nomA.localeCompare(nomB) || a.nombre.localeCompare(b.nombre);
+                });
+
+                equipos.forEach(eq => {
+                    let agencia = agencias.find(a => a.id === eq.agencia_id);
+                    let nombreAgencia = agencia ? agencia.nombre : 'Desconocida';
+                    
+                    let vendsEquipo = perfiles.filter(p => p.equipo_id === eq.id && p.rol === 'Vendedor');
+                    if(vendsEquipo.length === 0) return; // Skip empty teams
+
+                    let totalEqVentas = 0;
+                    let totalEqMonto = 0;
+                    let semTotals = Array(semanas.length).fill(0);
+
+                    let agColor = agencia && agencia.color_hex ? agencia.color_hex : '#ddd';
+                    let tdStyle = 'border: 2px solid ' + agColor + ';';
+                    
+                    vendsEquipo.forEach(v => {
+                        // Calcular totales del vendedor en general
+                        let misVentas = ventas.filter(vent => vent.vendedor_id === v.id);
+                        let miTotalVentas = misVentas.reduce((sum, vent) => sum + Number(vent.ventas_cerradas || 0) - Number(vent.bajas || 0), 0);
+                        let miTotalMonto = misVentas.reduce((sum, vent) => sum + Number(vent.monto || 0), 0);
+
+                        totalEqVentas += miTotalVentas;
+                        totalEqMonto += miTotalMonto;
+
+                        matrixHtml += '<tr>';
+                        matrixHtml += '<td class="td-sucursal" style="'+tdStyle+'">' + nombreAgencia + '</td>';
+                        matrixHtml += '<td class="td-asesor" style="'+tdStyle+'">' + v.nombre + '</td>';
+                        matrixHtml += '<td style="'+tdStyle+'">' + eq.nombre + '</td>';
+
+                        // Semanas
+                        semanas.forEach((sem, idx) => {
+                            let vNetas = getVentasEnSemana(v.id, sem.fecha_inicio, sem.fecha_fin);
+                            semTotals[idx] += vNetas;
+                            
+                            let colorClass = 'color-red';
+                            if (sem.objetivo === 0) colorClass = '';
+                            else if (vNetas >= sem.objetivo) colorClass = 'color-green';
+                            else if (vNetas > 0) colorClass = 'color-yellow';
+                            
+                            matrixHtml += '<td class="obj-cell ' + colorClass + '" style="'+tdStyle+'">' + vNetas + '</td>';
+                        });
+
+                        matrixHtml += '<td style="font-weight:bold; ' + tdStyle + '">' + miTotalVentas + '</td>';
+                        matrixHtml += '<td style="' + tdStyle + '">\$' + miTotalMonto.toLocaleString('es-AR') + '</td>';
+                        matrixHtml += '</tr>';
+                    });
+
+                    // Fila Total Equipo
+                    matrixHtml += '<tr class="row-equipo-total">';
+                    matrixHtml += '<td colspan="3" style="text-align:center; ' + tdStyle + ' border-top:none;">TOTAL EQUIPO ' + eq.nombre.toUpperCase() + '</td>';
+                    semanas.forEach((sem, idx) => {
+                        matrixHtml += '<td style="' + tdStyle + ' border-top:none;">' + semTotals[idx] + '</td>';
+                    });
+                    matrixHtml += '<td style="' + tdStyle + ' border-top:none;">' + totalEqVentas + '</td>';
+                    matrixHtml += '<td style="' + tdStyle + ' border-top:none;">\$' + totalEqMonto.toLocaleString('es-AR') + '</td>';
+                    matrixHtml += '</tr>';
+                });
+
+                matrixHtml += '</tbody></table>';
+                document.getElementById('contenedor-tabla').innerHTML = matrixHtml;
+
+            } catch (err) {
+                document.getElementById('contenedor-tabla').innerHTML = '<div style="color:red; text-align:center; padding:50px;">ERROR: ' + err.message + '</div>';
+            }
+        }
+
+        window.onload = cargarData;
+    </script>
+</body>
+</html>
+ + miTotalMonto.toLocaleString('es-AR') + '</td>';
+                        matrixHtml += '</tr>';
+                    });
+
+                    // Fila Total Equipo
+                    matrixHtml += '<tr class="row-equipo-total">';
+                    matrixHtml += '<td colspan="3" style="text-align:center; ' + tdStyle + ' border-top:none;">TOTAL EQUIPO ' + eq.nombre.toUpperCase() + '</td>';
+                    semanas.forEach((sem, idx) => {
+                        matrixHtml += '<td style="' + tdStyle + ' border-top:none;">' + semTotals[idx] + '</td>';
+                    });
+                    matrixHtml += '<td style="' + tdStyle + ' border-top:none;">' + totalEqVentas + '</td>';
+                    matrixHtml += '<td style="' + tdStyle + ' border-top:none;">
+                });
+
+                matrixHtml += '</tbody></table>';
+                document.getElementById('contenedor-tabla').innerHTML = matrixHtml;
+
+            } catch (err) {
+                document.getElementById('contenedor-tabla').innerHTML = '<div style="color:red; text-align:center; padding:50px;">ERROR: ' + err.message + '</div>';
+            }
+        }
+
+        window.onload = cargarData;
+    </script>
+</body>
+</html>
+ + totalEqMonto.toLocaleString('es-AR') + '</td>';
+                    matrixHtml += '</tr>';
+                });
+
+                matrixHtml += '</tbody></table>';
+                document.getElementById('contenedor-tabla').innerHTML = matrixHtml;
+
+            } catch (err) {
+                document.getElementById('contenedor-tabla').innerHTML = '<div style="color:red; text-align:center; padding:50px;">ERROR: ' + err.message + '</div>';
+            }
+        }
+
+        window.onload = cargarData;
+    </script>
+</body>
+</html>

@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -220,7 +219,12 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#A42A68">
     <link rel="apple-touch-icon" href="LOGO-gpl.png">
-    <script>
+    
+
+
+    
+
+<script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js');
@@ -245,6 +249,7 @@
         <li onclick="cambiarTab(5)"><i class="fa-solid fa-file-import"></i> IMPORTAR DATOS</li>
         <li onclick="cambiarTab(6)"><i class="fa-solid fa-sliders"></i> Opciones</li>
         <li onclick="cambiarTab(7)"><i class="fa-solid fa-trophy"></i> Competencias</li>
+        <li onclick="cambiarTab(8)"><i class="fa-solid fa-calendar-week"></i> Semanas Obj.</li>
         <li onclick="window.open('ranking_tv.html', '_blank')" style="border-left: 2px solid var(--gpl-dorado);"><i class="fa-solid fa-tv"></i> Transmitir en TV</li>
         <li onclick="window.location.href='index.html'" style="background: #e74c3c; color: white;"><i class="fa-solid fa-right-from-bracket"></i> Salir</li>
     </ul>
@@ -264,6 +269,7 @@
                     <thead>
                         <tr>
                             <th>Agencia</th>
+                      <th>Ver Prospectos</th>
                             <th>Líder de Sucursal</th>
                             <th>Color</th>
                             <th>Acciones</th>
@@ -517,7 +523,60 @@
                 </div>
             </div>
         </div>
-    </div>
+ 
+
+    <!-- TAB 8: SEMANAS Y OBJETIVOS -->
+    <div id="tab8" class="tab-content">
+        <div class="card-admin">
+            <h2><i class="fa-solid fa-calendar-week"></i> Configurar Semanas y Objetivos</h2>
+            
+            <div class="form-row" style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <div style="flex: 2;">
+                    <label style="display:block; margin-bottom:5px; color:#aaa; font-size:12px;">Campaña Actual</label>
+                    <input type="text" id="sem_campana" placeholder="Ej: Campaña Septiembre 2026">
+                </div>
+                <div style="flex: 2;">
+                    <label style="display:block; margin-bottom:5px; color:#aaa; font-size:12px;">Nombre de la Semana</label>
+                    <input type="text" id="sem_nombre" placeholder="Ej: Semana 1">
+                </div>
+                <div style="flex: 1;">
+                    <label style="display:block; margin-bottom:5px; color:#aaa; font-size:12px;">Fecha Inicio</label>
+                    <input type="date" id="sem_inicio">
+                </div>
+                <div style="flex: 1;">
+                    <label style="display:block; margin-bottom:5px; color:#aaa; font-size:12px;">Fecha Fin</label>
+                    <input type="date" id="sem_fin">
+                </div>
+                <div style="flex: 1;">
+                    <label style="display:block; margin-bottom:5px; color:#aaa; font-size:12px;">Objetivo de Ventas</label>
+                    <input type="number" id="sem_objetivo" placeholder="Ej: 4" min="0">
+                </div>
+                <div style="display: flex; align-items: flex-end;">
+                    <button class="btn-save" onclick="guardarSemana()" style="padding: 10px; font-size: 14px;"><i class="fa-solid fa-plus"></i> AGREGAR</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-admin">
+            <h2><i class="fa-solid fa-list-check"></i> Semanas Configuradas</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Campaña</th>
+                        <th>Semana</th>
+                        <th>Inicio</th>
+                        <th>Fin</th>
+                        <th>Objetivo</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="lista-semanas">
+                    <tr><td colspan="6" class="empty-state">Cargando semanas...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div> <!-- Cierre Tab 8 -->
+   </div>
 
     <script>
         const clienteSupabase = supabase.createClient('https://pumpwqyazqaxeeknrhyo.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1bXB3cXlhenFheGVla25yaHlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MjQ4ODEsImV4cCI6MjA5NDIwMDg4MX0.-AQZZYAt-uskDLUpbiafJXbHgW0lErf8bwEnk7eq1DE');
@@ -531,6 +590,13 @@
         cargarCompetencias();
         cargarParticipantesCompetencia();
         cargarOpciones();
+            cargarSemanas();
+        cargarSemanas();
+        // Set default campana
+        let _d = new Date(); let _dia = _d.getDate(); let _mes = _d.getMonth(); let _anio = _d.getFullYear();
+        let _tMes = _dia >= 16 ? _mes + 1 : _mes; let _tAnio = _anio; if(_tMes > 11) { _tMes = 0; _tAnio++; }
+        const _nMeses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+        document.getElementById('sem_campana').value = 'Campaña ' + _nMeses[_tMes] + ' ' + _tAnio;
         }
 
         async function refrescarDatos() {
@@ -615,6 +681,9 @@
                     <td><select onchange="updateEquipo('${e.id}', 'lider_id', this.value)"><option value="">Sin Líder de Asesores</option>${listaGente.map(p => `<option value="${p.id}" ${p.id === e.lider_id ? 'selected' : ''}>${p.nombre}</option>`).join('')}</select></td>
                     <td><select onchange="updateEquipo('${e.id}', 'coordinador_id', this.value)"><option value="">Sin Líder</option>${coordinadores.map(p => `<option value="${p.id}" ${p.id === e.coordinador_id ? 'selected' : ''}>${p.nombre}</option>`).join('')}</select></td>
                     <td><select onchange="updateEquipo('${e.id}', 'agencia_id', this.value)"><option value="">Sin Agencia</option>${listaAgs.map(a => `<option value="${a.id}" ${a.id === e.agencia_id ? 'selected' : ''}>${a.nombre}</option>`).join('')}</select></td>
+                      <td style="text-align:center;">
+                          <input type="checkbox" onchange="updateEquipo('${e.id}', 'ver_prospectos', this.checked)" ${e.ver_prospectos ? 'checked' : ''} style="width: 20px; height: 20px; cursor:pointer;" title="Mostrar prospectos a los asesores">
+                      </td>
                     <td><button class="btn-edit" onclick="renombrar('equipos', '${e.id}', '${e.nombre}')">Renombrar</button><button class="btn-del" onclick="borrar('equipos', '${e.id}')">Eliminar</button></td>
                 </tr>
             `).join('');
@@ -1400,6 +1469,78 @@
                 await clienteSupabase.from('competencias').delete().eq('id', id);
                 cargarCompetencias();
             }
+        }
+
+
+        async function cargarSemanas() {
+            const tbody = document.getElementById('lista-semanas');
+            if(!tbody) return;
+            tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i> Cargando...</td></tr>';
+            
+            const { data, error } = await clienteSupabase
+                .from('semanas_config')
+                .select('*')
+                .order('fecha_inicio', { ascending: false });
+                
+            if (error) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state" style="color:red;">Error: ' + error.message + '</td></tr>';
+                return;
+            }
+            
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No hay semanas configuradas.</td></tr>';
+                return;
+            }
+            
+            let htmlFilas = '';
+            data.forEach(sem => {
+                htmlFilas += `<tr>
+                    <td>${sem.campana}</td>
+                    <td style="font-weight:bold;">${sem.nombre_semana}</td>
+                    <td>${sem.fecha_inicio.split('-').reverse().join('/')}</td>
+                    <td>${sem.fecha_fin.split('-').reverse().join('/')}</td>
+                    <td style="color:#f1c40f; font-weight:bold;">${sem.objetivo}</td>
+                    <td><button class="btn-delete" onclick="eliminarSemana('${sem.id}')"><i class="fa-solid fa-trash"></i></button></td>
+                </tr>`;
+            });
+            tbody.innerHTML = htmlFilas;
+        }
+
+        async function guardarSemana() {
+            const campana = document.getElementById('sem_campana').value;
+            const nombre = document.getElementById('sem_nombre').value;
+            const inicio = document.getElementById('sem_inicio').value;
+            const fin = document.getElementById('sem_fin').value;
+            const objetivo = parseInt(document.getElementById('sem_objetivo').value) || 0;
+            
+            if(!campana || !nombre || !inicio || !fin) {
+                return alert("Completá todos los campos.");
+            }
+            
+            const { error } = await clienteSupabase.from('semanas_config').insert([{
+                campana: campana,
+                nombre_semana: nombre,
+                fecha_inicio: inicio,
+                fecha_fin: fin,
+                objetivo: objetivo
+            }]);
+            
+            if(error) {
+                alert("Error: " + error.message);
+            } else {
+                document.getElementById('sem_nombre').value = '';
+                document.getElementById('sem_inicio').value = '';
+                document.getElementById('sem_fin').value = '';
+                document.getElementById('sem_objetivo').value = '';
+                cargarSemanas();
+            }
+        }
+
+        async function eliminarSemana(id) {
+            if(!confirm("¿Borrar esta semana?")) return;
+            const { error } = await clienteSupabase.from('semanas_config').delete().eq('id', id);
+            if(error) alert("Error: " + error.message);
+            else cargarSemanas();
         }
 
 </script>
