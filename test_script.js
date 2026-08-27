@@ -1,166 +1,7 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Seguimiento Comercial - GPL</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        :root {
-            --gpl-petroleo: #006779;
-            --gpl-dorado: #A42A68;
-            --fondo-oscuro: #121a1f;
-        }
-        body {
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            background: #f4f6f8;
-            margin: 0;
-            padding: 20px;
-            color: #333;
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .header img {
-            max-width: 150px;
-        }
-        .header h1 {
-            color: var(--gpl-petroleo);
-            font-size: 28px;
-            margin-top: 10px;
-            text-transform: uppercase;
-        }
-        .btn-volver {
-            display: inline-block;
-            margin-bottom: 20px;
-            color: #666;
-            text-decoration: none;
-            font-size: 14px;
-            background: rgba(0,0,0,0.05);
-            padding: 8px 15px;
-            border-radius: 20px;
-        }
-        .btn-volver:hover { background: rgba(0,0,0,0.1); color: #333; }
-        
-        .table-container {
-            width: 100%;
-            overflow-x: auto;
-            background: #fff;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            border-radius: 8px;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            border: 1px solid #ddd;
-        }
-        
-        th, td {
-            padding: 8px 5px; /* Compact padding */
-            text-align: center;
-            border: 1px solid #ddd; /* Borders added */
-            font-size: 13px;
-        }
 
-        th {
-            background-color: var(--gpl-dorado);
-            color: white;
-            font-weight: bold;
-            font-size: 13px;
-        }
-
-        .header-sucursal {
-            background-color: var(--gpl-petroleo) !important;
-            color: white;
-            width: 10%; /* Compact width */
-        }
-
-        .text-left {
-            text-align: left;
-            padding-left: 10px;
-            white-space: nowrap; /* Prevent names from wrapping */
-            width: 20%;
-        }
-        
-        .obj-cell {
-            font-weight: bold;
-            font-size: 14px;
-        }
-        
-        /* Paler colors */
-        .color-green { background-color: #8fdfaa; color: #1e5c33; }
-        .color-yellow { background-color: #fdec98; color: #6d5b00; }
-        .color-red { background-color: #f8ad9d; color: #7a1d13; }
-        
-        .row-equipo-total td {
-            background-color: var(--gpl-petroleo);
-            color: white;
-            font-weight: bold;
-        }
-        .row-equipo-total td:first-child {
-            text-align: center !important;
-        }
-        .table-container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        .row-sucursal-total {
-            background: var(--gpl-petroleo);
-            color: white;
-            font-weight: bold;
-        }
-    </style>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-</head>
-<body>
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-        <a href="index.html" class="btn-volver" style="margin-bottom:0;"><i class="fa-solid fa-arrow-left"></i> Volver al Inicio</a>
-        
-        <div style="display:flex; gap:10px; align-items:center;">
-            <select id="filtroAgencia" onchange="cargarData()" style="padding:10px; border-radius:5px; border:1px solid #ddd; font-size:14px; outline:none; cursor:pointer;">
-                <option value="todas">Todas las Sucursales</option>
-            </select>
-            <button onclick="exportarExcel()" style="background:#27ae60; color:white; border:none; padding:10px 15px; border-radius:5px; font-weight:bold; cursor:pointer;"><i class="fa-solid fa-file-excel"></i> Descargar Excel</button>
-            <button onclick="exportarPNG()" style="background:var(--gpl-dorado); color:white; border:none; padding:10px 15px; border-radius:5px; font-weight:bold; cursor:pointer;"><i class="fa-solid fa-image"></i> Descargar PNG</button>
-        </div>
-    </div>
-    
-    <div class="header">
-        <img src="LOGO-gpl.png" alt="Grupo Pro Líder">
-        <h1><i class="fa-solid fa-table-list"></i> Tablero de Seguimiento Semanal</h1>
-        <h2 id="titulo-campana" style="color:#666; font-size:18px; margin-top:5px;">Cargando...</h2>
-    </div>
-
-    <div class="table-container" id="contenedor-tabla">
-        <div style="text-align:center; padding:50px; color:#aaa; font-size:18px;">
-            <i class="fa-solid fa-spinner fa-spin" style="font-size:40px; margin-bottom:15px; color:#555;"></i><br>
-            Cargando auditoría comercial...
-        </div>
-    </div>
-
-    <script>
         const clienteSupabase = supabase.createClient('https://pumpwqyazqaxeeknrhyo.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1bXB3cXlhenFheGVla25yaHlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MjQ4ODEsImV4cCI6MjA5NDIwMDg4MX0.-AQZZYAt-uskDLUpbiafJXbHgW0lErf8bwEnk7eq1DE');
 
         
-        
-        function exportarPNG() {
-            let tableCont = document.getElementById("contenedor-tabla");
-            if (!tableCont) return alert("No hay datos para exportar.");
-            
-            // Backup the display of buttons if we had any inside, but here the container just holds the table.
-            html2canvas(tableCont, { scale: 2 }).then(canvas => {
-                let link = document.createElement("a");
-                link.download = "Seguimiento_" + document.getElementById('titulo-campana').innerText.trim() + ".png";
-                link.href = canvas.toDataURL("image/png");
-                link.click();
-            });
-        }
-
         function exportarExcel() {
             let table = document.getElementById("tabla-seguimiento");
             if (!table) return alert("No hay datos para exportar.");
@@ -194,21 +35,9 @@
                 }
 
                 // Traer catálogos
-                                const { data: perfiles } = await clienteSupabase.from('perfiles').select('id, nombre, equipo_id, rol');
+                const { data: perfiles } = await clienteSupabase.from('perfiles').select('id, nombre, equipo_id, rol');
                 const { data: equipos } = await clienteSupabase.from('equipos').select('id, nombre, agencia_id');
                 const { data: agencias } = await clienteSupabase.from('agencias').select('id, nombre, color_hex');
-                
-                // Poblar filtro de agencias si est vaco
-                let selectAgencia = document.getElementById('filtroAgencia');
-                if (selectAgencia && selectAgencia.options.length <= 1) {
-                    agencias.forEach(a => {
-                        let opt = document.createElement('option');
-                        opt.value = a.id;
-                        opt.textContent = a.nombre;
-                        selectAgencia.appendChild(opt);
-                    });
-                }
-
 
                 // Traer todas las ventas (paginadas) para no perder ninguna
                 let earliestDate = new Date(semanas[0].fecha_inicio + 'T00:00:00');
@@ -268,42 +97,30 @@
 
                 let matrixHtml = '<table id="tabla-seguimiento"><thead><tr><th>SUCURSAL</th><th>ASESOR/A</th><th>EQUIPO</th>';
                 semanas.forEach(sem => {
+                    matrixHtml += '<th class="th-semana" style="cursor:pointer;" onclick="toggleSemana(\\''+sem.id+'\\')">' + sem.nombre_semana + ' <i id="icon-sem-'+sem.id+'" class="fa-solid fa-square-plus"></i><br><small>(Obj: ' + sem.objetivo + ')</small></th>';
                     // Crear THs ocultos para cada dia
                     let dNames = ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'];
                     diasPorSemana[sem.id].forEach(dStr => {
                         let objD = new Date(dStr + 'T00:00:00');
                         matrixHtml += '<th class="day-col-'+sem.id+'" style="display:none; background:#d4c49d;">'+dNames[objD.getDay()]+'<br><small>'+dStr.substring(8,10)+'/'+dStr.substring(5,7)+'</small></th>';
                     });
-                    matrixHtml += '<th class="th-semana" style="cursor:pointer;" onclick="toggleSemana(\'' + sem.id + '\')">' + sem.nombre_semana + ' <i id="icon-sem-'+sem.id+'" class="fa-solid fa-square-plus"></i><br><small>(Obj: ' + sem.objetivo + ')</small></th>';
                 });
                 matrixHtml += '<th class="th-totales">Ventas Totales</th><th class="th-totales">Monto Vendido</th></tr></thead><tbody>';
 
                 let totalesAgencia = { ventas: 0, monto: 0 };
                 let currentAgenciaId = null;
 
-                                equipos.sort((a,b) => {
+                equipos.sort((a,b) => {
                     let nomA = agencias.find(x => x.id === a.agencia_id)?.nombre || '';
                     let nomB = agencias.find(x => x.id === b.agencia_id)?.nombre || '';
                     return nomA.localeCompare(nomB) || a.nombre.localeCompare(b.nombre);
                 });
 
-                let filtroAgenciaId = document.getElementById('filtroAgencia') ? document.getElementById('filtroAgencia').value : 'todas';
-
                 equipos.forEach(eq => {
-                    if (filtroAgenciaId !== 'todas' && eq.agencia_id !== filtroAgenciaId) return;
-
                     let agencia = agencias.find(a => a.id === eq.agencia_id);
                     let nombreAgencia = agencia ? agencia.nombre : 'Desconocida';
                     
-                    let vendsEquipo = perfiles.filter(p => {
-                        if (p.equipo_id !== eq.id || p.rol !== 'Vendedor') return false;
-                        if (p.nombre.includes('(BAJA)')) {
-                            let misVentas = ventas.filter(vent => vent.vendedor_id === p.id);
-                            let miTotalVentas = misVentas.reduce((sum, vent) => sum + Number(vent.ventas_cerradas || 0) - Number(vent.bajas || 0), 0);
-                            if (miTotalVentas <= 0) return false;
-                        }
-                        return true;
-                    });
+                    let vendsEquipo = perfiles.filter(p => p.equipo_id === eq.id && p.rol === 'Vendedor');
                     if(vendsEquipo.length === 0) return;
 
                     let totalEqVentas = 0;
@@ -337,13 +154,14 @@
                             else if (vNetas >= sem.objetivo) colorClass = 'color-green';
                             else if (vNetas > 0) colorClass = 'color-yellow';
                             
+                            matrixHtml += '<td class="obj-cell ' + colorClass + '" style="'+tdStyle+'">' + vNetas + '</td>';
+
                             // Celdas diarias
                             diasPorSemana[sem.id].forEach((dStr, dIdx) => {
                                 let vDia = getVentasEnDia(v.id, dStr);
                                 dayEqTotals[sem.id][dIdx] += vDia;
                                 matrixHtml += '<td class="day-col-'+sem.id+'" style="display:none; '+tdStyle+' font-size:12px; color:#555;">' + (vDia > 0 ? vDia : '-') + '</td>';
                             });
-                            matrixHtml += '<td class="obj-cell ' + colorClass + '" style="'+tdStyle+'">' + vNetas + '</td>';
                         });
 
                         matrixHtml += '<td style="font-weight:bold; ' + tdStyle + '">' + miTotalVentas + '</td>';
@@ -355,11 +173,11 @@
                     matrixHtml += '<tr class="row-equipo-total">';
                     matrixHtml += '<td colspan="3" style="text-align:center; ' + tdStyle + ' border-top:none;">TOTAL EQUIPO ' + eq.nombre.toUpperCase() + '</td>';
                     semanas.forEach((sem, idx) => {
+                        matrixHtml += '<td style="' + tdStyle + ' border-top:none;">' + semTotals[idx] + '</td>';
                         diasPorSemana[sem.id].forEach((dStr, dIdx) => {
                              let vTot = dayEqTotals[sem.id][dIdx];
                              matrixHtml += '<td class="day-col-'+sem.id+'" style="display:none; '+tdStyle+' border-top:none; font-size:12px; color:#ccc;">' + (vTot > 0 ? vTot : '-') + '</td>';
                         });
-                        matrixHtml += '<td style="' + tdStyle + ' border-top:none;">' + semTotals[idx] + '</td>';
                     });
                     matrixHtml += '<td style="' + tdStyle + ' border-top:none;">' + totalEqVentas + '</td>';
                     matrixHtml += '<td style="' + tdStyle + ' border-top:none;">\$' + totalEqMonto.toLocaleString('es-AR') + '</td>';
@@ -387,6 +205,4 @@
 
         window.onload = cargarData;
 
-    </script>
-</body>
-</html>
+    

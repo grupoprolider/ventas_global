@@ -1149,7 +1149,9 @@
                         let esBaja = estadoStr.includes('baja') || estadoStr.includes('rechazad') || estadoStr.includes('anulad') || estadoStr.includes('caida');
                         
                         const { data: dbVenta } = await clienteSupabase.from('registro_ventas').select('*').eq('numero_solicitud', nroSol);
-                        let existe = dbVenta && dbVenta.length > 0;
+                        let existeEnDB = dbVenta && dbVenta.length > 0;
+                        let altaPendiente = window.operacionesExcelPendientes.find(op => op.data && op.data.numero_solicitud === nroSol && op.tipo === 'insert');
+                        let existe = existeEnDB || altaPendiente;
                         
                         if (!esBaja) {
                             if (existe) {
@@ -1174,44 +1176,55 @@
                             }
                         } else {
                             if (!existe) {
-                                const objBaja = {
-                                    vendedor_id: vendMatch.id,
-                                    ventas_cerradas: 0,
-                                    entrevistas: 0,
-                                    bajas: 1,
-                                    monto: -importe,
-                                    beneficio: beneficio + " (BAJA/RECHAZO EXCEL)",
-                                    medio_pago: entidad,
-                                    semana: 1,
-                                    campana: campanaCalculada,
-                                    es_anulada: false,
-                                    created_at: fechaDB.toISOString(),
-                                    numero_solicitud: nroSol + "_BAJA"
-                                };
-                                window.operacionesExcelPendientes.push({ tipo: 'insert', data: objBaja });
-                                bajasNuevas++;
+                                msjs.push("Fila " + (i+2) + ": Baja ignorada. No existe el ALTA (Auditada) previa para la solicitud " + nroSol + ".");
+                                errores++;
                             } else {
-                                let orig = dbVenta[0];
-                                if(orig.es_anulada) {
-                                    ignoradasVentas++;
-                                } else {
-                                    const objContra = {
-                                        vendedor_id: orig.vendedor_id,
-                                        ventas_cerradas: 0,
-                                        entrevistas: 0,
-                                        bajas: orig.ventas_cerradas || 1,
-                                        monto: -(orig.monto || 0),
-                                        semana: orig.semana,
-                                        campana: orig.campana,
-                                        beneficio: orig.beneficio + " (ANULACIÓN EXCEL)",
-                                        medio_pago: orig.medio_pago,
-                                        es_anulada: false,
-                                        created_at: new Date().toISOString(),
-                                        numero_solicitud: nroSol + "_BAJA"
-                                    };
-                                    window.operacionesExcelPendientes.push({ tipo: 'insert', data: objContra });
-                                    window.operacionesExcelPendientes.push({ tipo: 'update', id: orig.id, data: { es_anulada: true } });
-                                    bajasNuevas++;
+                                if (existeEnDB) {
+                                    let orig = dbVenta[0];
+                                    if(orig.es_anulada) {
+                                        ignoradasVentas++;
+                                    } else {
+                                        const objContra = {
+                                            vendedor_id: orig.vendedor_id,
+                                            ventas_cerradas: 0,
+                                            entrevistas: 0,
+                                            bajas: orig.ventas_cerradas || 1,
+                                            monto: -(orig.monto || 0),
+                                            semana: orig.semana,
+                                            campana: orig.campana,
+                                            beneficio: orig.beneficio + " (ANULACIÓN EXCEL)",
+                                            medio_pago: orig.medio_pago,
+                                            es_anulada: false,
+                                            created_at: new Date().toISOString(),
+                                            numero_solicitud: nroSol + "_BAJA"
+                                        };
+                                        window.operacionesExcelPendientes.push({ tipo: 'insert', data: objContra });
+                                        window.operacionesExcelPendientes.push({ tipo: 'update', id: orig.id, data: { es_anulada: true } });
+                                        bajasNuevas++;
+                                    }
+                                } else if (altaPendiente) {
+                                    if (altaPendiente.data.es_anulada) {
+                                        ignoradasVentas++;
+                                    } else {
+                                        // El alta está en el mismo Excel
+                                        altaPendiente.data.es_anulada = true; // La marcamos como anulada desde el inicio
+                                        const objContra = {
+                                            vendedor_id: altaPendiente.data.vendedor_id,
+                                            ventas_cerradas: 0,
+                                            entrevistas: 0,
+                                            bajas: 1,
+                                            monto: -(altaPendiente.data.monto || 0),
+                                            semana: altaPendiente.data.semana,
+                                            campana: altaPendiente.data.campana,
+                                            beneficio: altaPendiente.data.beneficio + " (ANULACIÓN EXCEL)",
+                                            medio_pago: altaPendiente.data.medio_pago,
+                                            es_anulada: false,
+                                            created_at: new Date().toISOString(),
+                                            numero_solicitud: nroSol + "_BAJA"
+                                        };
+                                        window.operacionesExcelPendientes.push({ tipo: 'insert', data: objContra });
+                                        bajasNuevas++;
+                                    }
                                 }
                             }
                         }

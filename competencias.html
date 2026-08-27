@@ -180,7 +180,6 @@
                     const { data: vPage } = await clienteSupabase
                         .from('registro_ventas')
                         .select('vendedor_id, monto, created_at, es_anulada, ventas_cerradas, bajas')
-                        .eq('es_anulada', false)
                         .gte('created_at', fromStr)
                         .lte('created_at', toStr)
                         .range(page * pageSize, (page + 1) * pageSize - 1);
