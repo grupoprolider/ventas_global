@@ -1120,7 +1120,7 @@
                             continue;
                         }
 
-                        let vendMatch = perfilesDB.find(p => p.nombre.toLowerCase().trim() === String(nomVendedor).toLowerCase().trim());
+                        let vendMatch = perfilesDB.find(p => p.nombre.replace('(BAJA)', '').toLowerCase().trim() === String(nomVendedor).toLowerCase().trim());
                         if(!vendMatch) {
                             msjs.push("Fila " + (i+2) + ": Vendedor '" + nomVendedor + "' no encontrado en el sistema.");
                             errores++;
