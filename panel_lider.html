@@ -631,7 +631,7 @@
                     int.proyeccion = Math.round((int.netas / dias.transcurridos) * dias.totales);
                     int.proyeccionTexto = formatProyeccion(int.netas, objCalc, dias.transcurridos, dias.totales);
                     return int;
-                }).sort((a,b) => b.atraso - a.atraso);
+                }).filter(int => !int.nombre.includes('(BAJA)') || int.netas > 0).sort((a,b) => b.atraso - a.atraso);
                 
                 if (listaFinal.length === 0) {
                     document.getElementById('listaIntegrantes').innerHTML = `<li><div class="empty-state">No hay miembros en el equipo aún.</div></li>`;

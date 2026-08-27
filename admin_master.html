@@ -973,10 +973,10 @@
             if (nombreActual.includes('(BAJA)')) {
                 return alert("Este perfil ya está dado de baja.");
             }
-            if (!confirm(`¿Estás seguro de que querés marcar a ${nombreActual} como (BAJA) y dejarlo Sin Equipo?\nEsto ocultará su perfil de los radares activos.`)) return;
+            if (!confirm(`¿Estás seguro de que querés marcar a ${nombreActual} como (BAJA) ?\nEsto ocultará su perfil (salvo que tenga ventas) de los radares activos.`)) return;
             
             const nuevoNombre = nombreActual + ' (BAJA)';
-            const { error } = await clienteSupabase.from('perfiles').update({ nombre: nuevoNombre, equipo_id: null }).eq('id', id);
+            const { error } = await clienteSupabase.from('perfiles').update({ nombre: nuevoNombre }).eq('id', id);
             
             if (error) {
                 alert("Error al dar de baja: " + error.message);

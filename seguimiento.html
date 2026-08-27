@@ -296,7 +296,15 @@
                     let agencia = agencias.find(a => a.id === eq.agencia_id);
                     let nombreAgencia = agencia ? agencia.nombre : 'Desconocida';
                     
-                    let vendsEquipo = perfiles.filter(p => p.equipo_id === eq.id && p.rol === 'Vendedor');
+                    let vendsEquipo = perfiles.filter(p => {
+                        if (p.equipo_id !== eq.id || p.rol !== 'Vendedor') return false;
+                        if (p.nombre.includes('(BAJA)')) {
+                            let misVentas = ventas.filter(vent => vent.vendedor_id === p.id);
+                            let miTotalVentas = misVentas.reduce((sum, vent) => sum + Number(vent.ventas_cerradas || 0) - Number(vent.bajas || 0), 0);
+                            if (miTotalVentas <= 0) return false;
+                        }
+                        return true;
+                    });
                     if(vendsEquipo.length === 0) return;
 
                     let totalEqVentas = 0;

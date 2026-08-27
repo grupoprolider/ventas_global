@@ -754,7 +754,7 @@
                 let eq = mapEquipos[i.equipo_id]?.nombre || 'Sin Equipo';
                 
                 return { nombre: i.nombre, equipo: eq, netas: vts, objetivo: obj, atraso: atraso, proyeccion: proyeccion, proyeccionTexto: proyeccionTexto };
-            }).sort((a,b) => b.atraso - a.atraso);
+            }).filter(int => !int.nombre.includes('(BAJA)') || int.netas > 0).sort((a,b) => b.atraso - a.atraso);
             
             document.getElementById('listaRadar').innerHTML = listaVendedores.map(v => {
                 let colorRiesgo = v.atraso > 0 ? '#e74c3c' : '#2ecc71';
