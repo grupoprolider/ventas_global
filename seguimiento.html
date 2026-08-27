@@ -296,7 +296,7 @@
                     let nombreAgencia = agencia ? agencia.nombre : 'Desconocida';
                     
                     let vendsEquipo = perfiles.filter(p => {
-                        if (p.equipo_id !== eq.id || p.rol !== 'Vendedor') return false;
+                        if (p.equipo_id !== eq.id) return false;
                         if (p.nombre.includes('(BAJA)')) {
                             let misVentas = ventas.filter(vent => vent.vendedor_id === p.id);
                             let miTotalVentas = misVentas.reduce((sum, vent) => sum + Number(vent.ventas_cerradas || 0) - Number(vent.bajas || 0), 0);
@@ -325,7 +325,12 @@
 
                         matrixHtml += '<tr>';
                         matrixHtml += '<td class="td-sucursal" style="'+tdStyle+'">' + nombreAgencia + '</td>';
-                        matrixHtml += '<td class="td-asesor" style="'+tdStyle+'">' + v.nombre + '</td>';
+                        let nombreMostrar = v.nombre;
+                        if (v.rol && v.rol !== 'Vendedor') {
+                            nombreMostrar += ' <span style="font-size:0.8em; color:#666;">(Líder)</span>';
+                        }
+                        
+                        matrixHtml += '<td class="td-asesor" style="'+tdStyle+'">' + nombreMostrar + '</td>';
                         matrixHtml += '<td style="'+tdStyle+'">' + eq.nombre + '</td>';
 
                         semanas.forEach((sem, idx) => {
