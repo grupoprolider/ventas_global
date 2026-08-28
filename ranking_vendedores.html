@@ -272,6 +272,19 @@
                     if (data.length < step) break;
                     fromRow += step;
                 }
+                
+                // --- NUEVO: Obtener las entrevistas de la tabla correcta ---
+                let ents = [];
+                let stepEnt = 1000, fromRowEnt = 0;
+                while (true) {
+                    const { data } = await clienteSupabase.from('registro_entrevistas').select('vendedor_id').eq('campana', campana).order('id').range(fromRowEnt, fromRowEnt + stepEnt - 1);
+                    if (!data || data.length === 0) break;
+                    ents = ents.concat(data);
+                    if (data.length < stepEnt) break;
+                    fromRowEnt += stepEnt;
+                }
+                window.L_Ents_Global = ents || []; 
+                // -----------------------------------------------------------
 
                 async function fetchAll(table) {
                     let allData = [];
@@ -298,6 +311,8 @@
                     globalBrutas += (v.ventas_cerradas || 0); globalEnt += (v.entrevistas || 0);
                     globalBajas += (v.bajas || 0); globalMonto += (v.monto || 0);
                 });
+                // Sumamos el total de entrevistas de la nueva tabla
+                globalEnt += window.L_Ents_Global.length;
                 
                 document.getElementById('totBrutas').textContent = globalBrutas;
                 document.getElementById('totEntrevistas').textContent = globalEnt;
@@ -353,6 +368,11 @@
                     L_Vtas.filter(x => x.vendedor_id === p.id).forEach(x => {
                         v += (x.ventas_cerradas || 0); b += (x.bajas || 0); m += (x.monto || 0); ent += (x.entrevistas || 0);
                     });
+                    
+                    // Sumar las entrevistas contabilizadas en la nueva tabla
+                    let countEnt = window.L_Ents_Global.filter(x => x.vendedor_id === p.id).length;
+                    ent += countEnt;
+
                     return { p, v, b, m, ent };
                 }).filter(data => (data.p.equipo_id !== null || data.v > 0 || data.b > 0) && (!data.p.nombre.includes('(BAJA)') || data.v > 0 || data.b > 0)).map(data => {
                     let { p, v, b, m, ent } = data;
