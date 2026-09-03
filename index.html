@@ -201,10 +201,6 @@
         <p>Sistema de Control de Ventas</p>
 
         <div id="rankingDiarioContainer" class="ranking-diario-wrapper" style="display:none;">
-            <div class="ranking-diario-caja">
-                <div class="ranking-diario-titulo">🏆 Ventas Hoy</div>
-                <div id="listaVentasHoy" class="ranking-diario-lista"></div>
-            </div>
             <div class="ranking-diario-caja entrevistas">
                 <div class="ranking-diario-titulo">🗣️ Entrevistas Hoy</div>
                 <div id="listaEntrevistasHoy" class="ranking-diario-lista"></div>
@@ -212,8 +208,6 @@
         </div>
 
         <button onclick="window.location.href='competencias.html'" style="width:100%; margin:15px 0; padding:15px; background:linear-gradient(45deg, #f1c40f, #e67e22); color:white; border:none; border-radius:10px; font-size:16px; font-weight:bold; cursor:pointer; box-shadow: 0 4px 15px rgba(241,196,15,0.4);"><i class="fa-solid fa-trophy"></i> VER COMPETENCIAS ACTIVAS</button>
-
-        <button onclick="window.location.href='seguimiento.html'" style="width:100%; margin-bottom:15px; padding:15px; background:linear-gradient(45deg, #006779, #004d5a); color:white; border:none; border-radius:10px; font-size:16px; font-weight:bold; cursor:pointer; box-shadow: 0 4px 15px rgba(0,103,121,0.4);"><i class="fa-solid fa-table-list"></i> VER TABLERO DE SEGUIMIENTO</button>
 
 
         <div class="seccion-acceso">
@@ -366,20 +360,12 @@
                 hoyLocal.setHours(0, 0, 0, 0);
                 const isoMidnight = hoyLocal.toISOString();
                 
-                const [{ data: ventas }, { data: entrevistas }] = await Promise.all([
-                    clienteSupabase.from('registro_ventas').select('vendedor_id, ventas_cerradas, created_at').gte('created_at', isoMidnight),
+                const [{ data: entrevistas }] = await Promise.all([
                     clienteSupabase.from('registro_entrevistas').select('vendedor_id, created_at').gte('created_at', isoMidnight)
                 ]);
 
-                let mapVentas = {}, mapEnt = {};
-                if (ventas) {
-                    ventas.forEach(v => {
-                        // Filtro de fecha en el cliente usando la zona horaria local
-                        if (v.ventas_cerradas > 0 && v.created_at && obtenerFechaLocal(v.created_at) === hoyStr) {
-                            mapVentas[v.vendedor_id] = (mapVentas[v.vendedor_id] || 0) + v.ventas_cerradas;
-                        }
-                    });
-                }
+                let mapEnt = {};
+                
                 if (entrevistas) {
                     entrevistas.forEach(e => {
                         // Filtro de fecha en el cliente usando la zona horaria local
@@ -389,16 +375,10 @@
                     });
                 }
                 
-                let arrVentas = Object.keys(mapVentas).map(id => ({ id, total: mapVentas[id] })).sort((a,b) => b.total - a.total);
                 let arrEntrevistas = Object.keys(mapEnt).map(id => ({ id, total: mapEnt[id] })).sort((a,b) => b.total - a.total);
                 
-                const boxVentas = document.getElementById('listaVentasHoy');
                 const boxEnt = document.getElementById('listaEntrevistasHoy');
                 
-                boxVentas.innerHTML = arrVentas.length > 0 
-                    ? arrVentas.map((v, i) => `<div class="ranking-diario-item"><span class="ranking-diario-nombre" title="${window.mapaVendedores[v.id] || ''}">${i === 0 ? '🔥' : ''} ${window.mapaVendedores[v.id] || 'N/A'}</span><span class="ranking-diario-valor">${v.total}</span></div>`).join('')
-                    : '<div class="ranking-diario-vacio">El día recién empieza</div>';
-                    
                 boxEnt.innerHTML = arrEntrevistas.length > 0 
                     ? arrEntrevistas.map((e, i) => `<div class="ranking-diario-item"><span class="ranking-diario-nombre" title="${window.mapaVendedores[e.id] || ''}">${i === 0 ? '⭐' : ''} ${window.mapaVendedores[e.id] || 'N/A'}</span><span class="ranking-diario-valor">${e.total}</span></div>`).join('')
                     : '<div class="ranking-diario-vacio">El día recién empieza</div>';
