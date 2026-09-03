@@ -276,6 +276,9 @@
                 const select = document.getElementById('selectVendedor');
                 if (data) {
                     data.forEach(p => {
+                        // Ocultar vendedores dados de baja del menú desplegable
+                        if (p.nombre.toUpperCase().includes('(BAJA)')) return;
+                        
                         const opt = document.createElement('option');
                         opt.value = p.id;
                         opt.textContent = p.nombre;
