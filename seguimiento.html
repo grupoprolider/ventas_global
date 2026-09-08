@@ -278,8 +278,7 @@
                 });
                 matrixHtml += '<th class="th-totales">Ventas Totales</th><th class="th-totales">Monto Vendido</th></tr></thead><tbody>';
 
-                let totalesAgencia = { ventas: 0, monto: 0 };
-                let currentAgenciaId = null;
+                
 
                                 equipos.sort((a,b) => {
                     let nomA = agencias.find(x => x.id === a.agencia_id)?.nombre || '';
@@ -289,9 +288,26 @@
 
                 let filtroAgenciaId = document.getElementById('filtroAgencia') ? document.getElementById('filtroAgencia').value : 'todas';
 
-                equipos.forEach(eq => {
-                    if (filtroAgenciaId !== 'todas' && eq.agencia_id !== filtroAgenciaId) return;
+                let validEquipos = equipos.filter(eq => {
+                    if (filtroAgenciaId !== 'todas' && eq.agencia_id !== filtroAgenciaId) return false;
+                    let vends = perfiles.filter(p => {
+                        if (p.equipo_id !== eq.id) return false;
+                        if (p.nombre.includes('(BAJA)')) {
+                            let mis = ventas.filter(vent => vent.vendedor_id === p.id);
+                            let mTot = mis.reduce((sum, vent) => sum + Number(vent.ventas_cerradas || 0) - Number(vent.bajas || 0), 0);
+                            if (mTot <= 0) return false;
+                        }
+                        return true;
+                    });
+                    return vends.length > 0;
+                });
 
+                let totalesAgencia = { ventas: 0, monto: 0 };
+                let agSemTotals = Array(semanas.length).fill(0);
+                let agDayTotals = {};
+                semanas.forEach(sem => { agDayTotals[sem.id] = Array(diasPorSemana[sem.id].length).fill(0); });
+                
+                validEquipos.forEach((eq, index) => {
                     let agencia = agencias.find(a => a.id === eq.agencia_id);
                     let nombreAgencia = agencia ? agencia.nombre : 'Desconocida';
                     
@@ -304,7 +320,6 @@
                         }
                         return true;
                     });
-                    if(vendsEquipo.length === 0) return;
 
                     let totalEqVentas = 0;
                     let totalEqMonto = 0;
@@ -352,7 +367,7 @@
                         });
 
                         matrixHtml += '<td style="font-weight:bold; ' + tdStyle + '">' + miTotalVentas + '</td>';
-                        matrixHtml += '<td style="' + tdStyle + '">\$' + miTotalMonto.toLocaleString('es-AR') + '</td>';
+                        matrixHtml += '<td style="' + tdStyle + '">$' + miTotalMonto.toLocaleString('es-AR') + '</td>';
                         matrixHtml += '</tr>';
                     });
 
@@ -369,6 +384,47 @@
                     matrixHtml += '<td style="' + tdStyle + ' border-top:none;">' + totalEqVentas + '</td>';
                     matrixHtml += '<td style="' + tdStyle + ' border-top:none;">\$' + totalEqMonto.toLocaleString('es-AR') + '</td>';
                     matrixHtml += '</tr>';
+                    
+                    // ACCUMULATE INTO TOTAL SUCURSAL
+                    totalesAgencia.ventas += totalEqVentas;
+                    totalesAgencia.monto += totalEqMonto;
+                    semanas.forEach((sem, idx) => {
+                        agSemTotals[idx] += semTotals[idx];
+                        diasPorSemana[sem.id].forEach((dStr, dIdx) => {
+                            agDayTotals[sem.id][dIdx] += dayEqTotals[sem.id][dIdx];
+                        });
+                    });
+
+                    // IS IT THE LAST TEAM FOR THIS SUCURSAL?
+                    let isLastForAgencia = true;
+                    if (index < validEquipos.length - 1) {
+                        if (validEquipos[index + 1].agencia_id === eq.agencia_id) {
+                            isLastForAgencia = false;
+                        }
+                    }
+
+                    if (isLastForAgencia) {
+                        let darkBg = '#004d5a'; // Match the user's header/total color
+                        let borderStyle = 'border: 2px solid ' + darkBg + ';';
+                        matrixHtml += '<tr style="background-color: ' + darkBg + '; color: white; font-weight: bold;">';
+                        matrixHtml += '<td colspan="3" style="text-align:center; ' + borderStyle + '">TOTAL SUCURSAL ' + nombreAgencia.toUpperCase() + '</td>';
+                        semanas.forEach((sem, idx) => {
+                            diasPorSemana[sem.id].forEach((dStr, dIdx) => {
+                                 let vTot = agDayTotals[sem.id][dIdx];
+                                 matrixHtml += '<td class="day-col-'+sem.id+'" style="display:none; '+borderStyle+' font-size:12px; color:#fff;">' + (vTot > 0 ? vTot : '-') + '</td>';
+                            });
+                            matrixHtml += '<td style="' + borderStyle + '">' + agSemTotals[idx] + '</td>';
+                        });
+                        matrixHtml += '<td style="' + borderStyle + '">' + totalesAgencia.ventas + '</td>';
+                        matrixHtml += '<td style="' + borderStyle + '">\$' + totalesAgencia.monto.toLocaleString('es-AR') + '</td>';
+                        matrixHtml += '</tr>';
+
+                        // Reset accumulators for next branch
+                        totalesAgencia.ventas = 0;
+                        totalesAgencia.monto = 0;
+                        agSemTotals = Array(semanas.length).fill(0);
+                        semanas.forEach(sem => { agDayTotals[sem.id] = Array(diasPorSemana[sem.id].length).fill(0); });
+                    }
                 });
 
                 matrixHtml += '</tbody></table>';
