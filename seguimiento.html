@@ -404,8 +404,8 @@
                     }
 
                     if (isLastForAgencia) {
-                        let darkBg = '#004d5a'; // Match the user's header/total color
-                        let borderStyle = 'border: 2px solid ' + darkBg + ';';
+                        let darkBg = '#A42A68'; // Match the user's header/total color
+                        let borderStyle = 'border: 2px solid ' + agColor + ' !important;';
                         matrixHtml += '<tr style="background-color: ' + darkBg + '; color: white; font-weight: bold;">';
                         matrixHtml += '<td colspan="3" style="text-align:center; ' + borderStyle + '">TOTAL SUCURSAL ' + nombreAgencia.toUpperCase() + '</td>';
                         semanas.forEach((sem, idx) => {
