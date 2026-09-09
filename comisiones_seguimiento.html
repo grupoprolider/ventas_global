@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seguimiento de Comisiones (12 Meses)</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --gpl-petroleo: #006779;
+            --gpl-dorado: #A42A68;
+            --gpl-borravino: #72224c;
+            --fondo-oscuro: #1a252c;
+            --celda-oscura: #23323c;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: var(--fondo-oscuro);
+            margin: 0;
+            padding: 0;
+            color: white;
+        }
+
+        .header-admin {
+            background: white;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 5px solid var(--gpl-dorado);
+        }
+
+        .header-admin h1 {
+            color: var(--gpl-petroleo);
+            margin: 5px 0 0 0;
+            font-size: 24px;
+            text-transform: uppercase;
+            font-weight: 900;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        .card-admin {
+            background: var(--celda-oscura);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #444;
+            margin-bottom: 20px;
+        }
+
+        h3 {
+            color: var(--gpl-dorado);
+            margin-top: 0;
+            text-transform: uppercase;
+            font-size: 16px;
+            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 13px;
+        }
+
+        th {
+            background: #111;
+            color: var(--gpl-dorado);
+            padding: 10px;
+            text-align: center;
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+
+        td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #333;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .td-left {
+            text-align: left;
+            font-weight: bold;
+            color: #a8d5e2;
+        }
+
+        .td-id {
+            font-family: monospace;
+            font-size: 14px;
+            color: #ddd;
+        }
+
+        .btn-save {
+            background: var(--gpl-petroleo);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+
+        .btn-save:hover {
+            background: #00879e;
+        }
+
+        .icon-cobrado { color: #2ecc71; font-size: 18px; }
+        .icon-nocobrado { color: #e74c3c; font-size: 18px; }
+        .icon-baja { color: #c0392b; font-size: 18px; }
+        .icon-inactivo { color: #95a5a6; font-size: 18px; }
+        .icon-empty { color: #444; font-size: 18px; }
+
+        .loader {
+            display: none;
+            color: var(--gpl-dorado);
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .info-box {
+            background: #111;
+            padding: 15px;
+            border-left: 4px solid var(--gpl-dorado);
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .charts-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .chart-box {
+            background: #111;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            width: 300px;
+            text-align: center;
+        }
+
+        /* --- TEMA CLARO --- */
+        body.light-theme {
+            --fondo-oscuro: #f4f6f9;
+            --celda-oscura: #ffffff;
+            color: #333;
+        }
+        
+        body.light-theme .card-admin {
+            border: 1px solid #ddd;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        
+        body.light-theme th {
+            background: #eef2f5;
+            color: var(--gpl-petroleo);
+            border-bottom: 2px solid #ddd;
+        }
+        
+        body.light-theme td {
+            border-bottom: 1px solid #eee;
+            color: #555;
+        }
+        
+        body.light-theme .td-id {
+            color: #777;
+        }
+        
+        body.light-theme .td-left {
+            color: var(--gpl-petroleo);
+        }
+        
+        body.light-theme input, body.light-theme select {
+            background: #fff !important;
+            color: #333 !important;
+            border: 1px solid #ccc !important;
+        }
+        
+        body.light-theme .info-box {
+            background: #eaf1f4;
+            border-left: 4px solid var(--gpl-petroleo);
+            color: #333;
+        }
+        
+        body.light-theme .chart-box {
+            background: #fff;
+            border: 1px solid #ddd;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        body.light-theme .chart-box h4 {
+            color: #555 !important;
+        }
+
+        .btn-theme {
+            position: absolute;
+            right: 20px;
+            top: 25px;
+            background: transparent;
+            border: 1px solid var(--gpl-petroleo);
+            color: var(--gpl-petroleo);
+            padding: 5px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        .btn-theme:hover {
+            background: var(--gpl-petroleo);
+            color: white;
+        }
+        .btn-toggle-chart {
+            background: transparent;
+            border: none;
+            color: #888;
+            padding: 5px 15px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        .btn-toggle-chart.active {
+            background: var(--gpl-petroleo);
+            color: white;
+        }
+    </style>
+
+    <!-- Configuración para iOS Safari (iPhone/iPad) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Suite GPL">
+</head>
+<body>
+
+    <div class="header-admin" style="position: relative;">
+        <h1>Módulo de Seguimiento de Cobros (12 Meses)</h1>
+        <p style="color: #666; margin-top: 5px; font-weight: bold;">(Entorno de Pruebas Independiente)</p>
+        <button class="btn-theme" onclick="toggleTheme()"><i class="fa-solid fa-circle-half-stroke"></i> Cambiar Tema</button>
+    </div>
+
+    <div class="container">
+        
+        <div class="info-box">
+            <strong>Instrucciones:</strong> Sube un archivo Excel (.xlsx) que contenga al menos dos columnas: <strong>"ID"</strong> (número de solicitud de la venta) y <strong>"Estado"</strong> (Cobrado, No Cobrado, Baja, o Inactivo). 
+            <br>Cada vez que subas un archivo, el sistema registrará un nuevo mes en el historial de esa venta (hasta un máximo de 12 meses).
+        </div>
+
+        <!-- RESUMEN DE COBRANZAS -->
+        <div class="card-admin">
+            <h3><i class="fa-solid fa-chart-pie"></i> Resumen de Cobranza por Vendedor</h3>
+            <div style="display: flex; gap: 10px; align-items: center; margin-top: 15px; flex-wrap: wrap;">
+                <label>Seleccionar Vendedor:</label>
+                <select id="selectVendedorChart" onchange="renderCharts()" style="padding: 10px; border-radius: 5px; border: 1px solid #444; background: #111; color: white; min-width: 250px;">
+                    <option value="">Seleccione un vendedor...</option>
+                </select>
+                
+                <div id="chartToggleWrapper" style="display: none; margin-left: 20px; background: #111; border-radius: 20px; padding: 3px; border: 1px solid #444;">
+                    <button id="btnChartCobrado" class="btn-toggle-chart active" onclick="setEstadoFiltroGraficos('COBRADO')">Cobrados</button>
+                    <button id="btnChartNoCobrado" class="btn-toggle-chart" onclick="setEstadoFiltroGraficos('NO_COBRADO')">No Cobrados</button>
+                </div>
+            </div>
+            
+            <div class="charts-container" id="chartsWrapper" style="display: none;">
+                <div class="chart-box">
+                    <h4 id="tituloBeneficio" style="margin:0 0 10px 0; color:#ccc;">Beneficio</h4>
+                    <canvas id="chartBeneficio"></canvas>
+                </div>
+                <div class="chart-box">
+                    <h4 id="tituloBanco" style="margin:0 0 10px 0; color:#ccc;">Banco</h4>
+                    <canvas id="chartBanco"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- IMPORTADOR EXCEL -->
+        <div class="card-admin">
+            <h3><i class="fa-solid fa-file-excel"></i> Subir Cobros Mensuales (Excel)</h3>
+            <div style="display: flex; gap: 10px; align-items: center; margin-top: 15px;">
+                <input type="file" id="archivoExcel" accept=".xlsx, .xls, .csv" style="padding: 10px; background: #111; border-radius: 5px; border: 1px solid #444; color: white;">
+                <button class="btn-save" onclick="procesarExcel()"><i class="fa-solid fa-upload"></i> Cargar Cobros</button>
+            </div>
+            <div id="loaderUpload" class="loader"><i class="fa-solid fa-spinner fa-spin"></i> Procesando archivo, por favor espera...</div>
+            <div id="resultadoUpload" style="margin-top: 15px; font-size: 14px; color: #a8d5e2;"></div>
+        </div>
+
+        <!-- PANEL DE SEGUIMIENTO (GRILLA) -->
+        <div class="card-admin">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3><i class="fa-solid fa-chart-gantt"></i> Grilla de Seguimiento Activo</h3>
+                <button class="btn-save" onclick="cargarGrilla()" style="background: #444;"><i class="fa-solid fa-rotate-right"></i> Actualizar</button>
+            </div>
+            
+            <div style="margin-top: 10px; margin-bottom: 15px;">
+                <input type="text" id="filtroTexto" placeholder="Buscar por vendedor o ID de venta..." style="padding: 10px; border-radius: 5px; border: 1px solid #444; background: #111; color: white; width: 100%; max-width: 400px;" onkeyup="filtrarTabla()">
+            </div>
+
+            <div style="overflow-x: auto;">
+                <table id="tablaSeguimiento">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left;">Vendedor/a</th>
+                            <th>ID Venta</th>
+                            <th>Beneficio</th>
+                            <th>Banco</th>
+                            <th>M1</th>
+                            <th>M2</th>
+                            <th>M3</th>
+                            <th>M4</th>
+                            <th>M5</th>
+                            <th>M6</th>
+                            <th>M7</th>
+                            <th>M8</th>
+                            <th>M9</th>
+                            <th>M10</th>
+                            <th>M11</th>
+                            <th>M12</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cuerpoTabla">
+                        <tr><td colspan="16" style="text-align: center; color: #888;">Cargando datos...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const supabaseUrl = 'https://pumpwqyazqaxeeknrhyo.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1bXB3cXlhenFheGVla25yaHlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MjQ4ODEsImV4cCI6MjA5NDIwMDg4MX0.-AQZZYAt-uskDLUpbiafJXbHgW0lErf8bwEnk7eq1DE';
+        const clienteSupabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        let dataPerfiles = [];
+        let dataVentas = [];
+        let chartsInstancias = {}; // Para destruir los gráficos viejos
+
+        async function inicializar() {
+            // Cargar Perfiles para los nombres
+            const resPerfiles = await clienteSupabase.from('perfiles').select('id, nombre');
+            if (resPerfiles.data) {
+                dataPerfiles = resPerfiles.data;
+                // Llenar select de vendedores
+                let select = document.getElementById('selectVendedorChart');
+                dataPerfiles.forEach(p => {
+                    let opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.textContent = p.nombre;
+                    select.appendChild(opt);
+                });
+            }
+            
+            cargarGrilla();
+        }
+
+        async function cargarGrilla() {
+            document.getElementById('cuerpoTabla').innerHTML = '<tr><td colspan="16" style="text-align: center; color: #888;"><i class="fa-solid fa-spinner fa-spin"></i> Cargando...</td></tr>';
+            
+            let ventas = [];
+            let step = 1000, fromRow = 0;
+            while (true) {
+                const { data } = await clienteSupabase.from('registro_ventas')
+                    .select('id, numero_solicitud, vendedor_id, historial_cobros, beneficio, medio_pago, created_at')
+                    .not('numero_solicitud', 'is', null)
+                    .order('id', { ascending: false })
+                    .range(fromRow, fromRow + step - 1);
+                
+                if (!data || data.length === 0) break;
+                ventas = ventas.concat(data);
+                if (data.length < step) break;
+                fromRow += step;
+            }
+
+            // Excluir cualquier venta cuyo ID sea un texto vacío o que sea un registro compensatorio de BAJA
+            ventas = ventas.filter(v => {
+                let id = String(v.numero_solicitud || '').trim().toUpperCase();
+                return id !== "" && !id.includes('_BAJA');
+            });
+
+            // Ocultar si tienen 12 meses o 10 pagos cobrados (limite lider de sucursal)
+            dataVentas = ventas.filter(v => {
+                let h = v.historial_cobros || [];
+                let cobrados = h.filter(est => {
+                    let e = String(est).toLowerCase();
+                    return (e.includes('cobrado') || e === 'si') && !e.includes('no');
+                }).length;
+
+                return h.length < 12 && cobrados < 10;
+            });
+
+            // Guardar todas las ventas globales para los gráficos (incluso las ocultas)
+            window.todasLasVentasParaGraficos = ventas;
+
+            renderTabla();
+            renderCharts(); // Actualizar gráficos si ya hay un vendedor seleccionado
+        }
+
+        function renderTabla() {
+            const tbody = document.getElementById('cuerpoTabla');
+            const filtro = document.getElementById('filtroTexto').value.toLowerCase();
+
+            let html = '';
+            
+            let ventasFiltradas = dataVentas.filter(v => {
+                let vend = dataPerfiles.find(p => p.id === v.vendedor_id);
+                let nombreVend = vend ? vend.nombre.toLowerCase() : 'desconocido';
+                let idVenta = (v.numero_solicitud || '').toString().toLowerCase();
+                return nombreVend.includes(filtro) || idVenta.includes(filtro);
+            });
+
+            if (ventasFiltradas.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="16" style="text-align: center; color: #888;">No hay cobros activos para mostrar.</td></tr>';
+                return;
+            }
+
+            ventasFiltradas.forEach(v => {
+                let vend = dataPerfiles.find(p => p.id === v.vendedor_id);
+                let nombreVend = vend ? vend.nombre : 'S/N';
+                let historial = v.historial_cobros || [];
+
+                html += `<tr>
+                    <td class="td-left">${nombreVend}</td>
+                    <td class="td-id">#${v.numero_solicitud || 'S/N'}</td>
+                    <td style="font-size: 12px; color: #888;">${v.beneficio || '-'}</td>
+                    <td style="font-size: 12px; color: #888;">${v.medio_pago || '-'}</td>
+                `;
+
+                // Renderizar los 12 meses
+                for (let i = 0; i < 12; i++) {
+                    let icono = '<i class="fa-regular fa-circle icon-empty"></i>'; // Vacío por defecto
+                    if (i < historial.length) {
+                        let est = String(historial[i]).toLowerCase();
+                        if (est.includes('no cobrado') || est === 'no') {
+                            icono = '<i class="fa-solid fa-circle-xmark icon-nocobrado" title="No Cobrado"></i>';
+                        } else if (est.includes('cobrado') || est === 'si') {
+                            icono = '<i class="fa-solid fa-circle-check icon-cobrado" title="Cobrado"></i>';
+                        } else if (est.includes('baja')) {
+                            icono = '<i class="fa-solid fa-ban icon-baja" title="Baja"></i>';
+                        } else if (est.includes('inactivo')) {
+                            icono = '<i class="fa-solid fa-circle-pause icon-inactivo" title="Inactivo"></i>';
+                        } else {
+                            icono = `<span style="color:#aaa; font-size:11px;">${historial[i]}</span>`; // Por si escriben otra cosa
+                        }
+                    }
+                    html += `<td>${icono}</td>`;
+                }
+
+                html += `</tr>`;
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        function filtrarTabla() {
+            renderTabla();
+        }
+
+        function procesarExcel() {
+            const fileInput = document.getElementById('archivoExcel');
+            if (fileInput.files.length === 0) return alert("Por favor selecciona un archivo Excel.");
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            document.getElementById('loaderUpload').style.display = 'block';
+            document.getElementById('resultadoUpload').innerHTML = '';
+
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const json = XLSX.utils.sheet_to_json(worksheet);
+
+                procesarDatosSubidos(json);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        async function procesarDatosSubidos(filas) {
+            let actualizados = 0;
+            let noEncontrados = 0;
+            let ignorados = 0;
+
+            const allVentas = window.todasLasVentasParaGraficos || [];
+            
+            // Recolectar todas las promesas de actualización para hacerlas en paralelo
+            let promesasUpdate = [];
+            
+            for (let i = 0; i < filas.length; i++) {
+                let row = filas[i];
+                
+                let rowKeys = Object.keys(row);
+                let idKey = rowKeys.find(k => String(k).trim().toLowerCase() === 'id' || String(k).trim().toLowerCase() === 'id venta' || String(k).trim().toLowerCase() === 'numero_solicitud');
+                let estadoKey = rowKeys.find(k => String(k).trim().toLowerCase() === 'estado');
+
+                let nroSol = idKey ? row[idKey] : null;
+                let estadoStr = estadoKey ? row[estadoKey] : null;
+
+                if (!nroSol || !estadoStr) continue;
+                nroSol = String(nroSol).replace(/#/g, '').trim();
+                estadoStr = String(estadoStr).trim();
+
+                let ventaDB = allVentas.find(v => String(v.numero_solicitud || '').replace(/#/g, '').trim() === nroSol);
+                
+                if (ventaDB) {
+                    let historial = ventaDB.historial_cobros || [];
+                    
+                    let cobrados = historial.filter(est => {
+                        let e = String(est).toLowerCase();
+                        return (e.includes('cobrado') || e === 'si') && !e.includes('no');
+                    }).length;
+
+                    // El líder de sucursal cobra hasta 10 cuotas, por lo que ocultamos/ignoramos al llegar a 10
+                    if (historial.length >= 12 || cobrados >= 10) {
+                        ignorados++;
+                        continue;
+                    }
+
+                    historial.push(estadoStr);
+
+                    // Preparamos la promesa de actualización pero NO esperamos a que termine todavía
+                    let p = clienteSupabase.from('registro_ventas').update({ historial_cobros: historial }).eq('id', ventaDB.id);
+                    promesasUpdate.push(p);
+                    
+                    actualizados++;
+                    ventaDB.historial_cobros = historial;
+                } else {
+                    noEncontrados++;
+                }
+            }
+
+            // Ejecutar todas las actualizaciones en lotes de a 50 para no colapsar la base de datos ni el navegador
+            let batchSize = 50;
+            for (let i = 0; i < promesasUpdate.length; i += batchSize) {
+                let batch = promesasUpdate.slice(i, i + batchSize);
+                await Promise.all(batch);
+            }
+
+            document.getElementById('loaderUpload').style.display = 'none';
+            document.getElementById('resultadoUpload').innerHTML = `
+                <b>Resumen de carga:</b><br>
+                <span style="color:#2ecc71">✅ Solicitudes actualizadas: ${actualizados}</span><br>
+                <span style="color:#e74c3c">⚠️ Solicitudes no encontradas en DB: ${noEncontrados}</span><br>
+                <span style="color:#f39c12">⛔ Solicitudes ignoradas (ya tenían 12 meses): ${ignorados}</span>
+            `;
+            
+            cargarGrilla();
+        }
+
+        let filtroEstadoGraficos = 'COBRADO';
+
+        function setEstadoFiltroGraficos(estado) {
+            filtroEstadoGraficos = estado;
+            document.getElementById('btnChartCobrado').classList.toggle('active', estado === 'COBRADO');
+            document.getElementById('btnChartNoCobrado').classList.toggle('active', estado === 'NO_COBRADO');
+            renderCharts();
+        }
+
+        function renderCharts() {
+            const vendId = document.getElementById('selectVendedorChart').value;
+            const wrapper = document.getElementById('chartsWrapper');
+            const toggleWrapper = document.getElementById('chartToggleWrapper');
+            
+            if (!vendId) {
+                wrapper.style.display = 'none';
+                toggleWrapper.style.display = 'none';
+                return;
+            }
+            
+            wrapper.style.display = 'flex';
+            toggleWrapper.style.display = 'block';
+
+            let ventasVend = (window.todasLasVentasParaGraficos || []).filter(v => v.vendedor_id === vendId);
+
+            let countBeneficios = {};
+            let countBancos = {};
+            let hayDatos = false;
+
+            ventasVend.forEach(v => {
+                let h = v.historial_cobros || [];
+                h.forEach(est => {
+                    let e = String(est).toLowerCase();
+                    
+                    let esCobrado = (e.includes('cobrado') || e === 'si') && !e.includes('no');
+                    let esNoCobrado = e.includes('no cobrado') || e === 'no';
+                    
+                    let cuenta = false;
+                    if (filtroEstadoGraficos === 'COBRADO' && esCobrado) cuenta = true;
+                    if (filtroEstadoGraficos === 'NO_COBRADO' && esNoCobrado) cuenta = true;
+
+                    if (cuenta) {
+                        let ben = v.beneficio || 'Sin Especificar';
+                        let ban = v.medio_pago || 'Sin Especificar';
+                        countBeneficios[ben] = (countBeneficios[ben] || 0) + 1;
+                        countBancos[ban] = (countBancos[ban] || 0) + 1;
+                        hayDatos = true;
+                    }
+                });
+            });
+
+            document.getElementById('tituloBeneficio').innerText = (filtroEstadoGraficos === 'COBRADO' ? 'Cobrados' : 'No Cobrados') + ' por Beneficio';
+            document.getElementById('tituloBanco').innerText = (filtroEstadoGraficos === 'COBRADO' ? 'Cobrados' : 'No Cobrados') + ' por Banco';
+
+            // Función Helper para crear gráficos
+            const crearGrafico = (canvasId, type, labels, data, colors) => {
+                if (chartsInstancias[canvasId]) {
+                    chartsInstancias[canvasId].destroy();
+                }
+                const ctx = document.getElementById(canvasId).getContext('2d');
+                chartsInstancias[canvasId] = new Chart(ctx, {
+                    type: type,
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data.length > 0 ? data : [1],
+                            backgroundColor: data.length > 0 ? colors : ['#333'],
+                            borderWidth: 1,
+                            borderColor: '#111'
+                        }]
+                    },
+                    options: {
+                        plugins: {
+                            legend: { 
+                                labels: { color: '#888' },
+                                display: data.length > 0
+                            },
+                            tooltip: { enabled: data.length > 0 }
+                        }
+                    }
+                });
+            };
+
+            let colors1 = ['#A42A68', '#f1c40f', '#3498db', '#e67e22', '#2ecc71', '#9b59b6', '#1abc9c', '#e74c3c', '#34495e', '#006779'];
+            let colors2 = ['#006779', '#e67e22', '#9b59b6', '#2ecc71', '#f1c40f', '#3498db', '#e74c3c', '#1abc9c', '#A42A68', '#34495e'];
+
+            let dataBen = Object.values(countBeneficios);
+            let labelsBen = Object.keys(countBeneficios);
+            crearGrafico('chartBeneficio', 'doughnut', labelsBen.length ? labelsBen : ['Sin Datos'], dataBen, colors1);
+
+            let dataBan = Object.values(countBancos);
+            let labelsBan = Object.keys(countBancos);
+            crearGrafico('chartBanco', 'doughnut', labelsBan.length ? labelsBan : ['Sin Datos'], dataBan, colors2);
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-theme');
+        }
+
+        inicializar();
+    </script>
+</body>
+</html>

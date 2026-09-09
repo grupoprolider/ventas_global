@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Estructura de Ventas</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --bg-color: #f4f7fa;
+            --text-color: #333;
+        }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: var(--bg-color); 
+            margin: 0; 
+            padding: 20px; 
+            color: var(--text-color);
+        }
+        .header-title {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .header-title h1 {
+            color: #2c3e50;
+            margin: 0;
+            font-size: 28px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .header-title p {
+            color: #666;
+            margin-top: 5px;
+        }
+        .estructura-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+            align-items: start;
+        }
+        .agencia-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            overflow: hidden;
+            border-top: 6px solid #2c3e50;
+            page-break-inside: avoid; /* Para impresión */
+        }
+        .agencia-header {
+            padding: 15px 20px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+        .agencia-header h2 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+        .supervisor {
+            margin: 5px 0 0 0;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .equipos-container {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .equipo-box {
+            background: #fdfdfd;
+            border: 1px solid #e1e4e8;
+            border-radius: 8px;
+            padding: 12px;
+            page-break-inside: avoid; /* Para impresión */
+        }
+        .equipo-title {
+            font-size: 15px;
+            font-weight: bold;
+            color: #34495e;
+            text-align: center;
+            border-bottom: 1px dashed #ccc;
+            padding-bottom: 8px;
+            margin-bottom: 8px;
+        }
+        .equipo-jerarquia {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #555;
+            background: #f1f3f5;
+            padding: 6px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .vendedores-list {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            font-size: 13px;
+            color: #444;
+        }
+        .vendedores-list li {
+            padding: 4px 0;
+            border-bottom: 1px solid #f5f5f5;
+        }
+        .vendedores-list li:last-child {
+            border-bottom: none;
+        }
+        .vendedores-list li::before {
+            content: "•";
+            color: #c5a059;
+            font-weight: bold;
+            display: inline-block;
+            width: 1em;
+            margin-left: -1em;
+        }
+        .empty-state {
+            text-align: center;
+            color: #aaa;
+            font-style: italic;
+            padding: 10px;
+            font-size: 13px;
+        }
+        
+        @media print {
+            body { background: white; padding: 0; }
+            .estructura-grid { display: block; }
+            .agencia-card { margin-bottom: 30px; box-shadow: none; border-left: 1px solid #eee; border-right: 1px solid #eee; border-bottom: 1px solid #eee; }
+        }
+    </style>
+
+    <!-- Configuración para iOS Safari (iPhone/iPad) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Suite GPL">
+</head>
+<body>
+    <div class="header-title">
+        <h1>Organigrama Comercial</h1>
+        <p>Estructura de Ventas Consolidada - Formato Imprimible</p>
+    </div>
+    
+    <div class="estructura-grid">
+        
+            <div class="agencia-card" style="border-top-color: #e5b32a;">
+                <div class="agencia-header" style="background-color: #e5b32a15; color: #e5b32a;">
+                    <h2>Agencia Salta</h2>
+                    <p class="supervisor"><i class="fa-solid fa-user-tie"></i> Sup: PIZARRO FRANCO</p>
+                </div>
+                <div class="equipos-container">
+                    <div class="equipo-box">
+                        <div class="equipo-title">Equipo Caudillos</div>
+                        <div class="equipo-jerarquia">
+                            <span><b>Coord:</b> Sin Coord.</span>
+                            <span><b>Líder:</b> PIZARRO FRANCO</span>
+                        </div>
+                        <ul class="vendedores-list"><li>SOULE ROBERTO</li><li>OVEJERO NOEMI</li><li>MAMANI TIAGO</li><li>CHUNGARA GABRIEL</li>
+                        </ul>
+                    </div>
+                    <div class="equipo-box">
+                        <div class="equipo-title">Equipo Atenea</div>
+                        <div class="equipo-jerarquia">
+                            <span><b>Coord:</b> MEDINA RICARDO EZEQUIEL</span>
+                            <span><b>Líder:</b> MARTINEZ VALERIA</span>
+                        </div>
+                        <ul class="vendedores-list"><li>MONTANAR PABLO</li><li>GUERRA ERIKA</li><li>ACUÑA BRISA</li>
+                        </ul>
+                    </div>
+                    <div class="equipo-box">
+                        <div class="equipo-title">Equipo Leones</div>
+                        <div class="equipo-jerarquia">
+                            <span><b>Coord:</b> MEDINA RICARDO EZEQUIEL</span>
+                            <span><b>Líder:</b> MEDINA RICARDO EZEQUIEL</span>
+                        </div>
+                        <ul class="vendedores-list"><li>BRICEÑO FREDDY</li><li>CHOROJSI PABLO</li><li>CRUZ MEDINA RODRIGO</li><li>LINARES MARCELO</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="agencia-card" style="border-top-color: #2ae536;">
+                <div class="agencia-header" style="background-color: #2ae53615; color: #2ae536;">
+                    <h2>Agencia Rosario Inst</h2>
+                    <p class="supervisor"><i class="fa-solid fa-user-tie"></i> Sup: LEDESMA VERONICA</p>
+                </div>
+                <div class="equipos-container">
+                    <div class="equipo-box">
+                        <div class="equipo-title">Equipo Sinergia</div>
+                        <div class="equipo-jerarquia">
+                            <span><b>Coord:</b> Sin Coord.</span>
+                            <span><b>Líder:</b> LEDESMA VERONICA</span>
+                        </div>
+                        <ul class="vendedores-list"><li>RIQUELME JESICA</li><li>GARCIA DAMIAN</li><li>ACOSTA GUILLERMINA</li><li>BARKI NICOLAS</li><li>AMORIN PONCE MICAELA</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="agencia-card" style="border-top-color: #6d98ee;">
+                <div class="agencia-header" style="background-color: #6d98ee15; color: #6d98ee;">
+                    <h2>Agencia Rosario</h2>
+                    <p class="supervisor"><i class="fa-solid fa-user-tie"></i> Sup: DOMINGUEZ JULIAN</p>
+                </div>
+                <div class="equipos-container">
+                    <div class="equipo-box">
+                        <div class="equipo-title">Equipo Asgardianos</div>
+                        <div class="equipo-jerarquia">
+                            <span><b>Coord:</b> Sin Coord.</span>
+                            <span><b>Líder:</b> DOMINGUEZ JULIAN</span>
+                        </div>
+                        <ul class="vendedores-list"><li>RUIZ MATIAS</li><li>RODRIGUEZ DAVID</li><li>CASTELLI ALEJANDRO</li><li>BAZAN PEDRO</li><li>BORDON MATIAS</li><li>AGUIRRE TOBIAS</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="agencia-card" style="border-top-color: #c21e58;">
+                <div class="agencia-header" style="background-color: #c21e5815; color: #c21e58;">
+                    <h2>Agencia Mendoza</h2>
+                    <p class="supervisor"><i class="fa-solid fa-user-tie"></i> Sup: ORTIZ ANDRES</p>
+                </div>
+                <div class="equipos-container">
+                    <div class="equipo-box">
+                        <div class="equipo-title">Equipo Chronos</div>
+                        <div class="equipo-jerarquia">
+                            <span><b>Coord:</b> Sin Coord.</span>
+                            <span><b>Líder:</b> RECOSTA GONZALO</span>
+                        </div>
+                        <ul class="vendedores-list"><li>PASCUALOTTO RODRIGO</li><li>MALOSSI GIULIANA</li><li>MARIN JOAQUIN</li><li>MARCOVECCHIO TOMAS</li><li>CUELLO EDUARDO</li>
+                        </ul>
+                    </div>
+                    <div class="equipo-box">
+                        <div class="equipo-title">Equipo Alfa</div>
+                        <div class="equipo-jerarquia">
+                            <span><b>Coord:</b> Sin Coord.</span>
+                            <span><b>Líder:</b> LLULL KARINA</span>
+                        </div>
+                        <ul class="vendedores-list"><li>VELAZQUEZ AGUSTINA</li><li>RODRIGUEZ NAHUEL</li><li>CORBERA JOEL</li><li>FLORES MARIAN</li>
+                        </ul>
+                    </div>
+                    <div class="equipo-box">
+                        <div class="equipo-title">Equipo Expreso</div>
+                        <div class="equipo-jerarquia">
+                            <span><b>Coord:</b> Sin Coord.</span>
+                            <span><b>Líder:</b> PAEZ LEANDRO</span>
+                        </div>
+                        <ul class="vendedores-list"><li>SERNA MAXIMO</li><li>HENRIQUEZ LEONEL</li>
+                        </ul>
+                    </div>
+                    <div class="equipo-box">
+                        <div class="equipo-title">Equipo Jobs</div>
+                        <div class="equipo-jerarquia">
+                            <span><b>Coord:</b> Sin Coord.</span>
+                            <span><b>Líder:</b> ORTIZ ANDRES</span>
+                        </div>
+                        <ul class="vendedores-list"><li>ESCUDERO LAURA</li><li>BULLONES BIANCA</li><li>GRIGOR IBAÑEZ ENZO NICOLAS</li><li>CARREÑO SAMUEL</li>
+                        </ul>
+                    </div>
+                    <div class="equipo-box">
+                        <div class="equipo-title">Equipo Visionarios</div>
+                        <div class="equipo-jerarquia">
+                            <span><b>Coord:</b> BLANES ORO ARIAN NEHUEN</span>
+                            <span><b>Líder:</b> BLANES ORO ARIAN NEHUEN</span>
+                        </div>
+                        <ul class="vendedores-list"><li>RIVAS PABLO</li><li>ROLDAN LOURDES</li><li>FIGUEROA IGNACIO</li><li>SANTIBAÑEZ NICOLAS</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="agencia-card" style="border-top-color: #a80ba3;">
+                <div class="agencia-header" style="background-color: #a80ba315; color: #a80ba3;">
+                    <h2>Agencia La Plata</h2>
+                    <p class="supervisor"><i class="fa-solid fa-user-tie"></i> Sup: AGUERO FRANCO</p>
+                </div>
+                <div class="equipos-container">
+                    <div class="equipo-box">
+                        <div class="equipo-title">Equipo Impetu</div>
+                        <div class="equipo-jerarquia">
+                            <span><b>Coord:</b> PACHECO MAXIMILIANO</span>
+                            <span><b>Líder:</b> BOGADO JUAN CRUZ</span>
+                        </div>
+                        <ul class="vendedores-list"><li>FAGUAGA EMILIANO</li><li>ZORRAINDO FACUNDO</li><li>MOSQUEDA MAXIMILIANO</li><li>BARRAGAN CRISTIAN</li>
+                        </ul>
+                    </div>
+                    <div class="equipo-box">
+                        <div class="equipo-title">Equipo Astros</div>
+                        <div class="equipo-jerarquia">
+                            <span><b>Coord:</b> PACHECO MAXIMILIANO</span>
+                            <span><b>Líder:</b> PACHECO MAXIMILIANO</span>
+                        </div>
+                        <ul class="vendedores-list"><li>GAUNA LUCIANO</li><li>MIGANI DANIELA</li><li>ZALAZAR ALEXIS</li><li>CEBALLOS NICOLAS</li><li>VIDELA FEDERICO</li><li>PIZARRO JUAN MANUEL</li><li>CORA BERENICE</li>
+                        </ul>
+                    </div>
+                    <div class="equipo-box">
+                        <div class="equipo-title">Equipo Vetta</div>
+                        <div class="equipo-jerarquia">
+                            <span><b>Coord:</b> PACHECO MAXIMILIANO</span>
+                            <span><b>Líder:</b> RAHN SOFÍA</span>
+                        </div>
+                        <ul class="vendedores-list"><li>MANSILLA MARIANO</li><li>LOIKO RODRIGO</li><li>GOMEZ NATALIA</li><li>BLANCO JAZMIN</li><li>CHERNIAVSKY DANA</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="agencia-card" style="border-top-color: #c6e006;">
+                <div class="agencia-header" style="background-color: #c6e00615; color: #c6e006;">
+                    <h2>Agencia Corrientes</h2>
+                    <p class="supervisor"><i class="fa-solid fa-user-tie"></i> Sup: FERNANDEZ HECTOR</p>
+                </div>
+                <div class="equipos-container">
+                    <div class="equipo-box">
+                        <div class="equipo-title">Equipo Arcadios</div>
+                        <div class="equipo-jerarquia">
+                            <span><b>Coord:</b> Sin Coord.</span>
+                            <span><b>Líder:</b> FERNANDEZ HECTOR</span>
+                        </div>
+                        <ul class="vendedores-list"><li>ESCALANTE JONATAN</li><li>MOLINA MAURICIO</li><li>DOMINGUEZ ELIAS</li><li>ARREJIN WALTER</li><li>PISARELLO GONZALO</li>
+                        </ul>
+                    </div>
+                    <div class="equipo-box">
+                        <div class="equipo-title">Equipo Horizonte</div>
+                        <div class="equipo-jerarquia">
+                            <span><b>Coord:</b> Sin Coord.</span>
+                            <span><b>Líder:</b> MAIDANA ANDRÉS</span>
+                        </div>
+                        <ul class="vendedores-list"><li>TAGLIAPIETRA GONZALO</li><li>ORTIZ HERNAN</li><li>ACOSTA HERNAN</li>
+                        </ul>
+                    </div>
+                    <div class="equipo-box">
+                        <div class="equipo-title">Equipo Gedeon</div>
+                        <div class="equipo-jerarquia">
+                            <span><b>Coord:</b> SOLAN FEDERICO</span>
+                            <span><b>Líder:</b> SOLAN FEDERICO</span>
+                        </div>
+                        <ul class="vendedores-list"><li>GIORASI AGUSTIN</li><li>DUETTE DANIEL</li><li>VALENZUELA PABLO</li><li>HERNANDEZ RODRIGO</li>
+                        </ul>
+                    </div>
+                    <div class="equipo-box">
+                        <div class="equipo-title">Equipo Tenaces</div>
+                        <div class="equipo-jerarquia">
+                            <span><b>Coord:</b> SOLAN FEDERICO</span>
+                            <span><b>Líder:</b> ARREGIN GONZALO NAHUEL</span>
+                        </div>
+                        <ul class="vendedores-list"><li>TAGLIAPIETRA OSCAR</li><li>FLORES LAUTARO</li><li>ROMERO LISANDRO</li><li>BENITEZ FERNANDO</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="agencia-card" style="border-top-color: #074183;">
+                <div class="agencia-header" style="background-color: #07418315; color: #074183;">
+                    <h2>Agencia Cordoba</h2>
+                    <p class="supervisor"><i class="fa-solid fa-user-tie"></i> Sup: AGUERO FRANCO</p>
+                </div>
+                <div class="equipos-container">
+                    <div class="equipo-box">
+                        <div class="equipo-title">Equipo Aguilas</div>
+                        <div class="equipo-jerarquia">
+                            <span><b>Coord:</b> DELGADO MAXIMILIANO</span>
+                            <span><b>Líder:</b> DELGADO MAXIMILIANO</span>
+                        </div>
+                        <ul class="vendedores-list"><li>VILLARREAL DIEGO</li><li>GONZALEZ LUCIANO</li><li>AVEDAÑO LEONEL</li><li>DE LOS RIOS LAUTARO</li>
+                        </ul>
+                    </div>
+                    <div class="equipo-box">
+                        <div class="equipo-title">Equipo Vanguardia</div>
+                        <div class="equipo-jerarquia">
+                            <span><b>Coord:</b> CANOVAS SHEILA</span>
+                            <span><b>Líder:</b> CANOVAS SHEILA</span>
+                        </div>
+                        <ul class="vendedores-list"><li>MONTOYA RODRIGO</li><li>PERALTA CELESTE</li><li>MARMOL JAVIER</li><li>JUAREZ CAMILA</li><li>BALLESTERO GABRIELA</li><li>BENAVIDEZ DARIO</li>
+                        </ul>
+                    </div>
+                    <div class="equipo-box">
+                        <div class="equipo-title">Equipo Kaizen</div>
+                        <div class="equipo-jerarquia">
+                            <span><b>Coord:</b> CANOVAS SHEILA</span>
+                            <span><b>Líder:</b> MARTINEZ ALEJO</span>
+                        </div>
+                        <ul class="vendedores-list"><li>PALOMEQUE EXEQUIEL</li><li>TURCHI CANDELARIA</li><li>MARTINEZ ERIC</li><li>AZAR LUCIANO</li>
+                        </ul>
+                    </div>
+                    <div class="equipo-box">
+                        <div class="equipo-title">Equipo Diamond</div>
+                        <div class="equipo-jerarquia">
+                            <span><b>Coord:</b> DELGADO MAXIMILIANO</span>
+                            <span><b>Líder:</b> JUAREZ MARIANO</span>
+                        </div>
+                        <ul class="vendedores-list"><li>VELEZ JUNCOS IVAN</li><li>ARDILES ALEXANDER</li>
+                        </ul>
+                    </div>
+                    <div class="equipo-box">
+                        <div class="equipo-title">Equipo Bastiones</div>
+                        <div class="equipo-jerarquia">
+                            <span><b>Coord:</b> CANOVAS SHEILA</span>
+                            <span><b>Líder:</b> ARGUELLO AARON</span>
+                        </div>
+                        <ul class="vendedores-list"><li>SALINAS LAUTARO</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="agencia-card" style="border-top-color: #f7a78d;">
+                <div class="agencia-header" style="background-color: #f7a78d15; color: #f7a78d;">
+                    <h2>Agencia Casa Central</h2>
+                    <p class="supervisor"><i class="fa-solid fa-user-tie"></i> Sup: NICOLAU MARCELA</p>
+                </div>
+                <div class="equipos-container">
+                    <div class="equipo-box">
+                        <div class="equipo-title">Equipo Koi</div>
+                        <div class="equipo-jerarquia">
+                            <span><b>Coord:</b> Sin Coord.</span>
+                            <span><b>Líder:</b> NICOLAU MARCELA</span>
+                        </div>
+                        <ul class="vendedores-list"><li>OLIVA PAULA</li><li>RODRIGUEZ FEDERICO</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="agencia-card" style="border-top-color: #b07b07;">
+                <div class="agencia-header" style="background-color: #b07b0715; color: #b07b07;">
+                    <h2>Agencia Capital Federal</h2>
+                    <p class="supervisor"><i class="fa-solid fa-user-tie"></i> Sup: AGUERO FRANCO</p>
+                </div>
+                <div class="equipos-container">
+                    <div class="equipo-box">
+                        <div class="equipo-title">Equipo Bodegueros BA</div>
+                        <div class="equipo-jerarquia">
+                            <span><b>Coord:</b> Sin Coord.</span>
+                            <span><b>Líder:</b> AGUERO FRANCO</span>
+                        </div>
+                        <ul class="vendedores-list"><li>ALONSO SANTIAGO</li>
+                        </ul>
+                    </div>
+                    <div class="equipo-box">
+                        <div class="equipo-title">Equipo Blessed</div>
+                        <div class="equipo-jerarquia">
+                            <span><b>Coord:</b> Sin Coord.</span>
+                            <span><b>Líder:</b> YBAÑES AGUSTIN IGNACIO</span>
+                        </div>
+                        <ul class="vendedores-list"><li>MELLACE GISELA</li><li>VALENZUELA GIULIANA</li><li>VISETTI FRANCO</li><li>BRACAMONTE LUCAS</li>
+                        </ul>
+                    </div>
+                    <div class="equipo-box">
+                        <div class="equipo-title">Equipo Stark</div>
+                        <div class="equipo-jerarquia">
+                            <span><b>Coord:</b> Sin Coord.</span>
+                            <span><b>Líder:</b> MORENO JOSE</span>
+                        </div>
+                        <ul class="vendedores-list"><li>JUAREZ MICAELA</li><li>FRENOUX AGUSTIN</li><li>BERRIOS NELWIS</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+    </div>
+</body>
+</html>
