@@ -172,7 +172,17 @@
             
         }
 
-    </style>
+    
+        .hide-btn {
+            cursor: pointer;
+            color: #888;
+            margin-left: 5px;
+            font-size: 10px;
+        }
+        .hide-btn:hover {
+            color: #333;
+        }
+</style>
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -365,7 +375,7 @@
                     });
                     matrixHtml += '<th class="th-semana" style="cursor:pointer;" onclick="toggleSemana(\'' + sem.id + '\')">' + sem.nombre_semana + ' <i id="icon-sem-'+sem.id+'" class="fa-solid fa-square-plus"></i><br><small>(Obj: ' + sem.objetivo + ')</small></th>';
                 });
-                matrixHtml += '<th class="th-totales">Ventas</th><th class="th-totales" style="color:#e74c3c;">Bajas</th><th class="th-totales">Ventas Netas</th><th class="th-totales">Monto Vendido</th></tr></thead><tbody>';
+                matrixHtml += '<th class="th-totales col-ventas" style="border-left:3px solid #ccc !important;">Ventas <i class="fa-solid fa-eye-slash hide-btn" onclick="toggleCol(\'col-ventas\')" title="Ocultar"></i></th><th class="th-totales col-bajas" style="color:#e74c3c;">Bajas <i class="fa-solid fa-eye-slash hide-btn" onclick="toggleCol(\'col-bajas\')" title="Ocultar"></i></th><th class="th-totales col-netas">Ventas Netas <i class="fa-solid fa-eye-slash hide-btn" onclick="toggleCol(\'col-netas\')" title="Ocultar"></i></th><th class="th-totales col-monto">Monto Vendido <i class="fa-solid fa-eye-slash hide-btn" onclick="toggleCol(\'col-monto\')" title="Ocultar"></i></th></tr></thead><tbody>';
 
                 let filtroAgenciaId = document.getElementById('filtroAgencia') ? document.getElementById('filtroAgencia').value : 'todas';
                 let validEquipos = equipos.filter(eq => {
@@ -510,10 +520,10 @@
                             matrixHtml += '<td class="obj-cell ' + colorClass + '" style="'+tdStyle+'">' + displaySem + '</td>';
                         });
 
-                        matrixHtml += '<td style="font-weight:bold; ' + tdStyle + '">' + miBrutas + '</td>';
-                        matrixHtml += '<td style="font-weight:bold; color:#e74c3c; ' + tdStyle + '">' + miBajas + '</td>';
-                        matrixHtml += '<td style="font-weight:bold; ' + tdStyle + '">' + miNetas + '</td>';
-                        matrixHtml += '<td style="' + tdStyle + '">\$' + miTotalMonto.toLocaleString('es-AR') + '</td>';
+                        matrixHtml += '<td class="col-ventas" style="font-weight:bold; background-color:#f1f5f9; font-size:13px; border-left:3px solid #ccc !important; ' + tdStyle + '">' + miBrutas + '</td>';
+                        matrixHtml += '<td class="col-bajas" style="font-weight:bold; color:#e74c3c; background-color:#fdf2f2; font-size:13px; ' + tdStyle + '">' + miBajas + '</td>';
+                        matrixHtml += '<td class="col-netas" style="font-weight:bold; background-color:#f0fdf4; font-size:13px; ' + tdStyle + '">' + miNetas + '</td>';
+                        matrixHtml += '<td class="col-monto" style="' + tdStyle + '">$' + miTotalMonto.toLocaleString('es-AR') + '</td>';
                         matrixHtml += '</tr>';
                     });
 
@@ -544,10 +554,10 @@
                         
                         matrixHtml += '<td style="' + tdStyle + ' border-top:none;">' + displaySem + '</td>';
                     });
-                    matrixHtml += '<td style="' + tdStyle + ' border-top:none;">' + totalEqBrutas + '</td>';
-                    matrixHtml += '<td style="' + tdStyle + ' border-top:none; color:#ffcccc;">' + totalEqBajas + '</td>';
-                    matrixHtml += '<td style="' + tdStyle + ' border-top:none;">' + totalEqNetas + '</td>';
-                    matrixHtml += '<td style="' + tdStyle + ' border-top:none;">\$' + totalEqMonto.toLocaleString('es-AR') + '</td>';
+                    matrixHtml += '<td class="col-ventas" style="border-left:3px solid #ccc !important; ' + tdStyle + ' border-top:none;">' + totalEqBrutas + '</td>';
+                    matrixHtml += '<td class="col-bajas" style="' + tdStyle + ' border-top:none; color:#ffcccc;">' + totalEqBajas + '</td>';
+                    matrixHtml += '<td class="col-netas" style="' + tdStyle + ' border-top:none;">' + totalEqNetas + '</td>';
+                    matrixHtml += '<td class="col-monto" style="' + tdStyle + ' border-top:none;">$' + totalEqMonto.toLocaleString('es-AR') + '</td>';
                     matrixHtml += '</tr>';
                     
                     // ACCUMULATE INTO TOTAL SUCURSAL
@@ -604,10 +614,10 @@
                             
                             matrixHtml += '<td style="' + borderStyle + '">' + displaySem + '</td>';
                         });
-                        matrixHtml += '<td style="' + borderStyle + '">' + totalesAgencia.brutas + '</td>';
-                        matrixHtml += '<td style="' + borderStyle + '; color:#ffcccc;">' + totalesAgencia.bajas + '</td>';
-                        matrixHtml += '<td style="' + borderStyle + '">' + totalesAgencia.netas + '</td>';
-                        matrixHtml += '<td style="' + borderStyle + '">\$' + totalesAgencia.monto.toLocaleString('es-AR') + '</td>';
+                        matrixHtml += '<td class="col-ventas" style="border-left:3px solid #ccc !important; ' + borderStyle + '">' + totalesAgencia.brutas + '</td>';
+                        matrixHtml += '<td class="col-bajas" style="' + borderStyle + '; color:#ffcccc;">' + totalesAgencia.bajas + '</td>';
+                        matrixHtml += '<td class="col-netas" style="' + borderStyle + '">' + totalesAgencia.netas + '</td>';
+                        matrixHtml += '<td class="col-monto" style="' + borderStyle + '">$' + totalesAgencia.monto.toLocaleString('es-AR') + '</td>';
                         matrixHtml += '</tr>';
                         
                         // Accumulate into Empresa
@@ -662,10 +672,10 @@
                     
                     matrixHtml += '<td style="' + empStyle + '">' + displaySem + '</td>';
                 });
-                matrixHtml += '<td style="' + empStyle + '">' + totalesEmpresa.brutas + '</td>';
-                matrixHtml += '<td style="' + empStyle + '; color:#ffcccc;">' + totalesEmpresa.bajas + '</td>';
-                matrixHtml += '<td style="' + empStyle + '">' + totalesEmpresa.netas + '</td>';
-                matrixHtml += '<td style="' + empStyle + '">\$' + totalesEmpresa.monto.toLocaleString('es-AR') + '</td>';
+                matrixHtml += '<td class="col-ventas" style="border-left:3px solid #ccc !important; ' + empStyle + '">' + totalesEmpresa.brutas + '</td>';
+                matrixHtml += '<td class="col-bajas" style="' + empStyle + '; color:#ffcccc;">' + totalesEmpresa.bajas + '</td>';
+                matrixHtml += '<td class="col-netas" style="' + empStyle + '">' + totalesEmpresa.netas + '</td>';
+                matrixHtml += '<td class="col-monto" style="' + empStyle + '">$' + totalesEmpresa.monto.toLocaleString('es-AR') + '</td>';
                 matrixHtml += '</tr>';
 
                 matrixHtml += '</tbody></table>';
@@ -677,6 +687,21 @@
         }
 
         
+        
+        window.toggleCol = function(className) {
+            let cols = document.querySelectorAll('.' + className);
+            let icon = document.querySelector('.' + className + ' .hide-btn');
+            
+            // Determine if we are hiding or showing based on the first cell
+            let isHidden = cols.length > 0 && cols[0].style.display === 'none';
+            
+            cols.forEach(c => c.style.display = isHidden ? 'table-cell' : 'none');
+            
+            if(icon) {
+                icon.className = isHidden ? 'fa-solid fa-eye-slash hide-btn' : 'fa-solid fa-eye hide-btn';
+            }
+        };
+
         window.toggleSemana = function(id) {
             let cols = document.querySelectorAll('.day-col-' + id);
             let icon = document.getElementById('icon-sem-' + id);
