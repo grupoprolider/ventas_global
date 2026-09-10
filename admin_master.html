@@ -1201,7 +1201,7 @@
                                             beneficio: orig.beneficio + " (ANULACIÓN EXCEL)",
                                             medio_pago: orig.medio_pago,
                                             es_anulada: false,
-                                            created_at: new Date().toISOString(),
+                                            created_at: orig.created_at,
                                             numero_solicitud: nroSol + "_BAJA"
                                         };
                                         window.operacionesExcelPendientes.push({ tipo: 'insert', data: objContra });
@@ -1225,7 +1225,7 @@
                                             beneficio: altaPendiente.data.beneficio + " (ANULACIÓN EXCEL)",
                                             medio_pago: altaPendiente.data.medio_pago,
                                             es_anulada: false,
-                                            created_at: new Date().toISOString(),
+                                            created_at: altaPendiente.data.created_at,
                                             numero_solicitud: nroSol + "_BAJA"
                                         };
                                         window.operacionesExcelPendientes.push({ tipo: 'insert', data: objContra });

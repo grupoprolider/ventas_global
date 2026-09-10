@@ -43,9 +43,12 @@
         }
         .btn-volver:hover { background: rgba(0,0,0,0.1); color: #333; }
         
+        
         .table-container {
             width: 100%;
             overflow-x: auto;
+            overflow-y: auto;
+            max-height: 75vh;
             background: #fff;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             border-radius: 8px;
@@ -53,16 +56,17 @@
         
         table {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate; border-spacing: 0;
             background: white;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             border: 1px solid #ddd;
         }
         
         th, td {
-            padding: 8px 5px; /* Compact padding */
+            padding: 8px 5px;
             text-align: center;
-            border: 1px solid #ddd; /* Borders added */
+            border-right: 1px solid #ddd;
+            border-bottom: 1px solid #ddd;
             font-size: 13px;
         }
 
@@ -113,6 +117,61 @@
             color: white;
             font-weight: bold;
         }
+    
+        
+        /* Congelar encabezados verticales */
+        #tabla-seguimiento thead th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background-color: var(--gpl-dorado);
+            /* Removed outline, using box-shadow for visual separation */
+            box-shadow: 0 1px 1px #ccc;
+        }
+
+        /* Congelar las 3 primeras columnas horizontales en el THEAD */
+        #tabla-seguimiento thead th:nth-child(1) { position: sticky; left: 0; z-index: 15; min-width: 90px; max-width: 90px; background-color: var(--gpl-dorado); border-right: 1px solid #ccc; }
+        #tabla-seguimiento thead th:nth-child(2) { position: sticky; left: 90px; z-index: 15; min-width: 220px; max-width: 220px; background-color: var(--gpl-dorado); border-right: 1px solid #ccc; }
+        #tabla-seguimiento thead th:nth-child(3) { position: sticky; left: 310px; z-index: 15; min-width: 140px; max-width: 140px; background-color: var(--gpl-dorado); border-right: 1px solid #ccc; }
+
+        /* Congelar las 3 primeras columnas horizontales en el TBODY (Solo filas normales) */
+        #tabla-seguimiento tbody tr:not(.row-equipo-total):not(.row-sucursal-total):not(.row-empresa-total) td:nth-child(1) {
+            position: sticky; left: 0; z-index: 5; background-color: white; 
+        }
+        #tabla-seguimiento tbody tr:not(.row-equipo-total):not(.row-sucursal-total):not(.row-empresa-total) td:nth-child(2) {
+            position: sticky; left: 90px; z-index: 5; background-color: white;  white-space: normal;
+        }
+        #tabla-seguimiento tbody tr:not(.row-equipo-total):not(.row-sucursal-total):not(.row-empresa-total) td:nth-child(3) {
+            position: sticky; left: 310px; z-index: 5; background-color: white; 
+        }
+
+        /* Filas de totales (tienen colspan=3 en la primera celda) */
+        #tabla-seguimiento tbody tr.row-empresa-total td:nth-child(1) {
+            position: sticky;
+            left: 0;
+            z-index: 5;
+            background-color: #000 !important;
+            color: white;
+            border-right: 1px solid #ddd;
+        }
+
+        #tabla-seguimiento tbody tr.row-equipo-total td:nth-child(1) {
+            position: sticky;
+            left: 0;
+            z-index: 5;
+            background-color: var(--gpl-petroleo) !important;
+            color: white;
+            
+        }
+        #tabla-seguimiento tbody tr.row-sucursal-total td:nth-child(1) {
+            position: sticky;
+            left: 0;
+            z-index: 5;
+            background-color: #A42A68 !important;
+            color: white;
+            
+        }
+
     </style>
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -157,13 +216,34 @@
             let tableCont = document.getElementById("contenedor-tabla");
             if (!tableCont) return alert("No hay datos para exportar.");
             
-            // Backup the display of buttons if we had any inside, but here the container just holds the table.
-            html2canvas(tableCont, { scale: 2 }).then(canvas => {
-                let link = document.createElement("a");
-                link.download = "Seguimiento_" + document.getElementById('titulo-campana').innerText.trim() + ".png";
-                link.href = canvas.toDataURL("image/png");
-                link.click();
-            });
+            // Fix overflow and maxHeight to prevent cropping
+            let originalMaxHeight = tableCont.style.maxHeight;
+            let originalOverflowY = tableCont.style.overflowY;
+            let originalOverflowX = tableCont.style.overflowX;
+            tableCont.style.maxHeight = 'none';
+            tableCont.style.overflowY = 'visible';
+            tableCont.style.overflowX = 'visible';
+
+            // html2canvas sometimes needs a small delay to register layout changes
+            setTimeout(() => {
+                html2canvas(tableCont, { scale: 2, useCORS: true, logging: false }).then(canvas => {
+                    // Restore original styles
+                    tableCont.style.maxHeight = originalMaxHeight;
+                    tableCont.style.overflowY = originalOverflowY;
+                    tableCont.style.overflowX = originalOverflowX;
+
+                    let link = document.createElement("a");
+                    link.download = "Seguimiento_" + document.getElementById('titulo-campana').innerText.trim() + ".png";
+                    link.href = canvas.toDataURL("image/png");
+                    link.click();
+                }).catch(err => {
+                    console.error(err);
+                    tableCont.style.maxHeight = originalMaxHeight;
+                    tableCont.style.overflowY = originalOverflowY;
+                    tableCont.style.overflowX = originalOverflowX;
+                    alert("Error al exportar PNG");
+                });
+            }, 100);
         }
 
         function exportarExcel() {
@@ -247,7 +327,9 @@
                     let dFin = new Date(fechaFinStr + 'T23:59:59');
                     let vts = ventas.filter(v => v.vendedor_id === vendedorId);
                     let vtsEnRango = vts.filter(v => { let d = new Date(v.created_at); return d >= dIni && d <= dFin; });
-                    return vtsEnRango.reduce((sum, v) => sum + Number(v.ventas_cerradas || 0) - Number(v.bajas || 0), 0);
+                    let brutas = vtsEnRango.reduce((sum, v) => sum + Number(v.ventas_cerradas || 0), 0);
+                    let bajas = vtsEnRango.reduce((sum, v) => sum + Number(v.bajas || 0), 0);
+                    return { brutas, bajas, netas: brutas - bajas };
                 };
                 
                 const getVentasEnDia = (vendedorId, fechaStr) => {
@@ -255,7 +337,9 @@
                     let dFin = new Date(fechaStr + 'T23:59:59');
                     let vts = ventas.filter(v => v.vendedor_id === vendedorId);
                     let vtsEnRango = vts.filter(v => { let d = new Date(v.created_at); return d >= dIni && d <= dFin; });
-                    return vtsEnRango.reduce((sum, v) => sum + Number(v.ventas_cerradas || 0) - Number(v.bajas || 0), 0);
+                    let brutas = vtsEnRango.reduce((sum, v) => sum + Number(v.ventas_cerradas || 0), 0);
+                    let bajas = vtsEnRango.reduce((sum, v) => sum + Number(v.bajas || 0), 0);
+                    return { brutas, bajas, netas: brutas - bajas };
                 };
 
                 // Calcular dias por semana
@@ -281,18 +365,9 @@
                     });
                     matrixHtml += '<th class="th-semana" style="cursor:pointer;" onclick="toggleSemana(\'' + sem.id + '\')">' + sem.nombre_semana + ' <i id="icon-sem-'+sem.id+'" class="fa-solid fa-square-plus"></i><br><small>(Obj: ' + sem.objetivo + ')</small></th>';
                 });
-                matrixHtml += '<th class="th-totales">Ventas Totales</th><th class="th-totales">Monto Vendido</th></tr></thead><tbody>';
-
-                
-
-                                equipos.sort((a,b) => {
-                    let nomA = agencias.find(x => x.id === a.agencia_id)?.nombre || '';
-                    let nomB = agencias.find(x => x.id === b.agencia_id)?.nombre || '';
-                    return nomA.localeCompare(nomB) || a.nombre.localeCompare(b.nombre);
-                });
+                matrixHtml += '<th class="th-totales">Ventas</th><th class="th-totales" style="color:#e74c3c;">Bajas</th><th class="th-totales">Ventas Netas</th><th class="th-totales">Monto Vendido</th></tr></thead><tbody>';
 
                 let filtroAgenciaId = document.getElementById('filtroAgencia') ? document.getElementById('filtroAgencia').value : 'todas';
-
                 let validEquipos = equipos.filter(eq => {
                     if (filtroAgenciaId !== 'todas' && eq.agencia_id !== filtroAgenciaId) return false;
                     let vends = perfiles.filter(p => {
@@ -307,10 +382,31 @@
                     return vends.length > 0;
                 });
 
-                let totalesAgencia = { ventas: 0, monto: 0 };
-                let agSemTotals = Array(semanas.length).fill(0);
+                
+                validEquipos.sort((a, b) => {
+                    let agA = agencias.find(ag => ag.id === a.agencia_id);
+                    let agB = agencias.find(ag => ag.id === b.agencia_id);
+                    let nombreA = agA ? agA.nombre : '';
+                    let nombreB = agB ? agB.nombre : '';
+                    if (nombreA < nombreB) return -1;
+                    if (nombreA > nombreB) return 1;
+                    if (a.nombre < b.nombre) return -1;
+                    if (a.nombre > b.nombre) return 1;
+                    return 0;
+                });
+
+                let totalesAgencia = { brutas: 0, bajas: 0, netas: 0, monto: 0 };
+                let agSemTotals = Array(semanas.length).fill(0).map(() => ({ brutas: 0, bajas: 0, netas: 0 }));
                 let agDayTotals = {};
-                semanas.forEach(sem => { agDayTotals[sem.id] = Array(diasPorSemana[sem.id].length).fill(0); });
+                
+                let totalesEmpresa = { brutas: 0, bajas: 0, netas: 0, monto: 0 };
+                let empSemTotals = Array(semanas.length).fill(0).map(() => ({ brutas: 0, bajas: 0, netas: 0 }));
+                let empDayTotals = {};
+                
+                semanas.forEach(sem => { 
+                    agDayTotals[sem.id] = Array(diasPorSemana[sem.id].length).fill(0).map(() => ({ brutas: 0, bajas: 0, netas: 0 }));
+                    empDayTotals[sem.id] = Array(diasPorSemana[sem.id].length).fill(0).map(() => ({ brutas: 0, bajas: 0, netas: 0 }));
+                });
                 
                 validEquipos.forEach((eq, index) => {
                     let agencia = agencias.find(a => a.id === eq.agencia_id);
@@ -326,21 +422,42 @@
                         return true;
                     });
 
-                    let totalEqVentas = 0;
+                    
+                    vendsEquipo.sort((a, b) => {
+                        let vA = ventas.filter(vent => vent.vendedor_id === a.id);
+                        let netasA = vA.reduce((sum, vent) => sum + Number(vent.ventas_cerradas || 0) - Number(vent.bajas || 0), 0);
+                        
+                        let vB = ventas.filter(vent => vent.vendedor_id === b.id);
+                        let netasB = vB.reduce((sum, vent) => sum + Number(vent.ventas_cerradas || 0) - Number(vent.bajas || 0), 0);
+                        
+                        if (netasA > netasB) return -1;
+                        if (netasA < netasB) return 1;
+                        
+                        if (a.nombre < b.nombre) return -1;
+                        if (a.nombre > b.nombre) return 1;
+                        return 0;
+                    });
+                    let totalEqBrutas = 0;
+                    let totalEqBajas = 0;
+                    let totalEqNetas = 0;
                     let totalEqMonto = 0;
-                    let semTotals = Array(semanas.length).fill(0);
+                    let semTotals = Array(semanas.length).fill(0).map(() => ({ brutas: 0, bajas: 0, netas: 0 }));
                     let dayEqTotals = {}; 
-                    semanas.forEach(sem => { dayEqTotals[sem.id] = Array(diasPorSemana[sem.id].length).fill(0); });
+                    semanas.forEach(sem => { dayEqTotals[sem.id] = Array(diasPorSemana[sem.id].length).fill(0).map(() => ({ brutas: 0, bajas: 0, netas: 0 })); });
 
                     let agColor = agencia && agencia.color_hex ? agencia.color_hex : '#ddd';
-                    let tdStyle = 'border: 2px solid ' + agColor + ';';
+                    let tdStyle = 'border-right: 2px solid ' + agColor + '; border-bottom: 2px solid ' + agColor + ';';
                     
                     vendsEquipo.forEach(v => {
                         let misVentas = ventas.filter(vent => vent.vendedor_id === v.id);
-                        let miTotalVentas = misVentas.reduce((sum, vent) => sum + Number(vent.ventas_cerradas || 0) - Number(vent.bajas || 0), 0);
+                        let miBrutas = misVentas.reduce((sum, vent) => sum + Number(vent.ventas_cerradas || 0), 0);
+                        let miBajas = misVentas.reduce((sum, vent) => sum + Number(vent.bajas || 0), 0);
+                        let miNetas = miBrutas - miBajas;
                         let miTotalMonto = misVentas.reduce((sum, vent) => sum + Number(vent.monto || 0), 0);
 
-                        totalEqVentas += miTotalVentas;
+                        totalEqBrutas += miBrutas;
+                        totalEqBajas += miBajas;
+                        totalEqNetas += miNetas;
                         totalEqMonto += miTotalMonto;
 
                         matrixHtml += '<tr>';
@@ -354,25 +471,49 @@
                         matrixHtml += '<td style="'+tdStyle+'">' + eq.nombre + '</td>';
 
                         semanas.forEach((sem, idx) => {
-                            let vNetas = getVentasEnSemana(v.id, sem.fecha_inicio, sem.fecha_fin);
-                            semTotals[idx] += vNetas;
+                            let vSem = getVentasEnSemana(v.id, sem.fecha_inicio, sem.fecha_fin);
+                            semTotals[idx].brutas += vSem.brutas;
+                            semTotals[idx].bajas += vSem.bajas;
+                            semTotals[idx].netas += vSem.netas;
                             
                             let colorClass = 'color-red';
                             if (sem.objetivo === 0) colorClass = '';
-                            else if (vNetas >= sem.objetivo) colorClass = 'color-green';
-                            else if (vNetas > 0) colorClass = 'color-yellow';
+                            else if (vSem.netas >= sem.objetivo) colorClass = 'color-green';
+                            else if (vSem.netas > 0) colorClass = 'color-yellow';
                             
                             // Celdas diarias
                             diasPorSemana[sem.id].forEach((dStr, dIdx) => {
                                 let vDia = getVentasEnDia(v.id, dStr);
-                                dayEqTotals[sem.id][dIdx] += vDia;
-                                matrixHtml += '<td class="day-col-'+sem.id+'" style="display:none; '+tdStyle+' font-size:12px; color:#555;">' + (vDia > 0 ? vDia : '-') + '</td>';
+                                dayEqTotals[sem.id][dIdx].brutas += vDia.brutas;
+                                dayEqTotals[sem.id][dIdx].bajas += vDia.bajas;
+                                dayEqTotals[sem.id][dIdx].netas += vDia.netas;
+                                
+                                let displayDia = '';
+                                if (vDia.brutas > 0) displayDia += vDia.brutas;
+                                if (vDia.bajas > 0) {
+                                    if (displayDia !== '') displayDia += ' ';
+                                    displayDia += '<span style="color:#e74c3c; font-weight:bold;">(-' + vDia.bajas + ')</span>';
+                                }
+                                if (displayDia === '') displayDia = '-';
+                                
+                                matrixHtml += '<td class="day-col-'+sem.id+'" style="display:none; '+tdStyle+' font-size:12px; color:#555;">' + displayDia + '</td>';
                             });
-                            matrixHtml += '<td class="obj-cell ' + colorClass + '" style="'+tdStyle+'">' + vNetas + '</td>';
+                            
+                            let displaySem = '';
+                            if (vSem.brutas > 0) displaySem += vSem.brutas;
+                            if (vSem.bajas > 0) {
+                                if (displaySem !== '') displaySem += ' ';
+                                displaySem += '<span style="color:#c0392b; font-weight:bold;">(-' + vSem.bajas + ')</span>';
+                            }
+                            if (displaySem === '') displaySem = '0';
+                            
+                            matrixHtml += '<td class="obj-cell ' + colorClass + '" style="'+tdStyle+'">' + displaySem + '</td>';
                         });
 
-                        matrixHtml += '<td style="font-weight:bold; ' + tdStyle + '">' + miTotalVentas + '</td>';
-                        matrixHtml += '<td style="' + tdStyle + '">$' + miTotalMonto.toLocaleString('es-AR') + '</td>';
+                        matrixHtml += '<td style="font-weight:bold; ' + tdStyle + '">' + miBrutas + '</td>';
+                        matrixHtml += '<td style="font-weight:bold; color:#e74c3c; ' + tdStyle + '">' + miBajas + '</td>';
+                        matrixHtml += '<td style="font-weight:bold; ' + tdStyle + '">' + miNetas + '</td>';
+                        matrixHtml += '<td style="' + tdStyle + '">\$' + miTotalMonto.toLocaleString('es-AR') + '</td>';
                         matrixHtml += '</tr>';
                     });
 
@@ -382,21 +523,47 @@
                     semanas.forEach((sem, idx) => {
                         diasPorSemana[sem.id].forEach((dStr, dIdx) => {
                              let vTot = dayEqTotals[sem.id][dIdx];
-                             matrixHtml += '<td class="day-col-'+sem.id+'" style="display:none; '+tdStyle+' border-top:none; font-size:12px; color:#ccc;">' + (vTot > 0 ? vTot : '-') + '</td>';
+                             let displayDia = '';
+                             if (vTot.brutas > 0) displayDia += vTot.brutas;
+                             if (vTot.bajas > 0) {
+                                 if (displayDia !== '') displayDia += ' ';
+                                 displayDia += '<span style="color:#ffcccc; font-weight:bold;">(-' + vTot.bajas + ')</span>';
+                             }
+                             if (displayDia === '') displayDia = '-';
+                             matrixHtml += '<td class="day-col-'+sem.id+'" style="display:none; '+tdStyle+' border-top:none; font-size:12px; color:#fff;">' + displayDia + '</td>';
                         });
-                        matrixHtml += '<td style="' + tdStyle + ' border-top:none;">' + semTotals[idx] + '</td>';
+                        
+                        let vSem = semTotals[idx];
+                        let displaySem = '';
+                        if (vSem.brutas > 0) displaySem += vSem.brutas;
+                        if (vSem.bajas > 0) {
+                            if (displaySem !== '') displaySem += ' ';
+                            displaySem += '<span style="color:#ffcccc; font-weight:bold;">(-' + vSem.bajas + ')</span>';
+                        }
+                        if (displaySem === '') displaySem = '0';
+                        
+                        matrixHtml += '<td style="' + tdStyle + ' border-top:none;">' + displaySem + '</td>';
                     });
-                    matrixHtml += '<td style="' + tdStyle + ' border-top:none;">' + totalEqVentas + '</td>';
+                    matrixHtml += '<td style="' + tdStyle + ' border-top:none;">' + totalEqBrutas + '</td>';
+                    matrixHtml += '<td style="' + tdStyle + ' border-top:none; color:#ffcccc;">' + totalEqBajas + '</td>';
+                    matrixHtml += '<td style="' + tdStyle + ' border-top:none;">' + totalEqNetas + '</td>';
                     matrixHtml += '<td style="' + tdStyle + ' border-top:none;">\$' + totalEqMonto.toLocaleString('es-AR') + '</td>';
                     matrixHtml += '</tr>';
                     
                     // ACCUMULATE INTO TOTAL SUCURSAL
-                    totalesAgencia.ventas += totalEqVentas;
+                    totalesAgencia.brutas += totalEqBrutas;
+                    totalesAgencia.bajas += totalEqBajas;
+                    totalesAgencia.netas += totalEqNetas;
                     totalesAgencia.monto += totalEqMonto;
+                    
                     semanas.forEach((sem, idx) => {
-                        agSemTotals[idx] += semTotals[idx];
+                        agSemTotals[idx].brutas += semTotals[idx].brutas;
+                        agSemTotals[idx].bajas += semTotals[idx].bajas;
+                        agSemTotals[idx].netas += semTotals[idx].netas;
                         diasPorSemana[sem.id].forEach((dStr, dIdx) => {
-                            agDayTotals[sem.id][dIdx] += dayEqTotals[sem.id][dIdx];
+                            agDayTotals[sem.id][dIdx].brutas += dayEqTotals[sem.id][dIdx].brutas;
+                            agDayTotals[sem.id][dIdx].bajas += dayEqTotals[sem.id][dIdx].bajas;
+                            agDayTotals[sem.id][dIdx].netas += dayEqTotals[sem.id][dIdx].netas;
                         });
                     });
 
@@ -410,27 +577,96 @@
 
                     if (isLastForAgencia) {
                         let darkBg = '#A42A68'; // Match the user's header/total color
-                        let borderStyle = 'border: 2px solid ' + agColor + ' !important;';
-                        matrixHtml += '<tr style="background-color: ' + darkBg + '; color: white; font-weight: bold;">';
+                        let borderStyle = 'border-right: 2px solid ' + agColor + '; border-bottom: 2px solid ' + agColor + ';';
+                        matrixHtml += '<tr class="row-sucursal-total" style="background-color: ' + darkBg + '; color: white; font-weight: bold;">';
                         matrixHtml += '<td colspan="3" style="text-align:center; ' + borderStyle + '">TOTAL SUCURSAL ' + nombreAgencia.toUpperCase() + '</td>';
                         semanas.forEach((sem, idx) => {
                             diasPorSemana[sem.id].forEach((dStr, dIdx) => {
                                  let vTot = agDayTotals[sem.id][dIdx];
-                                 matrixHtml += '<td class="day-col-'+sem.id+'" style="display:none; '+borderStyle+' font-size:12px; color:#fff;">' + (vTot > 0 ? vTot : '-') + '</td>';
+                                 let displayDia = '';
+                                 if (vTot.brutas > 0) displayDia += vTot.brutas;
+                                 if (vTot.bajas > 0) {
+                                     if (displayDia !== '') displayDia += ' ';
+                                     displayDia += '<span style="color:#ffcccc; font-weight:bold;">(-' + vTot.bajas + ')</span>';
+                                 }
+                                 if (displayDia === '') displayDia = '-';
+                                 matrixHtml += '<td class="day-col-'+sem.id+'" style="display:none; '+borderStyle+' font-size:12px; color:#fff;">' + displayDia + '</td>';
                             });
-                            matrixHtml += '<td style="' + borderStyle + '">' + agSemTotals[idx] + '</td>';
+                            
+                            let vSem = agSemTotals[idx];
+                            let displaySem = '';
+                            if (vSem.brutas > 0) displaySem += vSem.brutas;
+                            if (vSem.bajas > 0) {
+                                if (displaySem !== '') displaySem += ' ';
+                                displaySem += '<span style="color:#ffcccc; font-weight:bold;">(-' + vSem.bajas + ')</span>';
+                            }
+                            if (displaySem === '') displaySem = '0';
+                            
+                            matrixHtml += '<td style="' + borderStyle + '">' + displaySem + '</td>';
                         });
-                        matrixHtml += '<td style="' + borderStyle + '">' + totalesAgencia.ventas + '</td>';
+                        matrixHtml += '<td style="' + borderStyle + '">' + totalesAgencia.brutas + '</td>';
+                        matrixHtml += '<td style="' + borderStyle + '; color:#ffcccc;">' + totalesAgencia.bajas + '</td>';
+                        matrixHtml += '<td style="' + borderStyle + '">' + totalesAgencia.netas + '</td>';
                         matrixHtml += '<td style="' + borderStyle + '">\$' + totalesAgencia.monto.toLocaleString('es-AR') + '</td>';
                         matrixHtml += '</tr>';
+                        
+                        // Accumulate into Empresa
+                        totalesEmpresa.brutas += totalesAgencia.brutas;
+                        totalesEmpresa.bajas += totalesAgencia.bajas;
+                        totalesEmpresa.netas += totalesAgencia.netas;
+                        totalesEmpresa.monto += totalesAgencia.monto;
+                        
+                        semanas.forEach((sem, idx) => {
+                            empSemTotals[idx].brutas += agSemTotals[idx].brutas;
+                            empSemTotals[idx].bajas += agSemTotals[idx].bajas;
+                            empSemTotals[idx].netas += agSemTotals[idx].netas;
+                            diasPorSemana[sem.id].forEach((dStr, dIdx) => {
+                                empDayTotals[sem.id][dIdx].brutas += agDayTotals[sem.id][dIdx].brutas;
+                                empDayTotals[sem.id][dIdx].bajas += agDayTotals[sem.id][dIdx].bajas;
+                                empDayTotals[sem.id][dIdx].netas += agDayTotals[sem.id][dIdx].netas;
+                            });
+                        });
 
                         // Reset accumulators for next branch
-                        totalesAgencia.ventas = 0;
-                        totalesAgencia.monto = 0;
-                        agSemTotals = Array(semanas.length).fill(0);
-                        semanas.forEach(sem => { agDayTotals[sem.id] = Array(diasPorSemana[sem.id].length).fill(0); });
+                        totalesAgencia = { brutas: 0, bajas: 0, netas: 0, monto: 0 };
+                        agSemTotals = Array(semanas.length).fill(0).map(() => ({ brutas: 0, bajas: 0, netas: 0 }));
+                        semanas.forEach(sem => { agDayTotals[sem.id] = Array(diasPorSemana[sem.id].length).fill(0).map(() => ({ brutas: 0, bajas: 0, netas: 0 })); });
                     }
                 });
+                
+                // FINAL: TOTAL EMPRESA ROW
+                let empStyle = 'border-right: 2px solid #ccc; border-bottom: 2px solid #ccc;';
+                matrixHtml += '<tr class="row-empresa-total" style="background-color: #000; color: #fff; font-weight: bold; font-size: 14px;">';
+                matrixHtml += '<td colspan="3" style="text-align:center; ' + empStyle + '">TOTAL EMPRESA</td>';
+                semanas.forEach((sem, idx) => {
+                    diasPorSemana[sem.id].forEach((dStr, dIdx) => {
+                         let vTot = empDayTotals[sem.id][dIdx];
+                         let displayDia = '';
+                         if (vTot.brutas > 0) displayDia += vTot.brutas;
+                         if (vTot.bajas > 0) {
+                             if (displayDia !== '') displayDia += ' ';
+                             displayDia += '<span style="color:#ffcccc; font-weight:bold;">(-' + vTot.bajas + ')</span>';
+                         }
+                         if (displayDia === '') displayDia = '-';
+                         matrixHtml += '<td class="day-col-'+sem.id+'" style="display:none; '+empStyle+' color:#fff;">' + displayDia + '</td>';
+                    });
+                    
+                    let vSem = empSemTotals[idx];
+                    let displaySem = '';
+                    if (vSem.brutas > 0) displaySem += vSem.brutas;
+                    if (vSem.bajas > 0) {
+                        if (displaySem !== '') displaySem += ' ';
+                        displaySem += '<span style="color:#ffcccc; font-weight:bold;">(-' + vSem.bajas + ')</span>';
+                    }
+                    if (displaySem === '') displaySem = '0';
+                    
+                    matrixHtml += '<td style="' + empStyle + '">' + displaySem + '</td>';
+                });
+                matrixHtml += '<td style="' + empStyle + '">' + totalesEmpresa.brutas + '</td>';
+                matrixHtml += '<td style="' + empStyle + '; color:#ffcccc;">' + totalesEmpresa.bajas + '</td>';
+                matrixHtml += '<td style="' + empStyle + '">' + totalesEmpresa.netas + '</td>';
+                matrixHtml += '<td style="' + empStyle + '">\$' + totalesEmpresa.monto.toLocaleString('es-AR') + '</td>';
+                matrixHtml += '</tr>';
 
                 matrixHtml += '</tbody></table>';
                 document.getElementById('contenedor-tabla').innerHTML = matrixHtml;
