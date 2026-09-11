@@ -222,9 +222,13 @@
 
         
         
-        function exportarPNG() {
+        async function exportarPNG() {
             let tableCont = document.getElementById("contenedor-tabla");
             if (!tableCont) return alert("No hay datos para exportar.");
+            
+            let btn = document.querySelector('button[onclick="exportarPNG()"]');
+            let originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generando...';
             
             // Fix overflow and maxHeight to prevent cropping
             let originalMaxHeight = tableCont.style.maxHeight;
@@ -234,33 +238,88 @@
             tableCont.style.overflowY = 'visible';
             tableCont.style.overflowX = 'visible';
 
-            // html2canvas sometimes needs a small delay to register layout changes
-            setTimeout(() => {
-                html2canvas(tableCont, { scale: 2, useCORS: true, logging: false }).then(canvas => {
-                    // Restore original styles
+            setTimeout(async () => {
+                try {
+                    let canvas = await html2canvas(tableCont, { scale: 2, useCORS: true, logging: false });
+                    
                     tableCont.style.maxHeight = originalMaxHeight;
                     tableCont.style.overflowY = originalOverflowY;
                     tableCont.style.overflowX = originalOverflowX;
+                    
+                    let filename = "Seguimiento_" + document.getElementById('titulo-campana').innerText.trim() + ".png";
+                    let dataUrl = canvas.toDataURL("image/png");
+                    
+                    // Web Share API support for modern mobile devices (iOS/Android PWA)
+                    if (navigator.canShare && window.fetch) {
+                        try {
+                            let blob = await (await fetch(dataUrl)).blob();
+                            let file = new File([blob], filename, { type: "image/png" });
+                            if (navigator.canShare({ files: [file] })) {
+                                await navigator.share({
+                                    files: [file],
+                                    title: 'Seguimiento GPL',
+                                    text: 'Tablero de Seguimiento'
+                                });
+                                btn.innerHTML = originalText;
+                                return;
+                            }
+                        } catch (shareErr) {
+                            console.log("Share API failed or cancelled", shareErr);
+                        }
+                    }
 
+                    // Fallback for desktop or unsupported Web Share
                     let link = document.createElement("a");
-                    link.download = "Seguimiento_" + document.getElementById('titulo-campana').innerText.trim() + ".png";
-                    link.href = canvas.toDataURL("image/png");
-                    link.click();
-                }).catch(err => {
+                    link.download = filename;
+                    link.href = dataUrl;
+                    link.click(); 
+                    
+                    btn.innerHTML = originalText;
+                } catch(err) {
                     console.error(err);
                     tableCont.style.maxHeight = originalMaxHeight;
                     tableCont.style.overflowY = originalOverflowY;
                     tableCont.style.overflowX = originalOverflowX;
                     alert("Error al exportar PNG");
-                });
+                    btn.innerHTML = originalText;
+                }
             }, 100);
         }
 
-        function exportarExcel() {
+        async function exportarExcel() {
             let table = document.getElementById("tabla-seguimiento");
             if (!table) return alert("No hay datos para exportar.");
             let wb = XLSX.utils.table_to_book(table, {sheet:"Seguimiento"});
-            XLSX.writeFile(wb, "Seguimiento_Semanal_" + document.getElementById('titulo-campana').innerText.trim() + ".xlsx");
+            let filename = "Seguimiento_Semanal_" + document.getElementById('titulo-campana').innerText.trim() + ".xlsx";
+            
+            let btn = document.querySelector('button[onclick="exportarExcel()"]');
+            let originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generando...';
+            
+            setTimeout(async () => {
+                if (navigator.canShare && window.fetch && XLSX.write) {
+                    try {
+                        let wbout = XLSX.write(wb, { bookType:'xlsx', type:'array' });
+                        let blob = new Blob([wbout], { type: "application/octet-stream" });
+                        let file = new File([blob], filename, { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+                        
+                        if (navigator.canShare({ files: [file] })) {
+                            await navigator.share({
+                                files: [file],
+                                title: 'Seguimiento GPL Excel'
+                            });
+                            btn.innerHTML = originalText;
+                            return;
+                        }
+                    } catch(e) {
+                        console.log("Share API Excel fallback", e);
+                    }
+                }
+                
+                // Fallback
+                XLSX.writeFile(wb, filename);
+                btn.innerHTML = originalText;
+            }, 100);
         }
 
         async function cargarData() {
@@ -500,10 +559,7 @@
                                 
                                 let displayDia = '';
                                 if (vDia.brutas > 0) displayDia += vDia.brutas;
-                                if (vDia.bajas > 0) {
-                                    if (displayDia !== '') displayDia += ' ';
-                                    displayDia += '<span style="color:#e74c3c; font-weight:bold;">(-' + vDia.bajas + ')</span>';
-                                }
+                                
                                 if (displayDia === '') displayDia = '-';
                                 
                                 matrixHtml += '<td class="day-col-'+sem.id+'" style="display:none; '+tdStyle+' font-size:12px; color:#555;">' + displayDia + '</td>';
@@ -511,10 +567,7 @@
                             
                             let displaySem = '';
                             if (vSem.brutas > 0) displaySem += vSem.brutas;
-                            if (vSem.bajas > 0) {
-                                if (displaySem !== '') displaySem += ' ';
-                                displaySem += '<span style="color:#c0392b; font-weight:bold;">(-' + vSem.bajas + ')</span>';
-                            }
+                            
                             if (displaySem === '') displaySem = '0';
                             
                             matrixHtml += '<td class="obj-cell ' + colorClass + '" style="'+tdStyle+'">' + displaySem + '</td>';
@@ -535,10 +588,7 @@
                              let vTot = dayEqTotals[sem.id][dIdx];
                              let displayDia = '';
                              if (vTot.brutas > 0) displayDia += vTot.brutas;
-                             if (vTot.bajas > 0) {
-                                 if (displayDia !== '') displayDia += ' ';
-                                 displayDia += '<span style="color:#ffcccc; font-weight:bold;">(-' + vTot.bajas + ')</span>';
-                             }
+                             
                              if (displayDia === '') displayDia = '-';
                              matrixHtml += '<td class="day-col-'+sem.id+'" style="display:none; '+tdStyle+' border-top:none; font-size:12px; color:#fff;">' + displayDia + '</td>';
                         });
@@ -546,10 +596,7 @@
                         let vSem = semTotals[idx];
                         let displaySem = '';
                         if (vSem.brutas > 0) displaySem += vSem.brutas;
-                        if (vSem.bajas > 0) {
-                            if (displaySem !== '') displaySem += ' ';
-                            displaySem += '<span style="color:#ffcccc; font-weight:bold;">(-' + vSem.bajas + ')</span>';
-                        }
+                        
                         if (displaySem === '') displaySem = '0';
                         
                         matrixHtml += '<td style="' + tdStyle + ' border-top:none;">' + displaySem + '</td>';
@@ -595,10 +642,7 @@
                                  let vTot = agDayTotals[sem.id][dIdx];
                                  let displayDia = '';
                                  if (vTot.brutas > 0) displayDia += vTot.brutas;
-                                 if (vTot.bajas > 0) {
-                                     if (displayDia !== '') displayDia += ' ';
-                                     displayDia += '<span style="color:#ffcccc; font-weight:bold;">(-' + vTot.bajas + ')</span>';
-                                 }
+                                 
                                  if (displayDia === '') displayDia = '-';
                                  matrixHtml += '<td class="day-col-'+sem.id+'" style="display:none; '+borderStyle+' font-size:12px; color:#fff;">' + displayDia + '</td>';
                             });
@@ -606,10 +650,7 @@
                             let vSem = agSemTotals[idx];
                             let displaySem = '';
                             if (vSem.brutas > 0) displaySem += vSem.brutas;
-                            if (vSem.bajas > 0) {
-                                if (displaySem !== '') displaySem += ' ';
-                                displaySem += '<span style="color:#ffcccc; font-weight:bold;">(-' + vSem.bajas + ')</span>';
-                            }
+                            
                             if (displaySem === '') displaySem = '0';
                             
                             matrixHtml += '<td style="' + borderStyle + '">' + displaySem + '</td>';
@@ -653,10 +694,7 @@
                          let vTot = empDayTotals[sem.id][dIdx];
                          let displayDia = '';
                          if (vTot.brutas > 0) displayDia += vTot.brutas;
-                         if (vTot.bajas > 0) {
-                             if (displayDia !== '') displayDia += ' ';
-                             displayDia += '<span style="color:#ffcccc; font-weight:bold;">(-' + vTot.bajas + ')</span>';
-                         }
+                         
                          if (displayDia === '') displayDia = '-';
                          matrixHtml += '<td class="day-col-'+sem.id+'" style="display:none; '+empStyle+' color:#fff;">' + displayDia + '</td>';
                     });
@@ -664,10 +702,7 @@
                     let vSem = empSemTotals[idx];
                     let displaySem = '';
                     if (vSem.brutas > 0) displaySem += vSem.brutas;
-                    if (vSem.bajas > 0) {
-                        if (displaySem !== '') displaySem += ' ';
-                        displaySem += '<span style="color:#ffcccc; font-weight:bold;">(-' + vSem.bajas + ')</span>';
-                    }
+                    
                     if (displaySem === '') displaySem = '0';
                     
                     matrixHtml += '<td style="' + empStyle + '">' + displaySem + '</td>';
