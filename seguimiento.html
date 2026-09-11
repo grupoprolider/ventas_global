@@ -234,17 +234,20 @@
             let originalMaxHeight = tableCont.style.maxHeight;
             let originalOverflowY = tableCont.style.overflowY;
             let originalOverflowX = tableCont.style.overflowX;
+            let originalWidth = tableCont.style.width;
             tableCont.style.maxHeight = 'none';
             tableCont.style.overflowY = 'visible';
             tableCont.style.overflowX = 'visible';
+            tableCont.style.width = 'max-content';
 
             setTimeout(async () => {
                 try {
-                    let canvas = await html2canvas(tableCont, { scale: 2, useCORS: true, logging: false });
+                    let canvas = await html2canvas(tableCont, { scale: 2, useCORS: true, logging: false, width: tableCont.scrollWidth, windowWidth: tableCont.scrollWidth });
                     
                     tableCont.style.maxHeight = originalMaxHeight;
                     tableCont.style.overflowY = originalOverflowY;
                     tableCont.style.overflowX = originalOverflowX;
+                    tableCont.style.width = originalWidth;
                     
                     let filename = "Seguimiento_" + document.getElementById('titulo-campana').innerText.trim() + ".png";
                     let dataUrl = canvas.toDataURL("image/png");
