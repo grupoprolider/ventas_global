@@ -199,6 +199,11 @@
             <select id="filtroAgencia" onchange="cargarData()" style="padding:10px; border-radius:5px; border:1px solid #ddd; font-size:14px; outline:none; cursor:pointer;">
                 <option value="todas">Todas las Sucursales</option>
             </select>
+            <select id="filtroCategoria" onchange="cargarData()" style="padding:10px; border-radius:5px; border:1px solid #ddd; font-size:14px; outline:none; cursor:pointer;">
+                <option value="todas">Todas las Categorías</option>
+                <option value="Senior">Solo Senior</option>
+                <option value="Junior">Solo Junior</option>
+            </select>
             <button onclick="exportarExcel()" style="background:#27ae60; color:white; border:none; padding:10px 15px; border-radius:5px; font-weight:bold; cursor:pointer;"><i class="fa-solid fa-file-excel"></i> Descargar Excel</button>
             <button onclick="exportarPNG()" style="background:var(--gpl-dorado); color:white; border:none; padding:10px 15px; border-radius:5px; font-weight:bold; cursor:pointer;"><i class="fa-solid fa-image"></i> Descargar PNG</button>
         </div>
@@ -351,7 +356,7 @@
                 }
 
                 // Traer catálogos
-                                const { data: perfiles } = await clienteSupabase.from('perfiles').select('id, nombre, equipo_id, rol');
+                                const { data: perfiles } = await clienteSupabase.from('perfiles').select('id, nombre, equipo_id, rol, categoria');
                 const { data: equipos } = await clienteSupabase.from('equipos').select('id, nombre, agencia_id');
                 const { data: agencias } = await clienteSupabase.from('agencias').select('id, nombre, color_hex');
                 
@@ -440,6 +445,7 @@
                 matrixHtml += '<th class="th-totales col-ventas" style="border-left:3px solid #ccc !important;">Ventas <i class="fa-solid fa-eye-slash hide-btn" onclick="toggleCol(\'col-ventas\')" title="Ocultar"></i></th><th class="th-totales col-bajas" style="color:#e74c3c;">Bajas <i class="fa-solid fa-eye-slash hide-btn" onclick="toggleCol(\'col-bajas\')" title="Ocultar"></i></th><th class="th-totales col-netas">Ventas Netas <i class="fa-solid fa-eye-slash hide-btn" onclick="toggleCol(\'col-netas\')" title="Ocultar"></i></th><th class="th-totales col-monto">Monto Vendido <i class="fa-solid fa-eye-slash hide-btn" onclick="toggleCol(\'col-monto\')" title="Ocultar"></i></th></tr></thead><tbody>';
 
                 let filtroAgenciaId = document.getElementById('filtroAgencia') ? document.getElementById('filtroAgencia').value : 'todas';
+                let filtroCategoria = document.getElementById('filtroCategoria') ? document.getElementById('filtroCategoria').value : 'todas';
 
                 // Validar ventas huerfanas (fuera de las fechas de las semanas)
                 let validDates = new Set();
@@ -479,6 +485,7 @@
                     if (filtroAgenciaId !== 'todas' && eq.agencia_id !== filtroAgenciaId) return false;
                     let vends = perfiles.filter(p => {
                         if (p.equipo_id !== eq.id) return false;
+                        if (filtroCategoria !== 'todas' && p.categoria !== filtroCategoria) return false;
                         if (p.nombre.includes('(BAJA)')) {
                             let mis = ventas.filter(vent => vent.vendedor_id === p.id);
                             let mTot = mis.reduce((sum, vent) => sum + Number(vent.ventas_cerradas || 0) - Number(vent.bajas || 0), 0);
@@ -521,6 +528,7 @@
                     
                     let vendsEquipo = perfiles.filter(p => {
                         if (p.equipo_id !== eq.id) return false;
+                        if (filtroCategoria !== 'todas' && p.categoria !== filtroCategoria) return false;
                         if (p.nombre.includes('(BAJA)')) {
                             let misVentas = ventas.filter(vent => vent.vendedor_id === p.id);
                             let miTotalVentas = misVentas.reduce((sum, vent) => sum + Number(vent.ventas_cerradas || 0) - Number(vent.bajas || 0), 0);
