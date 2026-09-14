@@ -440,6 +440,41 @@
                 matrixHtml += '<th class="th-totales col-ventas" style="border-left:3px solid #ccc !important;">Ventas <i class="fa-solid fa-eye-slash hide-btn" onclick="toggleCol(\'col-ventas\')" title="Ocultar"></i></th><th class="th-totales col-bajas" style="color:#e74c3c;">Bajas <i class="fa-solid fa-eye-slash hide-btn" onclick="toggleCol(\'col-bajas\')" title="Ocultar"></i></th><th class="th-totales col-netas">Ventas Netas <i class="fa-solid fa-eye-slash hide-btn" onclick="toggleCol(\'col-netas\')" title="Ocultar"></i></th><th class="th-totales col-monto">Monto Vendido <i class="fa-solid fa-eye-slash hide-btn" onclick="toggleCol(\'col-monto\')" title="Ocultar"></i></th></tr></thead><tbody>';
 
                 let filtroAgenciaId = document.getElementById('filtroAgencia') ? document.getElementById('filtroAgencia').value : 'todas';
+
+                // Validar ventas huerfanas (fuera de las fechas de las semanas)
+                let validDates = new Set();
+                Object.values(diasPorSemana).forEach(dias => dias.forEach(d => validDates.add(d)));
+                
+                let ventasHuerfanas = ventas.filter(v => {
+                    // Ajustar a timezone local para que coincida con el dia que se muestra en la web
+                    let d = new Date(v.created_at);
+                    let dStr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+                    return !validDates.has(dStr);
+                });
+                
+                if (ventasHuerfanas.length > 0) {
+                    let container = document.getElementById('contenedor-tabla');
+                    let warnDiv = document.createElement('div');
+                    warnDiv.style.padding = "15px";
+                    warnDiv.style.backgroundColor = "#fff3cd";
+                    warnDiv.style.border = "1px solid #ffeeba";
+                    warnDiv.style.color = "#856404";
+                    warnDiv.style.borderRadius = "5px";
+                    warnDiv.style.marginBottom = "15px";
+                    warnDiv.style.fontWeight = "bold";
+                    
+                    let detalle = ventasHuerfanas.map(v => {
+                        let p = perfiles.find(per => per.id === v.vendedor_id);
+                        let nom = p ? p.nombre : 'Desconocido';
+                        let d = new Date(v.created_at);
+                        return nom + " (" + d.toLocaleDateString('es-AR') + ")";
+                    }).join(", ");
+                    
+                    warnDiv.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> <b>¡ATENCIÓN!</b> Se encontraron ' + ventasHuerfanas.length + ' registro(s) (ventas/bajas) cuyas fechas caen en días no mapeados por las semanas de la campaña (por ejemplo, fines de semana). Estos registros suman en los totales finales pero NO se ven en la grilla diaria. Detalle: <br><span style="font-weight:normal; font-size:12px;">' + detalle + '</span>';
+                    
+                    container.parentNode.insertBefore(warnDiv, container);
+                }
+
                 let validEquipos = equipos.filter(eq => {
                     if (filtroAgenciaId !== 'todas' && eq.agencia_id !== filtroAgenciaId) return false;
                     let vends = perfiles.filter(p => {
@@ -607,7 +642,7 @@
                     matrixHtml += '<td class="col-ventas" style="border-left:3px solid #ccc !important; ' + tdStyle + ' border-top:none;">' + totalEqBrutas + '</td>';
                     matrixHtml += '<td class="col-bajas" style="' + tdStyle + ' border-top:none; color:#ffcccc;">' + totalEqBajas + '</td>';
                     matrixHtml += '<td class="col-netas" style="' + tdStyle + ' border-top:none;">' + totalEqNetas + '</td>';
-                    matrixHtml += '<td class="col-monto" style="' + tdStyle + ' border-top:none;">$' + totalEqMonto.toLocaleString('es-AR') + '</td>';
+                    matrixHtml += '<td class="col-monto" style="' + tdStyle + ' border-top:none;">-</td>';
                     matrixHtml += '</tr>';
                     
                     // ACCUMULATE INTO TOTAL SUCURSAL
@@ -661,7 +696,7 @@
                         matrixHtml += '<td class="col-ventas" style="border-left:3px solid #ccc !important; ' + borderStyle + '">' + totalesAgencia.brutas + '</td>';
                         matrixHtml += '<td class="col-bajas" style="' + borderStyle + '; color:#ffcccc;">' + totalesAgencia.bajas + '</td>';
                         matrixHtml += '<td class="col-netas" style="' + borderStyle + '">' + totalesAgencia.netas + '</td>';
-                        matrixHtml += '<td class="col-monto" style="' + borderStyle + '">$' + totalesAgencia.monto.toLocaleString('es-AR') + '</td>';
+                        matrixHtml += '<td class="col-monto" style="' + borderStyle + '">-</td>';
                         matrixHtml += '</tr>';
                         
                         // Accumulate into Empresa
@@ -713,7 +748,7 @@
                 matrixHtml += '<td class="col-ventas" style="border-left:3px solid #ccc !important; ' + empStyle + '">' + totalesEmpresa.brutas + '</td>';
                 matrixHtml += '<td class="col-bajas" style="' + empStyle + '; color:#ffcccc;">' + totalesEmpresa.bajas + '</td>';
                 matrixHtml += '<td class="col-netas" style="' + empStyle + '">' + totalesEmpresa.netas + '</td>';
-                matrixHtml += '<td class="col-monto" style="' + empStyle + '">$' + totalesEmpresa.monto.toLocaleString('es-AR') + '</td>';
+                matrixHtml += '<td class="col-monto" style="' + empStyle + '">-</td>';
                 matrixHtml += '</tr>';
 
                 matrixHtml += '</tbody></table>';

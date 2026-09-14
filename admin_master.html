@@ -211,7 +211,7 @@
 
         .empty-state {
             text-align: center;
-            color: #777;
+            color: #ddd;
             padding: 20px;
             font-style: italic;
         }
@@ -394,9 +394,21 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
                     <h3 style="margin: 0;">Auditoría de Ventas</h3>
                     <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                        <input type="date" id="filtro_fecha_audit" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc;">
+                        <div style="display:flex; align-items:center; gap:5px; background:white; padding: 2px 5px; border-radius: 4px;">
+                            <span style="color: #444; font-size:12px; font-weight:bold;">Desde:</span>
+                            <input type="date" id="filtro_fecha_desde_audit" style="color: #333; border:none; outline:none; padding:3px; font-size:14px; background:transparent;">
+                        </div>
+                        <div style="display:flex; align-items:center; gap:5px; background:white; padding: 2px 5px; border-radius: 4px;">
+                            <span style="color: #444; font-size:12px; font-weight:bold;">Hasta:</span>
+                            <input type="date" id="filtro_fecha_hasta_audit" style="color: #333; border:none; outline:none; padding:3px; font-size:14px; background:transparent;">
+                        </div>
                         <select id="filtro_vendedor_audit" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc; max-width: 200px;">
                             <option value="">Todos los vendedores</option>
+                        </select>
+                        <select id="filtro_tipo_audit" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc; max-width: 200px;">
+                            <option value="">Todo (Ventas y Bajas)</option>
+                            <option value="ventas">Solo Ventas</option>
+                            <option value="bajas">Solo Bajas</option>
                         </select>
                         <button onclick="cargarAuditoria()" style="padding: 5px 15px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;"><i class="fa-solid fa-search"></i> Filtrar</button>
                     </div>
@@ -855,8 +867,12 @@
 
         // --- SISTEMA DE AUDITORÍA Y ASIENTOS DE REVERSIÓN ---
         async function cargarAuditoria() {
-            let fecha = document.getElementById('filtro_fecha_audit').value;
+            let dDesde = document.getElementById('filtro_fecha_desde_audit');
+            let dHasta = document.getElementById('filtro_fecha_hasta_audit');
+            let fechaDesde = dDesde ? dDesde.value : '';
+            let fechaHasta = dHasta ? dHasta.value : '';
             let vendedorId = document.getElementById('filtro_vendedor_audit').value;
+            let tipoOp = document.getElementById('filtro_tipo_audit') ? document.getElementById('filtro_tipo_audit').value : '';
 
             const hoy = new Date();
             const campanaActual = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
@@ -864,8 +880,10 @@
             let query = clienteSupabase.from('registro_ventas').select('*').eq('campana', campanaActual).order('created_at', { ascending: false });
 
             if (vendedorId) query = query.eq('vendedor_id', vendedorId);
-            if (fecha) {
-                query = query.gte('created_at', fecha + "T00:00:00").lte('created_at', fecha + "T23:59:59");
+            if (fechaDesde) query = query.gte('created_at', fechaDesde + "T00:00:00");
+            if (fechaHasta) query = query.lte('created_at', fechaHasta + "T23:59:59");
+            
+            if (fechaDesde || fechaHasta || tipoOp === 'bajas') {
                 
                 let vtas = [];
                 let step = 1000, fromRow = 0;
@@ -889,6 +907,12 @@
                 console.error("Error cargando auditoría:", error);
                 return;
             }
+            
+            if (tipoOp === 'ventas') {
+                data = data.filter(v => (v.ventas_cerradas && v.ventas_cerradas > 0));
+            } else if (tipoOp === 'bajas') {
+                data = data.filter(v => (v.bajas && v.bajas > 0));
+            }
 
             // Filtrar registros que sean pura entrevista (sin ventas ni bajas ni reversiones)
             let datosReales = data.filter(v => (v.ventas_cerradas > 0) || (v.bajas > 0) || (v.monto < 0) || v.beneficio?.includes('BAJA'));
@@ -903,7 +927,7 @@
                 let nombreVendedor = globalGenteAudit.find(p => p.id === v.vendedor_id)?.nombre || 'Desconocido';
                 
                 let esReversion = v.monto < 0 || v.beneficio?.includes("BAJA");
-                let estiloFila = esReversion ? "background: #fff0f0;" : "";
+                let estiloFila = esReversion ? "background: #fff0f0; color: #222;" : "";
                 
                 let btnAccion = '';
                 if (esReversion) {
