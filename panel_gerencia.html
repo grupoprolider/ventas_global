@@ -202,8 +202,9 @@
             padding: 15px 20px;
             cursor: pointer;
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-start;
             align-items: center;
+            gap: 15px;
             background: #fff;
             transition: 0.2s;
         }
@@ -217,6 +218,9 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            width: 250px;
+            min-width: 250px;
+            flex-shrink: 0;
         }
         .ag-stats-row {
             display: flex;
@@ -238,10 +242,16 @@
         }
         .eq-row {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-start;
             align-items: center;
+            gap: 15px;
             padding: 8px 0;
             border-bottom: 1px solid #eee;
+        }
+        .eq-row > div:first-child {
+            width: 230px;
+            min-width: 230px;
+            flex-shrink: 0;
         }
         .eq-row:last-child {
             border-bottom: none;
@@ -1320,7 +1330,7 @@
                                     <span class="eq-name">${eq.nombre}</span><br>
                                     <span class="eq-lider"><i class="fa-solid fa-crown" style="color:#f1c40f;"></i> ${eq.lider}</span>
                                 </div>
-                                <div class="eq-metrics" style="flex-wrap: wrap; justify-content: flex-end;">
+                                <div class="eq-metrics" style="flex-wrap: wrap;">
                                     <div><span style="color:#888; font-size:9px;">V. Netas</span><strong style="color:#2ecc71;">${eq.netas}</strong></div>
                                     <div><span style="color:#888; font-size:9px;">Bajas</span><strong style="color:#e74c3c;">${eq.bajas}</strong></div>
                                     <div><span style="color:#888; font-size:9px;">Obj</span><strong>${eq.objetivo}</strong></div>

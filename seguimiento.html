@@ -196,6 +196,9 @@
         <a href="index.html" class="btn-volver" style="margin-bottom:0;"><i class="fa-solid fa-arrow-left"></i> Volver al Inicio</a>
         
         <div style="display:flex; gap:10px; align-items:center;">
+            <select id="filtroCampana" onchange="cargarData(true)" style="padding:10px; border-radius:5px; border:1px solid #ddd; font-size:14px; outline:none; cursor:pointer; background:#f8f9fa; font-weight:bold; color:var(--gpl-petroleo);">
+                <option value="">Cargando...</option>
+            </select>
             <select id="filtroAgencia" onchange="cargarData()" style="padding:10px; border-radius:5px; border:1px solid #ddd; font-size:14px; outline:none; cursor:pointer;">
                 <option value="todas">Todas las Sucursales</option>
             </select>
@@ -330,10 +333,8 @@
             }, 100);
         }
 
-        async function cargarData() {
+        async function cargarData(isManualChange = false) {
             try {
-                // Calcular campaña actual
-                
                 // Traer todas las semanas
                 const { data: todasSemanas } = await clienteSupabase
                     .from('semanas_config')
@@ -343,9 +344,31 @@
                 let semanas = [];
                 let campanaActual = 'Sin Campaña';
                 if (todasSemanas && todasSemanas.length > 0) {
-                    // Agrupar por la campaña que tiene la semana más reciente o actual
-                    // Simplemente tomamos la campaña de la última semana configurada
-                    campanaActual = todasSemanas[todasSemanas.length - 1].campana;
+                    let campanasUnicas = [...new Set(todasSemanas.map(s => s.campana))];
+                    let selector = document.getElementById('filtroCampana');
+                    
+                    if (!isManualChange || selector.options.length <= 1) {
+                        const hoy = new Date();
+                        let mesActual = hoy.getMonth();
+                        let anioActual = hoy.getFullYear();
+                        if (hoy.getDate() >= 16) mesActual++;
+                        if (mesActual > 11) { mesActual = 0; anioActual++; }
+                        const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+                        let campanaCalculada = `Campaña ${meses[mesActual]} ${anioActual}`;
+                        
+                        selector.innerHTML = '';
+                        campanasUnicas.reverse().forEach(c => {
+                            selector.innerHTML += `<option value="${c}">${c}</option>`;
+                        });
+                        
+                        if (campanasUnicas.includes(campanaCalculada)) {
+                            selector.value = campanaCalculada;
+                        } else {
+                            selector.value = campanasUnicas[0];
+                        }
+                    }
+                    
+                    campanaActual = selector.value;
                     semanas = todasSemanas.filter(s => s.campana === campanaActual);
                 }
 
