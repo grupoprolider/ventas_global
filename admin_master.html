@@ -418,6 +418,7 @@
                         <thead>
                             <tr>
                                 <th>Fecha</th>
+                                <th>ID Solicitud</th>
                                 <th>Vendedor</th>
                                 <th>Vts / Bajas</th>
                                 <th>Importe</th>
@@ -944,6 +945,7 @@
                 return `
                     <tr style="${estiloFila}">
                         <td>${v.created_at ? new Date(v.created_at).toLocaleDateString() : '-'}</td>
+                        <td style="font-weight:bold; color:#3498db;">${v.numero_solicitud || '-'}</td>
                         <td>${nombreVendedor}</td>
                         <td>${esReversion ? '-' + v.bajas : (v.ventas_cerradas || 0)}</td>
                         <td>$${(v.monto || 0).toLocaleString()}</td>
