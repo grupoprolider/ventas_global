@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Competencias GPL</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         :root {
@@ -41,17 +42,21 @@
             margin-right: auto;
         }
         .comp-titulo {
-            font-size: 24px;
+            font-size: 38px;
             color: var(--gpl-petroleo);
             margin-bottom: 5px;
             border-bottom: 1px solid rgba(0,0,0,0.05);
             padding-bottom: 10px;
-            font-weight: bold;
+            font-weight: 900;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
         .comp-fechas {
             color: #666;
             font-size: 14px;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
+            text-align: center;
         }
         .ranking-item {
             display: flex;
@@ -117,12 +122,14 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Suite GPL">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
     <a href="index.html" class="btn-volver"><i class="fa-solid fa-arrow-left"></i> Volver al Inicio</a>
 
     <div class="header">
+        <button onclick="exportarPNG()" style="position:absolute; top:20px; right:20px; background:var(--gpl-dorado); color:white; border:none; padding:10px 15px; border-radius:5px; font-weight:bold; cursor:pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2);"><i class="fa-solid fa-image"></i> Descargar PNG</button>
         <img src="LOGO-gpl.png" alt="GPL" style="max-height: 80px;">
         <h1>🏆 ARENAS DE COMPETENCIA</h1>
         <p style="color:#aaa;">Resultados y clasificaciones en vivo</p>
@@ -232,6 +239,32 @@
                         let ventasNetas = vtsEq.reduce((sum, v) => sum + Number(v.ventas_cerradas || 0) - Number(v.bajas || 0), 0);
                         return { nombre: eq ? eq.nombre : 'Desconocido', total: ventasNetas, monto: monto };
                     });
+                } else if (comp.tipo === 'vendedores_1v1') {
+                    participantesData = comp.participantes.map(pair => {
+                        let parts = pair.split('_vs_');
+                        let id1 = parts[0];
+                        let id2 = parts[1];
+                        let vend1 = vendedores.find(v => v.id == id1);
+                        let vend2 = vendedores.find(v => v.id == id2);
+                        
+                        let vtsVend1 = ventasPeriodo.filter(v => v.vendedor_id == id1);
+                        let total1 = vtsVend1.reduce((sum, v) => sum + Number(v.ventas_cerradas || 0) - Number(v.bajas || 0), 0);
+                        
+                        let vtsVend2 = ventasPeriodo.filter(v => v.vendedor_id == id2);
+                        let total2 = vtsVend2.reduce((sum, v) => sum + Number(v.ventas_cerradas || 0) - Number(v.bajas || 0), 0);
+                        
+                        let ag1 = vend1 ? agencias.find(a => a.id === equipos.find(e => e.id === vend1.equipo_id)?.agencia_id)?.nombre : '';
+                        let ag2 = vend2 ? agencias.find(a => a.id === equipos.find(e => e.id === vend2.equipo_id)?.agencia_id)?.nombre : '';
+                        
+                        return { 
+                            v1: vend1 ? vend1.nombre : 'Desconocido', 
+                            ag1: ag1 ? ag1.substring(0, 4) + '.' : '',
+                            t1: total1, 
+                            v2: vend2 ? vend2.nombre : 'Desconocido', 
+                            ag2: ag2 ? ag2.substring(0, 4) + '.' : '',
+                            t2: total2 
+                        };
+                    });
                 } else if (comp.tipo === 'sucursales') {
                     participantesData = comp.participantes.map(id => {
                         let ag = agencias.find(a => a.id == id);
@@ -244,18 +277,12 @@
                     });
                 }
 
-                // Ordenar por total descendente
-                participantesData.sort((a,b) => b.total !== a.total ? b.total - a.total : b.monto - a.monto);
-
-                let maxTotal = participantesData.length > 0 ? participantesData[0].total : 0;
-                if(maxTotal === 0) maxTotal = 1; // avoid div by zero
-
                 let dInStr = comp.fecha_inicio.split('-').reverse().join('/');
                 let dOutStr = comp.fecha_fin.split('-').reverse().join('/');
+                
+                let txtTipo = comp.tipo === 'vendedores' ? 'Batalla de Vendedores' : (comp.tipo === 'equipos' ? 'Guerra de Equipos' : (comp.tipo === 'vendedores_1v1' ? 'Duelos 1 vs 1' : 'Guerra de Sucursales'));
 
-                let txtTipo = comp.tipo === 'vendedores' ? 'Batalla de Vendedores' : (comp.tipo === 'equipos' ? 'Guerra de Equipos' : 'Guerra de Sucursales');
-
-                let htmlComp = `<div class="competencia-card">
+                let htmlComp = `<div class="competencia-card" ${comp.tipo === 'vendedores_1v1' ? 'style="max-width:1000px;"' : ''}>
                     <div class="comp-titulo"><i class="fa-solid fa-fire" style="color:#e74c3c;"></i> ${comp.titulo}</div>
                     <div class="comp-fechas">
                         <span style="display:inline-block; margin-right:15px; color:var(--gpl-dorado);"><i class="fa-solid fa-users"></i> ${txtTipo}</span>
@@ -263,23 +290,58 @@
                     </div>
                     <div>`;
 
-                participantesData.forEach((p, idx) => {
-                    let pos = idx + 1;
-                    let posClass = pos === 1 ? 'pos-1' : pos === 2 ? 'pos-2' : pos === 3 ? 'pos-3' : '';
-                    let pct = Math.min(100, Math.round((p.total / maxTotal) * 100));
-
+                if (comp.tipo === 'vendedores_1v1') {
                     htmlComp += `
-                        <div class="ranking-item">
-                            <div class="barra-progreso" data-width="${pct}%"></div>
-                            <div class="posicion ${posClass}">#${pos}</div>
-                            <div class="nombre">${p.nombre}</div>
-                            <div class="puntaje" style="display:flex; flex-direction:column; align-items:flex-end;">
-                                <span style="font-size:24px; color:var(--gpl-petroleo); font-weight: 900;">${p.total} Vts</span>
-                                <span style="font-size:12px; color:#999; font-weight:normal;">${p.monto.toLocaleString('es-AR')}</span>
-                            </div>
-                        </div>
+                        <table style="width:100%; border-collapse:collapse; text-align:center; font-family:sans-serif; background:#fff; border-radius:8px; overflow:hidden; box-shadow:0 0 10px rgba(0,0,0,0.1);">
+                            <thead>
+                                <tr style="background:var(--gpl-petroleo); color:white; font-size:12px;">
+                                    <th style="padding:10px; width:40%; text-align:right;">VENDEDOR/A</th>
+                                    <th style="padding:10px; width:10%;">VENTAS</th>
+                                    <th style="padding:10px; width:5%; color:#e67e22;">VS.</th>
+                                    <th style="padding:10px; width:10%;">VENTAS</th>
+                                    <th style="padding:10px; width:40%; text-align:left;">VENDEDOR/A</th>
+                                </tr>
+                            </thead>
+                            <tbody>
                     `;
-                });
+                    participantesData.forEach((p, idx) => {
+                        let bg = idx % 2 === 0 ? '#fcfcfc' : '#f4f4f4';
+                        htmlComp += `
+                            <tr style="background:${bg}; border-bottom:1px solid #eee;">
+                                <td style="padding:8px 10px; text-align:right; font-weight:bold; font-size:13px; color:#333;">${p.v1} <span style="font-weight:normal; font-size:10px; color:#666;">(${p.ag1})</span></td>
+                                <td style="padding:8px 10px; font-weight:900; font-size:16px; color:#111;">${p.t1}</td>
+                                <td style="padding:8px 10px; font-size:10px; color:#888; font-weight:bold; background:#fafafa;">VS</td>
+                                <td style="padding:8px 10px; font-weight:900; font-size:16px; color:#111;">${p.t2}</td>
+                                <td style="padding:8px 10px; text-align:left; font-weight:bold; font-size:13px; color:#333;"><span style="font-weight:normal; font-size:10px; color:#666;">(${p.ag2})</span> ${p.v2}</td>
+                            </tr>
+                        `;
+                    });
+                    htmlComp += `</tbody></table>`;
+                } else {
+                    // Ordenar por total descendente
+                    participantesData.sort((a,b) => b.total !== a.total ? b.total - a.total : b.monto - a.monto);
+
+                    let maxTotal = participantesData.length > 0 ? participantesData[0].total : 0;
+                    if(maxTotal === 0) maxTotal = 1; // avoid div by zero
+
+                    participantesData.forEach((p, idx) => {
+                        let pos = idx + 1;
+                        let posClass = pos === 1 ? 'pos-1' : pos === 2 ? 'pos-2' : pos === 3 ? 'pos-3' : '';
+                        let pct = Math.min(100, Math.round((p.total / maxTotal) * 100));
+
+                        htmlComp += `
+                            <div class="ranking-item">
+                                <div class="barra-progreso" data-width="${pct}%"></div>
+                                <div class="posicion ${posClass}">#${pos}</div>
+                                <div class="nombre">${p.nombre}</div>
+                                <div class="puntaje" style="display:flex; flex-direction:column; align-items:flex-end;">
+                                    <span style="font-size:24px; color:var(--gpl-petroleo); font-weight: 900;">${p.total} Vts</span>
+                                    <span style="font-size:12px; color:#999; font-weight:normal;">${p.monto.toLocaleString('es-AR')}</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
 
                 htmlComp += `</div></div>`;
                 htmlFinal += htmlComp;
@@ -296,6 +358,57 @@
         }
 
         window.onload = cargarData;
+    </script>
+
+    <script>
+        async function exportarPNG() {
+            const container = document.getElementById('contenedorCompetencias');
+            const btn = document.querySelector('button[onclick="exportarPNG()"]');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando...';
+            
+            try {
+                const canvas = await html2canvas(container, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: "#f4f6f8"
+                });
+                
+                canvas.toBlob(async function(blob) {
+                    const filename = "Competencias_GPL_" + new Date().toISOString().split('T')[0] + ".png";
+                    const file = new File([blob], filename, { type: 'image/png' });
+
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        try {
+                            await navigator.share({
+                                files: [file],
+                                title: 'Competencias GPL',
+                                text: 'Resultados de las competencias.'
+                            });
+                        } catch (err) {
+                            console.log("Share API falló o se canceló, bajando normal...");
+                            downloadBlob(blob, filename);
+                        }
+                    } else {
+                        downloadBlob(blob, filename);
+                    }
+                    btn.innerHTML = '<i class="fa-solid fa-image"></i> Descargar PNG';
+                }, 'image/png');
+            } catch (err) {
+                alert("Error al exportar PNG: " + err.message);
+                btn.innerHTML = '<i class="fa-solid fa-image"></i> Descargar PNG';
+            }
+        }
+        
+        function downloadBlob(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
     </script>
 </body>
 </html>

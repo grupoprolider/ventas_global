@@ -503,6 +503,7 @@
                         <label style="display:block; margin-bottom:5px; color:#aaa; font-size:12px;">Tipo de Enfrentamiento</label>
                         <select id="comp_tipo" onchange="cargarParticipantesCompetencia()">
                             <option value="vendedores">Vendedores vs Vendedores</option>
+<option value="vendedores_1v1">Duelos 1 vs 1 (Cruces Fijos)</option>
                             <option value="equipos">Equipos vs Equipos</option>
                             <option value="sucursales">Sucursales vs Sucursales</option>
                         </select>
@@ -1423,10 +1424,20 @@
         }
 
 // Competencias JS
+        window.opcionesVendedores1v1 = [];
         async function cargarParticipantesCompetencia() {
             const tipo = document.getElementById('comp_tipo').value;
             const container = document.getElementById('comp_participantes');
             container.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Cargando...';
+            
+            if (tipo === 'vendedores_1v1') {
+                const { data } = await clienteSupabase.from('perfiles').select('id, nombre').order('nombre');
+                if(data) {
+                    window.opcionesVendedores1v1 = data;
+                    renderizarDuelosUI();
+                }
+                return;
+            }
             
             let tabla = '';
             if(tipo === 'vendedores') tabla = 'perfiles';
@@ -1445,17 +1456,64 @@
             }
         }
 
+        function renderizarDuelosUI() {
+            const container = document.getElementById('comp_participantes');
+            let opts = '<option value="">Seleccionar...</option>';
+            window.opcionesVendedores1v1.forEach(v => {
+                opts += `<option value="${v.id}">${v.nombre}</option>`;
+            });
+            
+            container.innerHTML = `
+                <div id="duelos_container" style="display:flex; flex-direction:column; gap:10px;"></div>
+                <button type="button" onclick="agregarDueloUI()" style="margin-top:10px; background:#2980b9; border:none; padding:5px 10px; color:white; border-radius:4px; cursor:pointer;"><i class="fa-solid fa-plus"></i> Agregar Duelo</button>
+            `;
+            window.dueloCount = 0;
+            agregarDueloUI(); // Add first one
+        }
+        
+        function agregarDueloUI() {
+            window.dueloCount++;
+            let opts = '<option value="">Seleccionar...</option>';
+            window.opcionesVendedores1v1.forEach(v => {
+                opts += `<option value="${v.id}">${v.nombre}</option>`;
+            });
+            const htmlDuelo = `
+                <div class="duelo-row" style="display:flex; gap:10px; align-items:center; background:#222; padding:8px; border-radius:4px;">
+                    <span style="color:#aaa; font-size:12px; font-weight:bold;">#${window.dueloCount}</span>
+                    <select class="duelo-v1" style="flex:1; padding:5px; border-radius:4px; outline:none; background:#333; color:white; border:1px solid #444;">${opts}</select>
+                    <span style="color:#e74c3c; font-weight:bold;">VS</span>
+                    <select class="duelo-v2" style="flex:1; padding:5px; border-radius:4px; outline:none; background:#333; color:white; border:1px solid #444;">${opts}</select>
+                    <button type="button" onclick="this.parentElement.remove()" style="background:#c0392b; border:none; padding:5px 8px; color:white; border-radius:4px; cursor:pointer;" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            `;
+            document.getElementById('duelos_container').insertAdjacentHTML('beforeend', htmlDuelo);
+        }
+
         async function guardarCompetencia() {
             const titulo = document.getElementById('comp_titulo').value;
             const tipo = document.getElementById('comp_tipo').value;
             const inicio = document.getElementById('comp_inicio').value;
             const fin = document.getElementById('comp_fin').value;
             
-            const chks = document.querySelectorAll('.chk-participante:checked');
-            let participantesIds = Array.from(chks).map(c => c.value);
-            
-            if(!titulo || !inicio || !fin || participantesIds.length < 2) {
-                return alert("Completá título, fechas y seleccioná al menos 2 participantes.");
+            let participantesIds = [];
+            if (tipo === 'vendedores_1v1') {
+                const duelos = document.querySelectorAll('.duelo-row');
+                duelos.forEach(d => {
+                    const v1 = d.querySelector('.duelo-v1').value;
+                    const v2 = d.querySelector('.duelo-v2').value;
+                    if (v1 && v2 && v1 !== v2) {
+                        participantesIds.push(v1 + "_vs_" + v2);
+                    }
+                });
+                if(!titulo || !inicio || !fin || participantesIds.length < 1) {
+                    return alert("Completá título, fechas y configurá al menos 1 duelo válido.");
+                }
+            } else {
+                const chks = document.querySelectorAll('.chk-participante:checked');
+                participantesIds = Array.from(chks).map(c => c.value);
+                if(!titulo || !inicio || !fin || participantesIds.length < 2) {
+                    return alert("Completá título, fechas y seleccioná al menos 2 participantes.");
+                }
             }
             
             const { error } = await clienteSupabase.from('competencias').insert([{
