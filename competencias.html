@@ -292,7 +292,7 @@
 
                 if (comp.tipo === 'vendedores_1v1') {
                     htmlComp += `
-                        <table style="width:100%; border-collapse:collapse; text-align:center; font-family:sans-serif; background:#fff; border-radius:8px; overflow:hidden; box-shadow:0 0 10px rgba(0,0,0,0.1);">
+                        <div style="overflow-x:auto; width:100%; border-radius:8px; box-shadow:0 0 10px rgba(0,0,0,0.1);"><table style="width:100%; min-width: 500px; border-collapse:collapse; text-align:center; font-family:sans-serif; background:#fff;">
                             <thead>
                                 <tr style="background:var(--gpl-petroleo); color:white; font-size:12px;">
                                     <th style="padding:10px; width:40%; text-align:right;">VENDEDOR/A</th>
@@ -312,11 +312,11 @@
                                 <td style="padding:8px 10px; font-weight:900; font-size:16px; color:#111;">${p.t1}</td>
                                 <td style="padding:8px 10px; font-size:10px; color:#888; font-weight:bold; background:#fafafa;">VS</td>
                                 <td style="padding:8px 10px; font-weight:900; font-size:16px; color:#111;">${p.t2}</td>
-                                <td style="padding:8px 10px; text-align:left; font-weight:bold; font-size:13px; color:#333;"><span style="font-weight:normal; font-size:10px; color:#666;">(${p.ag2})</span> ${p.v2}</td>
+                                <td style="padding:8px 10px; text-align:left; font-weight:bold; font-size:13px; color:#333;">${p.v2} <span style="font-weight:normal; font-size:10px; color:#666;">(${p.ag2})</span></td>
                             </tr>
                         `;
                     });
-                    htmlComp += `</tbody></table>`;
+                    htmlComp += `</tbody></table></div>`;
                 } else {
                     // Ordenar por total descendente
                     participantesData.sort((a,b) => b.total !== a.total ? b.total - a.total : b.monto - a.monto);
