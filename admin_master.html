@@ -718,12 +718,12 @@
             // Update perfiles activos a la metaBase
             const { error: err1 } = await clienteSupabase.from('perfiles').update({ 
                 objetivo_campana: parseInt(metaBase)
-            }).not('nombre', 'ilike', '%(BAJA)%');
+            }).not('nombre', 'ilike', '%(BAJA)%').not('nombre', 'ilike', '%(OCULTO)%');
             
             // Update perfiles BAJA a 0
             const { error: err2 } = await clienteSupabase.from('perfiles').update({ 
                 objetivo_campana: 0
-            }).ilike('nombre', '%(BAJA)%');
+            }).or('nombre.ilike.%BAJA%,nombre.ilike.%OCULTO%');
 
             const error = err1 || err2;
 
@@ -808,7 +808,7 @@
 
         function cargarPersonal(perfiles, equipos) {
             const tbody = document.querySelector('#tabla_personal tbody');
-            tbody.innerHTML = perfiles.map(p => `<tr><td>${p.nombre}</td><td><select onchange="updatePerfil('${p.id}', 'equipo_id', this.value)"><option value="">Sin Equipo</option>${equipos.map(e => `<option value="${e.id}" ${e.id === p.equipo_id ? 'selected' : ''}>${e.nombre}</option>`).join('')}</select></td><td><select onchange="updatePerfil('${p.id}', 'rol', this.value)"><option value="Vendedor" ${p.rol === 'Vendedor' ? 'selected' : ''}>Vendedor</option><option value="Líder de Asesores" ${p.rol === 'Líder de Asesores' ? 'selected' : ''}>Líder de Asesores</option><option value="Líder de Equipos" ${p.rol === 'Líder de Equipos' ? 'selected' : ''}>Líder de Equipos</option><option value="Líder de Sucursal" ${p.rol === 'Líder de Sucursal' ? 'selected' : ''}>Líder de Sucursal</option></select></td><td><select onchange="updatePerfil('${p.id}', 'categoria', this.value)"><option value="Senior" ${p.categoria === 'Senior' ? 'selected' : ''}>Senior</option><option value="Junior" ${p.categoria === 'Junior' ? 'selected' : ''}>Junior</option></select></td><td><input type="text" placeholder="PIN" value="${p.pin_acceso || ''}" onchange="updatePerfil('${p.id}', 'pin_acceso', this.value)" style="width:60px; padding:6px; text-align:center; font-weight:bold; border: 1px solid #444; background: #222; color: #fff; border-radius: 4px;"></td><td><button class="btn-edit" onclick="renombrar('perfiles', '${p.id}', '${p.nombre}')">Renombrar</button><button class="btn-del" style="background-color: #f39c12;" onclick="darDeBajaPerfil('${p.id}', '${p.nombre}')">Baja Lógica</button><button class="btn-del" onclick="borrar('perfiles', '${p.id}')">Eliminar</button></td></tr>`).join('');
+            tbody.innerHTML = perfiles.map(p => `<tr><td>${p.nombre}</td><td><select onchange="updatePerfil('${p.id}', 'equipo_id', this.value)"><option value="">Sin Equipo</option>${equipos.map(e => `<option value="${e.id}" ${e.id === p.equipo_id ? 'selected' : ''}>${e.nombre}</option>`).join('')}</select></td><td><select onchange="updatePerfil('${p.id}', 'rol', this.value)"><option value="Vendedor" ${p.rol === 'Vendedor' ? 'selected' : ''}>Vendedor</option><option value="Líder de Asesores" ${p.rol === 'Líder de Asesores' ? 'selected' : ''}>Líder de Asesores</option><option value="Líder de Equipos" ${p.rol === 'Líder de Equipos' ? 'selected' : ''}>Líder de Equipos</option><option value="Líder de Sucursal" ${p.rol === 'Líder de Sucursal' ? 'selected' : ''}>Líder de Sucursal</option></select></td><td><select onchange="updatePerfil('${p.id}', 'categoria', this.value)"><option value="Senior" ${p.categoria === 'Senior' ? 'selected' : ''}>Senior</option><option value="Junior" ${p.categoria === 'Junior' ? 'selected' : ''}>Junior</option></select></td><td><input type="text" placeholder="PIN" value="${p.pin_acceso || ''}" onchange="updatePerfil('${p.id}', 'pin_acceso', this.value)" style="width:60px; padding:6px; text-align:center; font-weight:bold; border: 1px solid #444; background: #222; color: #fff; border-radius: 4px;"></td><td><button class="btn-edit" onclick="renombrar('perfiles', '${p.id}', '${p.nombre}')">Renombrar</button><button class="btn-del" style="background-color: #f39c12;" onclick="darDeBajaPerfil('${p.id}', '${p.nombre}')">Baja Lógica</button><button class="btn-del" style="background-color: #9b59b6;" onclick="toggleOcultoPerfil('${p.id}', '${p.nombre}')">Ocultar/Lic.</button><button class="btn-del" onclick="borrar('perfiles', '${p.id}')">Eliminar</button></td></tr>`).join('');
         }
 
         function calcularProrrateoObjetivo(metaBase = 18) {
@@ -1000,6 +1000,21 @@
                     else refrescarDatos();
                 }
             }
+        }
+
+                async function toggleOcultoPerfil(id, nombreActual) {
+            let nuevoNombre = nombreActual;
+            if (nombreActual.includes('(OCULTO)')) {
+                nuevoNombre = nombreActual.replace(' (OCULTO)', '').replace('(OCULTO)', '').trim();
+                if (!confirm(`¿Restaurar a ${nuevoNombre} de su licencia/ocultamiento?`)) return;
+            } else {
+                nuevoNombre = nombreActual + ' (OCULTO)';
+                if (!confirm(`¿Estás seguro de que querés marcar a ${nombreActual} como (OCULTO) ?\nEsto ocultará su fila del ranking y seguimiento, pero mantendrá sus ventas en los totales.`)) return;
+            }
+            
+            const { error } = await clienteSupabase.from('perfiles').update({ nombre: nuevoNombre }).eq('id', id);
+            if (error) alert("Error al modificar perfil: " + error.message);
+            else refrescarDatos();
         }
 
         async function darDeBajaPerfil(id, nombreActual) {

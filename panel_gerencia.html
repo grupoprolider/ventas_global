@@ -1382,7 +1382,7 @@
                     });
                     return { p, vts };
                 }).filter(data => data.p.equipo_id !== null || data.vts > 0)
-                  .filter(data => !data.p.nombre.includes('(BAJA)') || data.vts > 0)
+                  .filter(data => (!data.p.nombre.includes('(BAJA)') || data.vts > 0) && !data.p.nombre.includes('(OCULTO)'))
                   .map(data => {
                     let p = data.p;
                     let vts = data.vts;
