@@ -522,7 +522,7 @@
                 <label style="display:block; margin-bottom:5px; color:#aaa; font-size:12px;">Seleccionar Participantes:</label>
                 <div id="comp_participantes" style="background: #111; padding: 10px; border-radius: 5px; border: 1px solid #333; max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; margin-bottom: 20px;">
                 </div>
-                <button class="btn-save" onclick="guardarCompetencia()" style="width: 100%; padding: 12px; font-size: 16px;"><i class="fa-solid fa-trophy"></i> Iniciar Competencia</button>
+                <button id="btn_guardar_comp" class="btn-save" onclick="guardarCompetencia()" style="width: 100%; padding: 12px; font-size: 16px; margin-bottom:10px;"><i class="fa-solid fa-trophy"></i> Iniciar Competencia</button><button id="btn_cancelar_edit" onclick="cancelarEdicionComp()" style="display:none; width: 100%; padding: 12px; font-size: 16px; background:#7f8c8d; border:none; color:white; border-radius:4px; cursor:pointer;"><i class="fa-solid fa-xmark"></i> Cancelar Edición</button>
             </div>
             <div class="card-admin">
                 <h2>Competencias Activas e Historial</h2>
@@ -1489,6 +1489,56 @@
             document.getElementById('duelos_container').insertAdjacentHTML('beforeend', htmlDuelo);
         }
 
+        
+        window.editingCompetenciaId = null;
+
+        function cancelarEdicionComp() {
+            window.editingCompetenciaId = null;
+            document.getElementById('comp_titulo').value = '';
+            document.getElementById('btn_guardar_comp').innerHTML = '<i class="fa-solid fa-trophy"></i> Iniciar Competencia';
+            document.getElementById('btn_cancelar_edit').style.display = 'none';
+            cargarParticipantesCompetencia();
+        }
+
+        async function editarCompetencia(id) {
+            const { data, error } = await clienteSupabase.from('competencias').select('*').eq('id', id).single();
+            if(error) return alert("Error: " + error.message);
+            
+            window.editingCompetenciaId = id;
+            document.getElementById('comp_titulo').value = data.titulo;
+            document.getElementById('comp_tipo').value = data.tipo;
+            document.getElementById('comp_inicio').value = data.fecha_inicio;
+            document.getElementById('comp_fin').value = data.fecha_fin;
+            
+            document.getElementById('btn_guardar_comp').innerHTML = '<i class="fa-solid fa-save"></i> Guardar Cambios';
+            document.getElementById('btn_cancelar_edit').style.display = 'block';
+            
+            await cargarParticipantesCompetencia();
+            
+            if (data.tipo === 'vendedores_1v1') {
+                document.getElementById('duelos_container').innerHTML = '';
+                window.dueloCount = 0;
+                
+                data.participantes.forEach(pair => {
+                    let parts = pair.split('_vs_');
+                    agregarDueloUI();
+                    const duelos = document.querySelectorAll('.duelo-row');
+                    const lastDuelo = duelos[duelos.length - 1];
+                    lastDuelo.querySelector('.duelo-v1').value = parts[0];
+                    lastDuelo.querySelector('.duelo-v2').value = parts[1];
+                });
+            } else {
+                const chks = document.querySelectorAll('.chk-participante');
+                chks.forEach(chk => {
+                    if(data.participantes.includes(chk.value)) {
+                        chk.checked = true;
+                    }
+                });
+            }
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
         async function guardarCompetencia() {
             const titulo = document.getElementById('comp_titulo').value;
             const tipo = document.getElementById('comp_tipo').value;
@@ -1555,6 +1605,7 @@
                     <td>${badge}</td>
                     <td>
                         ${actBtn}
+                        <button class="btn-edit" onclick="editarCompetencia('${c.id}')" title="Editar Competencia" style="background:#f39c12; color:white; border:none; padding:5px 8px; border-radius:4px; margin:0 5px; cursor:pointer;"><i class="fa-solid fa-pencil"></i></button>
                         <button class="btn-delete" onclick="borrarCompetencia('${c.id}')"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 </tr>`;
