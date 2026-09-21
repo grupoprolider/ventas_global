@@ -132,7 +132,14 @@
         <button onclick="exportarPNG()" style="position:absolute; top:20px; right:20px; background:var(--gpl-dorado); color:white; border:none; padding:10px 15px; border-radius:5px; font-weight:bold; cursor:pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2);"><i class="fa-solid fa-image"></i> Descargar PNG</button>
         <img src="LOGO-gpl.png" alt="GPL" style="max-height: 80px;">
         <h1>🏆 ARENAS DE COMPETENCIA</h1>
-        <p style="color:#aaa;">Resultados y clasificaciones en vivo</p>
+        
+    </div>
+
+    <div id="filtroContainer" style="text-align: center; margin: 15px auto; max-width: 800px; display: none;">
+        <label for="selectFiltroAgencia" style="font-weight: bold; color: #2c3e50;">Filtrar Sucursal (Solo 1vs1): </label>
+        <select id="selectFiltroAgencia" onchange="renderCompetencias()" style="padding: 5px 10px; border-radius: 5px; border: 1px solid #ccc; font-weight: bold; color: #333; background: white;">
+            <option value="todas">TODAS LAS SUCURSALES</option>
+        </select>
     </div>
 
     <div id="contenedorCompetencias">
@@ -208,6 +215,27 @@
                 }
             }
 
+            window.datosCompetencias = { competencias, vendedores, equipos, agencias, ventas };
+            
+            const selectAgencia = document.getElementById('selectFiltroAgencia');
+            if (selectAgencia && selectAgencia.options.length === 1) {
+                // sort agencias by name
+                agencias.sort((a,b) => a.nombre.localeCompare(b.nombre)).forEach(ag => {
+                    let opt = document.createElement('option');
+                    opt.value = ag.id;
+                    opt.textContent = ag.nombre;
+                    selectAgencia.appendChild(opt);
+                });
+                document.getElementById('filtroContainer').style.display = 'block';
+            }
+
+            renderCompetencias();
+        }
+
+        function renderCompetencias() {
+            const { competencias, vendedores, equipos, agencias, ventas } = window.datosCompetencias;
+            const filtroAgencia = document.getElementById('selectFiltroAgencia') ? document.getElementById('selectFiltroAgencia').value : 'todas';
+
             let htmlFinal = '';
 
             for (let comp of competencias) {
@@ -254,15 +282,23 @@
                         let ag1 = vend1 ? agencias.find(a => a.id === equipos.find(e => e.id === vend1.equipo_id)?.agencia_id)?.nombre : '';
                         let ag2 = vend2 ? agencias.find(a => a.id === equipos.find(e => e.id === vend2.equipo_id)?.agencia_id)?.nombre : '';
                         
+                        let eq1 = vend1 ? equipos.find(e => e.id === vend1.equipo_id) : null;
+                        let eq2 = vend2 ? equipos.find(e => e.id === vend2.equipo_id) : null;
                         return { 
                             v1: vend1 ? vend1.nombre : 'Desconocido', 
                             ag1: ag1 ? ag1.substring(0, 4) + '.' : '',
                             t1: total1, 
+                            agId1: eq1 ? eq1.agencia_id : null,
                             v2: vend2 ? vend2.nombre : 'Desconocido', 
                             ag2: ag2 ? ag2.substring(0, 4) + '.' : '',
-                            t2: total2 
+                            t2: total2,
+                            agId2: eq2 ? eq2.agencia_id : null
                         };
                     });
+                    
+                    if (filtroAgencia !== 'todas') {
+                        participantesData = participantesData.filter(d => d.agId1 === filtroAgencia || d.agId2 === filtroAgencia);
+                    }
                 } else if (comp.tipo === 'sucursales') {
                     participantesData = comp.participantes.map(id => {
                         let ag = agencias.find(a => a.id == id);
@@ -345,7 +381,7 @@
                 htmlFinal += htmlComp;
             }
 
-            contenedor.innerHTML = htmlFinal;
+            document.getElementById('contenedorCompetencias').innerHTML = htmlFinal;
 
             // Trigger animation
             setTimeout(() => {
@@ -363,6 +399,10 @@
             const container = document.getElementById('contenedorCompetencias');
             const btn = document.querySelector('button[onclick="exportarPNG()"]');
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando...';
+            
+            // Ocultar leyendas durante la captura
+            const leyendas = container.querySelectorAll('.comp-fechas');
+            leyendas.forEach(el => el.style.display = 'none');
             
             try {
                 const canvas = await html2canvas(container, {
