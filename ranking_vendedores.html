@@ -153,7 +153,7 @@
             <span style="font-size: 13px; font-weight: bold; margin-right: 10px; text-transform: uppercase;">Orden Principal:</span>
             <select id="llaveOrdenamiento" onchange="cambiarLlaveOrdenamiento()" style="padding: 8px; font-size: 14px; font-weight: bold; border-radius: 8px; outline: none; border: 2px solid var(--gpl-dorado); background: transparent; color: inherit; cursor: pointer;">
                 <option value="neta">🏆 Por Ventas Netas</option>
-                <option value="ent">👥 Por Entrevistas</option>
+                <option value="ent" style="display:none;">👥 Por Entrevistas</option>
             </select>
         </div>
         <button id="btnDescargarExcel" class="btn-excel" onclick="descargarExcelGerencial()">
@@ -175,7 +175,7 @@
         <div id="rank0" class="tab-ranking active">
             <table>
                 <thead>
-                    <tr><th>Pos</th><th onclick="ordenarVendedores('nom')" style="cursor:pointer;" title="Ordenar A-Z">Asesor/a / Equipo <i class="fa-solid fa-sort" style="color:#777; margin-left:3px;"></i></th><th class="vts-netas-col" onclick="ordenarVendedores('neta')" style="cursor:pointer;" title="Ordenar por Ventas Netas">Ventas Netas <i class="fa-solid fa-sort" style="color:#777; margin-left:3px;"></i></th><th class="bajas-col" onclick="ordenarVendedores('bajas')" style="cursor:pointer; color:#e74c3c;" title="Ordenar por Bajas">Bajas <i class="fa-solid fa-sort" style="color:#777; margin-left:3px;"></i></th><th class="monto-col">Importe</th><th style="text-align:center; cursor:pointer;" onclick="ordenarVendedores('ent')" title="Ordenar por Entrevistas">Entr <i class="fa-solid fa-sort" style="color:#777; margin-left:3px;"></i></th><th style="text-align:center; cursor:pointer;" onclick="ordenarVendedores('prom')" title="Ordenar por Promedio">Promedio <i class="fa-solid fa-sort" style="color:#777; margin-left:3px;"></i></th></tr>
+                    <tr><th>Pos</th><th onclick="ordenarVendedores('nom')" style="cursor:pointer;" title="Ordenar A-Z">Asesor/a / Equipo <i class="fa-solid fa-sort" style="color:#777; margin-left:3px;"></i></th><th class="vts-netas-col" onclick="ordenarVendedores('neta')" style="cursor:pointer;" title="Ordenar por Ventas Netas">Ventas Netas <i class="fa-solid fa-sort" style="color:#777; margin-left:3px;"></i></th><th class="bajas-col" onclick="ordenarVendedores('bajas')" style="cursor:pointer; color:#e74c3c;" title="Ordenar por Bajas">Bajas <i class="fa-solid fa-sort" style="color:#777; margin-left:3px;"></i></th><th class="monto-col">Importe</th><th style="display:none; text-align:center; cursor:pointer;" onclick="ordenarVendedores('ent')" title="Ordenar por Entrevistas">Entr <i class="fa-solid fa-sort" style="color:#777; margin-left:3px;"></i></th><th style="text-align:center; cursor:pointer;" onclick="ordenarVendedores('prom')" title="Ordenar por Promedio">Promedio <i class="fa-solid fa-sort" style="color:#777; margin-left:3px;"></i></th></tr>
                 </thead>
                 <tbody id="cuerpoNacional"><tr><td colspan="5"><div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i>Cargando rankings...</div></td></tr></tbody>
             </table>
@@ -212,7 +212,7 @@
             <h3><i class="fa-solid fa-chart-pie"></i> Resumen Consolidado de Campaña</h3>
             <div class="resumen-grid">
                 <div class="resumen-item"><span>Ventas Brutas</span><strong id="totBrutas">0</strong></div>
-                <div class="resumen-item"><span>Entrevistas</span><strong id="totEntrevistas" style="color: #a8d5e2;">0</strong></div>
+                <div class="resumen-item" style="display:none;"><span>Entrevistas</span><strong id="totEntrevistas" style="color: #a8d5e2;">0</strong></div>
                 <div class="resumen-item"><span>Bajas</span><strong id="totBajas" style="color:#e74c3c;">0</strong></div>
                 <div class="resumen-item"><span>Ventas Netas</span><strong id="totNetas" style="color:var(--gpl-dorado);">0</strong></div>
                 
@@ -464,7 +464,7 @@
                     <td class="vts-netas-col"><span class="vts-neta">${v.neta}</span></td>
                     <td class="bajas-col"><span style="color: #e74c3c; font-weight: bold; font-size: 14px;">${v.bajas}</span></td>
                     <td class="monto-col">$${v.monto.toLocaleString()}</td>
-                    <td class="entr-col">${v.ent}</td>
+                    <td class="entr-col" style="display:none;">${v.ent}</td>
                     <td class="entr-col">${v.prom}</td>
                 </tr>
             `).join('');
