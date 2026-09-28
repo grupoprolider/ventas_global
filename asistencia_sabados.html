@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista Asistencia Sábados - Grupo ProLíder</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --gpl-petroleo: #006779;
+            --gpl-dorado: #A42A68;
+            --gpl-borravino: #72224c;
+            --fondo-oscuro: #121a1f;
+            --celda-oscura: #1e2933;
+            --text-color: #ffffff;
+            --text-muted: #aaaaaa;
+            --border-color: #333344;
+        }
+        
+        body.light-theme {
+            --fondo-oscuro: #f4f6f8;
+            --celda-oscura: #ffffff;
+            --text-color: #333333;
+            --text-muted: #666666;
+            --border-color: #dddddd;
+        }
+
+        body {
+            color: var(--text-color);
+        }
+        
+        .filtros-container, .agencia-card {
+            border-color: var(--border-color);
+        }
+        
+        .equipo-container, th, td {
+            border-color: var(--border-color) !important;
+        }
+        
+        th { color: var(--text-muted); }
+        select { color: var(--text-color); }
+        .agencia-header span { text-shadow: none !important; }
+        
+            --gpl-petroleo: #006779;
+            --gpl-dorado: #A42A68;
+            --gpl-borravino: #72224c;
+            --fondo-oscuro: #121a1f;
+            --celda-oscura: #1e2933;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: var(--fondo-oscuro);
+            margin: 0;
+            padding: 20px;
+            color: white;
+            padding-bottom: 50px;
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .filtros-container {
+            background: var(--celda-oscura);
+            padding: 15px 20px;
+            border-radius: 8px;
+            border: 1px solid #334;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        select {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--gpl-dorado);
+            background: var(--fondo-oscuro);
+            color: var(--text-color);
+            outline: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button {
+            padding: 8px 15px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+        }
+
+        .btn-excel { background: #27ae60; }
+        .btn-volver { background: #555; text-decoration: none; padding: 10px 15px; border-radius: 6px; color: white; display: inline-block; font-weight: bold; }
+
+        .agencia-card {
+            background: var(--celda-oscura);
+            border-radius: 8px;
+            border: 1px solid #334;
+            margin-bottom: 30px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .agencia-header {
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .equipo-container {
+            padding: 15px 20px;
+            border-top: 1px solid #334;
+        }
+
+        .equipo-header {
+            font-size: 16px;
+            font-weight: bold;
+            color: #3498db;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #334;
+        }
+
+        th {
+            background: rgba(255,255,255,0.05);
+            color: #aaa;
+            font-weight: normal;
+        }
+
+        .badge-asiste {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid #e74c3c;
+            font-weight: bold;
+            font-size: 11px;
+            display: inline-block;
+        }
+
+        .badge-liberado {
+            background: rgba(39, 174, 96, 0.2);
+            color: #2ecc71;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid #2ecc71;
+            font-weight: bold;
+            font-size: 11px;
+            display: inline-block;
+        }
+        
+        .badge-ignorado {
+            background: rgba(149, 165, 166, 0.2);
+            color: #95a5a6;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid #95a5a6;
+            font-weight: bold;
+            font-size: 11px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-container">
+        <div>
+            <h1 style="margin:0; font-size:24px; color:var(--gpl-dorado);"><i class="fa-solid fa-calendar-check"></i> Asistencia Sábados</h1>
+            <p style="margin:5px 0 0 0; color:#aaa; font-size:14px;">Análisis automático de Asistencia por cumplimiento Semanal (Solo Seniors).</p>
+        </div>
+        <a href="panel_gerencia.html" class="btn-volver"><i class="fa-solid fa-arrow-left"></i> Volver a Gerencia</a>
+    </div>
+
+    <div class="filtros-container">
+        <div>
+            <label style="color:var(--text-muted); font-size:12px; display:block; margin-bottom:4px;">Sucursal</label>
+            <select id="selSucursal" onchange="renderGrid()">
+                <option value="TODAS">Todas las Sucursales</option>
+            </select>
+        </div>
+        <div>
+            <label style="color:#aaa; font-size:12px; display:block; margin-bottom:4px;">Campaña</label>
+            <select id="selCampana" onchange="onCampanaChange()"><option>Cargando...</option></select>
+        </div>
+        <div>
+            <label style="color:#aaa; font-size:12px; display:block; margin-bottom:4px;">Semana</label>
+            <select id="selSemana" onchange="renderGrid()"><option>Cargando...</option></select>
+        </div>
+        <div style="margin-top:20px; margin-left:auto;">
+            <button class="btn-excel" onclick="exportarExcel()"><i class="fa-solid fa-file-excel"></i> Descargar Excel</button>
+            <button onclick="toggleTheme()" style="background:#f39c12; margin-left:10px;"><i class="fa-solid fa-moon" id="themeIcon"></i> Tono Claro/Oscuro</button>
+        </div>
+    </div>
+
+    <div id="loading" style="text-align:center; padding:40px; color:#aaa;">
+        <i class="fa-solid fa-spinner fa-spin fa-2x"></i><br><br>Calculando asistencias...
+    </div>
+
+    <div id="gridContainer" style="margin-top: 30px;">
+        <!-- Se llena con JS -->
+    </div>
+
+    <script>
+        const clienteSupabase = supabase.createClient('https://pumpwqyazqaxeeknrhyo.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1bXB3cXlhenFheGVla25yaHlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MjQ4ODEsImV4cCI6MjA5NDIwMDg4MX0.-AQZZYAt-uskDLUpbiafJXbHgW0lErf8bwEnk7eq1DE');
+
+        let dbData = { perfiles: [], equipos: [], agencias: [], semanas: [], ventas: [] };
+        
+        async function init() {
+            console.log("Iniciando init()");
+            try {
+                // Fetch basic entities
+                const [resPerf, resEq, resAg, resSem] = await Promise.all([
+                    clienteSupabase.from('perfiles').select('*'),
+                    clienteSupabase.from('equipos').select('*'),
+                    clienteSupabase.from('agencias').select('*'),
+                    clienteSupabase.from('semanas_config').select('*').order('fecha_inicio', { ascending: true })
+                ]);
+
+                dbData.perfiles = resPerf.data || [];
+                dbData.equipos = resEq.data || [];
+                dbData.agencias = resAg.data || [];
+                dbData.semanas = resSem.data || [];
+
+                // Llenar select campañas
+                const campanasUnicas = [...new Set(dbData.semanas.map(s => s.campana))].reverse();
+                const selC = document.getElementById('selCampana');
+                if (campanasUnicas.length === 0) {
+                    selC.innerHTML = '<option>Sin campañas configuradas</option>';
+                    document.getElementById('loading').innerHTML = 'No hay semanas configuradas en el sistema.';
+                    return;
+                }
+                
+                selC.innerHTML = campanasUnicas.map(c => `<option value="${c}">${c}</option>`).join('');
+                
+                const selSuc = document.getElementById('selSucursal');
+                selSuc.innerHTML += dbData.agencias.map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
+                
+                
+                await onCampanaChange();
+
+            } catch (err) {
+                console.error(err);
+                alert('Error al iniciar: ' + err.message);
+                document.getElementById('loading').innerHTML = '<span style="color:#e74c3c;">Error al cargar datos. Revisa la consola.</span>';
+            }
+        }
+
+        async function onCampanaChange() {
+            const campana = document.getElementById('selCampana').value;
+            const semanasCampana = dbData.semanas.filter(s => s.campana === campana);
+            
+            const selS = document.getElementById('selSemana');
+            if (semanasCampana.length === 0) {
+                selS.innerHTML = '<option>Sin semanas</option>';
+            } else {
+                // Preseleccionar la semana actual si cae dentro del rango
+                const hoy = new Date().toISOString().split('T')[0];
+                let actIdx = 0;
+                semanasCampana.forEach((s, idx) => {
+                    if (hoy >= s.fecha_inicio && hoy <= s.fecha_fin) actIdx = idx;
+                });
+                
+                selS.innerHTML = semanasCampana.map(s => `<option value="${s.id}">${s.nombre_semana} (Obj: ${s.objetivo})</option>`).join('');
+                selS.selectedIndex = actIdx;
+            }
+
+            // Fetch ventas for this campana
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('gridContainer').innerHTML = '';
+            
+            let vtas = [];
+            let step = 1000, fromRow = 0;
+            while (true) {
+                const { data } = await clienteSupabase.from('registro_ventas')
+                    .select('vendedor_id, created_at, ventas_cerradas, bajas')
+                    .eq('campana', campana)
+                    .range(fromRow, fromRow + step - 1);
+                if (!data || data.length === 0) break;
+                vtas = vtas.concat(data);
+                if (data.length < step) break;
+                fromRow += step;
+            }
+            dbData.ventas = vtas;
+            
+            renderGrid();
+        }
+
+        function getVentasNetas(vendedorId, dInicio, dFin) {
+            let v = dbData.ventas.filter(x => 
+                x.vendedor_id === vendedorId &&
+                x.created_at >= dInicio + 'T00:00:00' && 
+                x.created_at <= dFin + 'T23:59:59'
+            );
+            let brutas = v.reduce((sum, item) => sum + (item.ventas_cerradas || 0), 0);
+            let bajas = v.reduce((sum, item) => sum + (item.bajas || 0), 0);
+            return brutas - bajas;
+        }
+
+        function renderGrid() {
+            document.getElementById('loading').style.display = 'none';
+            const semId = document.getElementById('selSemana').value;
+            const semana = dbData.semanas.find(s => s.id === semId);
+            if (!semana) return;
+
+            const dInicio = semana.fecha_inicio;
+            const dFin = semana.fecha_fin;
+            const objSemana = semana.objetivo;
+
+            let html = '';
+
+            // Filtrar y agrupar la estructura
+            
+            const selSuc = document.getElementById('selSucursal').value;
+            dbData.agencias.forEach(ag => {
+                if (selSuc !== 'TODAS' && ag.id !== selSuc) return;
+                let eqHtml = '';
+                
+                let totalesAgencia = { seniors: 0, cumplidores: 0 };
+                
+                let eqCount = 0;
+                
+                dbData.equipos.filter(e => e.agencia_id === ag.id).forEach(eq => {
+                    let rowsVend = '';
+                    let totalesEquipo = { seniors: 0, cumplidores: 0 };
+                    
+                    // Vendedores (solo Seniors, excluyendo bajas/ocultos)
+                    let vends = dbData.perfiles.filter(p => 
+                        p.equipo_id === eq.id && 
+                        (p.categoria || '').toLowerCase() === 'senior' && 
+                        !p.nombre.includes('(BAJA)') && 
+                        !p.nombre.includes('(OCULTO)') &&
+                        (p.rol || '').toLowerCase() === 'vendedor'
+                    );
+                    
+                    vends.forEach(v => {
+                        let netas = getVentasNetas(v.id, dInicio, dFin);
+                        let asiste = netas < objSemana;
+                        
+                        totalesEquipo.seniors++;
+                        if (!asiste) totalesEquipo.cumplidores++;
+                        totalesAgencia.seniors++;
+                        if (!asiste) totalesAgencia.cumplidores++;
+                        
+                        let badge = asiste ? `<span class="badge-asiste"><i class="fa-solid fa-xmark"></i> Asiste</span>` : `<span class="badge-liberado"><i class="fa-solid fa-check"></i> Liberado</span>`;
+                        
+                        rowsVend += `
+                            <tr>
+                                <td><i class="fa-solid fa-user" style="color:#aaa; margin-right:5px;"></i> ${v.nombre}</td>
+                                <td>${netas}</td>
+                                <td>${objSemana}</td>
+                                <td>${badge}</td>
+                            </tr>
+                        `;
+                    });
+
+                    if (vends.length > 0 || eq.lider_id) {
+                        eqCount++;
+                        // Determinar si el líder asiste. Asiste si (cumplidores / seniors) <= 0.5. (Es decir, si NO logró que MÁS del 50% cumplan).
+                        // Si no hay seniors en su equipo, no asiste.
+                        let liderAsiste = false;
+                        if (totalesEquipo.seniors > 0) {
+                            let ratio = totalesEquipo.cumplidores / totalesEquipo.seniors;
+                            if (ratio <= 0.5) liderAsiste = true;
+                        }
+                        
+                        let liderBadge = liderAsiste ? `<span class="badge-asiste" style="font-size:12px;">Asiste Lider</span>` : `<span class="badge-liberado" style="font-size:12px;">Líder Liberado</span>`;
+                        if (totalesEquipo.seniors === 0) liderBadge = `<span class="badge-ignorado" style="font-size:12px;">Sin Seniors</span>`;
+                        
+                        let nombreLider = dbData.perfiles.find(p => p.id === eq.lider_id)?.nombre || 'Sin Líder Asignado';
+                        
+                        eqHtml += `
+                            <div class="equipo-container">
+                                <div class="equipo-header">
+                                    <span><i class="fa-solid fa-users" style="margin-right:8px; color:var(--gpl-dorado);"></i> Equipo: ${eq.nombre} | Lider: <span style="color:var(--text-color);">${nombreLider}</span></span>
+                                    <span>${liderBadge} (Ratio: ${totalesEquipo.cumplidores} / ${totalesEquipo.seniors} obj. logrado)</span>
+                                </div>
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 40%">Vendedor Senior</th>
+                                            <th style="width: 20%">Ventas Sem.</th>
+                                            <th style="width: 20%">Objetivo Sem.</th>
+                                            <th style="width: 20%">Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${rowsVend || '<tr><td colspan="4" style="text-align:center; color:#777;">No hay vendedores Seniors activos en este equipo.</td></tr>'}
+                                    </tbody>
+                                </table>
+                            </div>
+                        `;
+                    }
+                });
+
+                if (eqCount > 0) {
+                    // Determinar si el gerente/coordinador de sucursal asiste
+                    let sucursalAsiste = false;
+                    if (totalesAgencia.seniors > 0) {
+                        let ratioAg = totalesAgencia.cumplidores / totalesAgencia.seniors;
+                        if (ratioAg <= 0.5) sucursalAsiste = true;
+                    }
+                    
+                    let bgHeader = `background: linear-gradient(90deg, ${ag.color_hex || 'var(--gpl-dorado)'} 0%, var(--fondo-oscuro) 100%); border-bottom: 2px solid ${ag.color_hex || 'var(--gpl-dorado)'};`;
+                    
+                    let sucBadge = sucursalAsiste ? `<span class="badge-asiste" style="background:#fff; border-color:#fff;">Líder Asiste</span>` : `<span class="badge-liberado" style="background:#fff; border-color:#fff;">Líder Liberado</span>`;
+                    if (totalesAgencia.seniors === 0) sucBadge = `<span class="badge-ignorado" style="background:#fff; border-color:#fff;">Sin Seniors</span>`;
+                    
+                    let nombreCoord = dbData.perfiles.find(p => p.id === ag.supervisor_id)?.nombre || 'Sin Líder de Sucursal';
+                    
+                    html += `
+                        <div class="agencia-card">
+                            <div class="agencia-header" style="${bgHeader}">
+                                <span style="color:#222; text-shadow: 1px 1px 0px rgba(255,255,255,0.8);"><i class="fa-solid fa-building"></i> Sucursal: ${ag.nombre} | Líder Suc.: ${nombreCoord}</span>
+                                <span style="color:#222; text-shadow: 1px 1px 0px rgba(255,255,255,0.8); font-size:14px;">${sucBadge} (Ratio Sucursal: ${totalesAgencia.cumplidores} / ${totalesAgencia.seniors} obj. logrado)</span>
+                            </div>
+                            ${eqHtml}
+                        </div>
+                    `;
+                }
+            });
+
+            if (html === '') {
+                html = '<div style="text-align:center; padding:40px; color:#aaa;">No se encontraron datos para procesar.</div>';
+            }
+
+            document.getElementById('gridContainer').innerHTML = html;
+        }
+
+        function exportarExcel() {
+            let dataArr = [];
+            const semId = document.getElementById('selSemana').value;
+            const semana = dbData.semanas.find(s => s.id === semId);
+            if(!semana) return alert("Semana no encontrada");
+            const dInicio = semana.fecha_inicio;
+            const dFin = semana.fecha_fin;
+            const objSemana = semana.objetivo;
+
+            dbData.agencias.forEach(ag => {
+                let totalesAgencia = { seniors: 0, cumplidores: 0 };
+                
+                dbData.equipos.filter(e => e.agencia_id === ag.id).forEach(eq => {
+                    let vends = dbData.perfiles.filter(p => 
+                        p.equipo_id === eq.id && 
+                        (p.categoria || '').toLowerCase() === 'senior' && 
+                        !p.nombre.includes('(BAJA)') && 
+                        !p.nombre.includes('(OCULTO)') &&
+                        (p.rol || '').toLowerCase() === 'vendedor'
+                    );
+                    
+                    let totalesEquipo = { seniors: 0, cumplidores: 0 };
+                    vends.forEach(v => {
+                        let netas = getVentasNetas(v.id, dInicio, dFin);
+                        let asiste = netas < objSemana;
+                        totalesEquipo.seniors++;
+                        totalesAgencia.seniors++;
+                        if(!asiste) { totalesEquipo.cumplidores++; totalesAgencia.cumplidores++; }
+                        
+                        dataArr.push({
+                            'Rol': 'Vendedor Senior',
+                            'Nombre': v.nombre,
+                            'Equipo': eq.nombre,
+                            'Sucursal': ag.nombre,
+                            'Ventas Sem.': netas,
+                            'Obj. Sem.': objSemana,
+                            'Resultado': asiste ? 'ASISTE SÁBADO' : 'LIBERADO'
+                        });
+                    });
+
+                    if(eq.lider_id) {
+                        let nombreLider = dbData.perfiles.find(p => p.id === eq.lider_id)?.nombre || 'Sin Líder Asignado';
+                        let liderAsiste = (totalesEquipo.seniors > 0) ? ((totalesEquipo.cumplidores / totalesEquipo.seniors) <= 0.5) : false;
+                        
+                        dataArr.push({
+                            'Rol': 'Líder de Asesores',
+                            'Nombre': nombreLider,
+                            'Equipo': eq.nombre,
+                            'Sucursal': ag.nombre,
+                            'Ventas Sem.': totalesEquipo.cumplidores + ' (logrados) / ' + totalesEquipo.seniors,
+                            'Obj. Sem.': '> 50% del eq.',
+                            'Resultado': (totalesEquipo.seniors === 0) ? 'SIN SENIORS' : (liderAsiste ? 'ASISTE SÁBADO' : 'LIBERADO')
+                        });
+                    }
+                });
+
+                if(ag.supervisor_id) {
+                    let nombreCoord = dbData.perfiles.find(p => p.id === ag.supervisor_id)?.nombre || 'Sin Líder de Sucursal';
+                    let sucAsiste = (totalesAgencia.seniors > 0) ? ((totalesAgencia.cumplidores / totalesAgencia.seniors) <= 0.5) : false;
+                    dataArr.push({
+                        'Rol': 'Líder de Sucursal',
+                        'Nombre': nombreCoord,
+                        'Equipo': '-',
+                        'Sucursal': ag.nombre,
+                        'Ventas Sem.': totalesAgencia.cumplidores + ' (logrados) / ' + totalesAgencia.seniors,
+                        'Obj. Sem.': '> 50% de la suc.',
+                        'Resultado': (totalesAgencia.seniors === 0) ? 'SIN SENIORS' : (sucAsiste ? 'ASISTE SÁBADO' : 'LIBERADO')
+                    });
+                }
+            });
+
+            if(dataArr.length === 0) return alert("No hay datos para exportar.");
+
+            const ws = XLSX.utils.json_to_sheet(dataArr);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Asistencia Sabados");
+            XLSX.writeFile(wb, "Asistencia_Sabados_" + semana.nombre_semana.replace(/ /g, "_") + ".xlsx");
+        }
+
+        
+        function toggleTheme() {
+            document.body.classList.toggle('light-theme');
+            let icon = document.getElementById('themeIcon');
+            if(document.body.classList.contains('light-theme')) {
+                icon.className = 'fa-solid fa-sun';
+            } else {
+                icon.className = 'fa-solid fa-moon';
+            }
+        }
+        init();
+    </script>
+</body>
+</html>
