@@ -918,6 +918,7 @@
 
             // Filtrar registros que sean pura entrevista (sin ventas ni bajas ni reversiones)
             let datosReales = data.filter(v => (v.ventas_cerradas > 0) || (v.bajas > 0) || (v.monto < 0) || v.beneficio?.includes('BAJA'));
+            window.datosAuditoria = datosReales;
 
             let tb = document.querySelector('#tabla_auditoria tbody');
             if (!datosReales || datosReales.length === 0) {
@@ -940,6 +941,7 @@
                     btnAccion = `<button class="btn-baja" onclick="darDeBajaVenta('${v.id}')"><i class="fa-solid fa-arrow-trend-down"></i> DAR DE BAJA</button>`;
                 }
                 
+                btnAccion += `<button style="background:#f39c12; color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer; margin-left: 10px;" onclick="abrirModalEditarVenta('${v.id}')" title="Editar"><i class="fa-solid fa-pen"></i></button>`;
                 btnAccion += `<button style="background:#c0392b; color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer; margin-left: 10px;" onclick="eliminarVentaDB('${v.id}')" title="Eliminar definitivamente de la DB"><i class="fa-solid fa-trash"></i></button>`;
 
 
@@ -1154,13 +1156,48 @@
                     for(let i = 0; i < json.length; i++) {
                         let row = json[i];
                         
-                        let nomVendedor = row["Vendedor"];
-                        let fechaExcel = row["Fecha"];
-                        let nroSol = row["id"] ? String(row["id"]).trim() : null;
-                        let importe = parseFloat(row["Importe"]) || 0;
-                        let estadoStr = String(row["estado"] || "").toLowerCase();
-                        let beneficio = row["Beneficio"] || "";
-                        let entidad = row["Entidad"] || "N/A";
+                                                let keys = Object.keys(row);
+                        
+                        let getKey = (posibles) => {
+                            return keys.find(k => posibles.includes(k.trim().toLowerCase()));
+                        };
+
+                        let vendKey = getKey(["vendedor", "asesor", "nombre"]);
+                        let nomVendedor = vendKey ? row[vendKey] : null;
+
+                        let fechaKey = getKey(["fecha", "date"]);
+                        let fechaExcel = fechaKey ? row[fechaKey] : null;
+
+                        let idKey = getKey(["id", "nro sol", "nro", "numero", "id venta", "solicitud"]);
+                        let nroSol = idKey ? String(row[idKey]).trim() : null;
+
+                        let montoKey = getKey(["importe", "monto", "capital", "valor", "precio"]);
+                        let rawMonto = montoKey ? row[montoKey] : 0;
+                        let importe = 0;
+                        if (typeof rawMonto === 'number') {
+                            importe = rawMonto;
+                        } else if (rawMonto) {
+                            let limpio = String(rawMonto).replace(/[^\d,\.-]/g, '');
+                            if (limpio.includes(',') && limpio.includes('.')) {
+                                if (limpio.lastIndexOf(',') > limpio.lastIndexOf('.')) {
+                                    limpio = limpio.replace(/\./g, '').replace(',', '.');
+                                } else {
+                                    limpio = limpio.replace(/,/g, '');
+                                }
+                            } else if (limpio.includes(',')) {
+                                limpio = limpio.replace(',', '.');
+                            }
+                            importe = parseFloat(limpio) || 0;
+                        }
+
+                        let estKey = getKey(["estado", "status"]);
+                        let estadoStr = estKey ? String(row[estKey]).toLowerCase() : "";
+
+                        let benKey = getKey(["beneficio", "plan", "producto"]);
+                        let beneficio = benKey ? row[benKey] : "";
+
+                        let entKey = getKey(["entidad", "banco", "medio de pago", "tarjeta"]);
+                        let entidad = entKey ? row[entKey] : "N/A";
                         
                         if(!nomVendedor || !nroSol) {
                             msjs.push("Fila " + (i+2) + ": Ignorada (falta Vendedor o ID de Solicitud).");
@@ -1367,11 +1404,17 @@
                     let encontradosParaEliminar = 0;
                     let origArestaurar = [];
 
-                    // Buscar registros en BD que coincidan con los IDs del Excel
-                    const { data: registrosEliminar } = await clienteSupabase
-                        .from('registro_ventas')
-                        .select('id, numero_solicitud, es_anulada')
-                        .in('numero_solicitud', idsBuscados);
+                                        // Buscar registros en BD que coincidan con los IDs del Excel
+                    let registrosEliminar = [];
+                    const CHUNK_SIZE = 300;
+                    for (let c = 0; c < idsBuscados.length; c += CHUNK_SIZE) {
+                        let chunk = idsBuscados.slice(c, c + CHUNK_SIZE);
+                        const { data: cData } = await clienteSupabase
+                            .from('registro_ventas')
+                            .select('id, numero_solicitud, es_anulada')
+                            .in('numero_solicitud', chunk);
+                        if (cData) registrosEliminar = registrosEliminar.concat(cData);
+                    }
                     
                     if (registrosEliminar && registrosEliminar.length > 0) {
                         for (let reg of registrosEliminar) {
@@ -1385,10 +1428,15 @@
                         }
 
                         if (origArestaurar.length > 0) {
-                            const { data: originales } = await clienteSupabase
-                                .from('registro_ventas')
-                                .select('id, numero_solicitud')
-                                .in('numero_solicitud', origArestaurar);
+                            let originales = [];
+                            for (let c = 0; c < origArestaurar.length; c += CHUNK_SIZE) {
+                                let chunk = origArestaurar.slice(c, c + CHUNK_SIZE);
+                                const { data: oData } = await clienteSupabase
+                                    .from('registro_ventas')
+                                    .select('id, numero_solicitud')
+                                    .in('numero_solicitud', chunk);
+                                if (oData) originales = originales.concat(oData);
+                            }
                             
                             if (originales && originales.length > 0) {
                                 for (let orig of originales) {
@@ -1418,11 +1466,25 @@
             
             btnRevertir.innerHTML = "<button class='btn-delete' style='width: 100%; padding: 10px; font-size: 16px; opacity: 0.7;' disabled><i class='fa-solid fa-spinner fa-spin'></i> Eliminando registros...</button>";
             
-            try {
+                        try {
+                let deleteIds = [];
                 for (let op of window.reversionesExcelPendientes) {
                     if (op.tipo === 'delete') {
-                        await clienteSupabase.from('registro_ventas').delete().eq('id', op.id);
-                    } else if (op.tipo === 'update') {
+                        deleteIds.push(op.id);
+                    }
+                }
+                
+                // Batch delete 500 at a time
+                const CHUNK = 500;
+                for (let i = 0; i < deleteIds.length; i += CHUNK) {
+                    let chunk = deleteIds.slice(i, i + CHUNK);
+                    resultDiv.innerHTML = "Eliminando lote " + (Math.floor(i/CHUNK) + 1) + " de " + Math.ceil(deleteIds.length/CHUNK) + "... <i class='fa-solid fa-spinner fa-spin'></i>";
+                    await clienteSupabase.from('registro_ventas').delete().in('id', chunk);
+                }
+                
+                resultDiv.innerHTML = "Restaurando altas anuladas (si las hubiera)... <i class='fa-solid fa-spinner fa-spin'></i>";
+                for (let op of window.reversionesExcelPendientes) {
+                    if (op.tipo === 'update') {
                         await clienteSupabase.from('registro_ventas').update(op.data).eq('id', op.id);
                     }
                 }
@@ -1713,6 +1775,94 @@
         }
 
 </script>
+
+<!-- Modal Editar Venta -->
+<div id="modalEditarVenta" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+    <div style="background:white; padding:20px; border-radius:8px; width:400px; max-width:90%; position:relative;">
+        <h3 style="margin-top:0; color:#2c3e50;"><i class="fa-solid fa-pen"></i> Editar Venta</h3>
+        <input type="hidden" id="edit_venta_id">
+        
+        <label style="display:block; margin-top:10px; font-weight:bold; font-size:12px; color:#555;">Fecha de Carga</label>
+        <input type="date" id="edit_venta_fecha" style="width:100%; padding:8px; box-sizing:border-box; margin-top:5px; border:1px solid #ccc; border-radius:4px;">
+        
+        <label style="display:block; margin-top:10px; font-weight:bold; font-size:12px; color:#555;">Monto ($)</label>
+        <input type="number" id="edit_venta_monto" style="width:100%; padding:8px; box-sizing:border-box; margin-top:5px; border:1px solid #ccc; border-radius:4px;">
+        
+        <label style="display:block; margin-top:10px; font-weight:bold; font-size:12px; color:#555;">Banco / Medio de Pago</label>
+        <input type="text" id="edit_venta_banco" style="width:100%; padding:8px; box-sizing:border-box; margin-top:5px; border:1px solid #ccc; border-radius:4px;">
+        
+        <label style="display:block; margin-top:10px; font-weight:bold; font-size:12px; color:#555;">Beneficio / Producto</label>
+        <input type="text" id="edit_venta_beneficio" style="width:100%; padding:8px; box-sizing:border-box; margin-top:5px; border:1px solid #ccc; border-radius:4px;">
+        
+        <label style="display:block; margin-top:10px; font-weight:bold; font-size:12px; color:#555;">Nro Solicitud / ID</label>
+        <input type="text" id="edit_venta_nrosol" style="width:100%; padding:8px; box-sizing:border-box; margin-top:5px; border:1px solid #ccc; border-radius:4px;">
+        
+        <div style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px;">
+            <button onclick="document.getElementById('modalEditarVenta').style.display='none'" style="padding:8px 15px; background:#bdc3c7; border:none; border-radius:4px; cursor:pointer;">Cancelar</button>
+            <button onclick="guardarEdicionVenta()" style="padding:8px 15px; background:#2ecc71; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function abrirModalEditarVenta(id) {
+    let v = window.datosAuditoria.find(x => x.id === id);
+    if(!v) return alert('No se encontró la venta en memoria.');
+    
+    document.getElementById('edit_venta_id').value = id;
+    
+    if(v.created_at) {
+        let d = new Date(v.created_at);
+        document.getElementById('edit_venta_fecha').value = d.toISOString().split('T')[0];
+    } else {
+        document.getElementById('edit_venta_fecha').value = '';
+    }
+    
+    document.getElementById('edit_venta_monto').value = v.monto || 0;
+    document.getElementById('edit_venta_banco').value = v.medio_pago || '';
+    document.getElementById('edit_venta_beneficio').value = v.beneficio || '';
+    document.getElementById('edit_venta_nrosol').value = v.numero_solicitud || '';
+    
+    document.getElementById('modalEditarVenta').style.display = 'flex';
+}
+
+async function guardarEdicionVenta() {
+    let id = document.getElementById('edit_venta_id').value;
+    let fecha = document.getElementById('edit_venta_fecha').value;
+    let monto = document.getElementById('edit_venta_monto').value;
+    let banco = document.getElementById('edit_venta_banco').value;
+    let beneficio = document.getElementById('edit_venta_beneficio').value;
+    let nrosol = document.getElementById('edit_venta_nrosol').value;
+    
+    if(!fecha) return alert('La fecha es obligatoria.');
+    
+    // Armar fecha respetando la hora original o poniendo 12:00
+    let v = window.datosAuditoria.find(x => x.id === id);
+    let hStr = 'T12:00:00Z';
+    if(v && v.created_at) {
+        hStr = 'T' + v.created_at.split('T')[1];
+    }
+    let fechaFinal = fecha + hStr;
+    
+    let updates = {
+        created_at: fechaFinal,
+        monto: parseFloat(monto) || 0,
+        medio_pago: banco,
+        beneficio: beneficio,
+        numero_solicitud: nrosol
+    };
+    
+    const { error } = await clienteSupabase.from('registro_ventas').update(updates).eq('id', id);
+    if(error) {
+        alert('Error al guardar: ' + error.message);
+    } else {
+        alert('Venta actualizada con éxito.');
+        document.getElementById('modalEditarVenta').style.display = 'none';
+        cargarAuditoria();
+    }
+}
+</script>
+
 </body>
 
 </html>
