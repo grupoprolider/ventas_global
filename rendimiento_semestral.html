@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rendimiento Semestral - Grupo ProLíder</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --gpl-petroleo: #006779;
+            --gpl-dorado: #A42A68;
+            --gpl-borravino: #72224c;
+            --fondo-oscuro: #121a1f;
+            --celda-oscura: #1e2933;
+            --text-color: #ffffff;
+            --text-muted: #aaaaaa;
+            --border-color: #333344;
+            --semaforo-verde: #27ae60;
+            --semaforo-amarillo: #f1c40f;
+            --semaforo-rojo: #c0392b;
+        }
+
+        body.light-theme {
+            --semaforo-verde: #1e8449;
+            --semaforo-rojo: #a93226;
+            --text-color: #111111;
+            --text-muted: #444444;
+            --fondo-oscuro: #f4f6f8;
+            --celda-oscura: #ffffff;
+            --text-color: #333333;
+            --text-muted: #666666;
+            --border-color: #dddddd;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--fondo-oscuro);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .filtros-container {
+            background: var(--celda-oscura);
+            padding: 15px 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+
+        select, input, button {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: var(--fondo-oscuro);
+            color: var(--text-color);
+            outline: none;
+            font-weight: bold;
+        }
+        
+        button { cursor: pointer; }
+        
+        .btn-excel { background: #27ae60; color: white; border: none; }
+        .btn-png { background: #8e44ad; color: white; border: none; }
+        .btn-volver { background: #555; text-decoration: none; padding: 10px 15px; border-radius: 6px; color: white; display: inline-block; font-weight: bold; border: none; }
+        
+        .table-container {
+            background: var(--celda-oscura);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            overflow-x: auto;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th, td {
+            padding: 12px 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
+            white-space: nowrap;
+        }
+
+        th { color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 12px; background: rgba(0,0,0,0.02); }
+        
+        .th-campana {
+            background: linear-gradient(90deg, var(--gpl-petroleo) 0%, var(--fondo-oscuro) 100%) !important;
+            color: white !important;
+            text-align: center;
+            border-right: 2px solid var(--gpl-dorado) !important;
+            font-size: 14px !important;
+        }
+        
+        .col-resumen {
+            text-align: center !important;
+            border-right: 2px solid var(--gpl-dorado) !important;
+        }
+
+        .badge {
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        
+        .badge-verde { background: rgba(46, 204, 113, 0.2); color: var(--semaforo-verde); border: 1px solid var(--semaforo-verde); }
+        .badge-amarillo { background: rgba(241, 196, 15, 0.2); color: #d4ac0d; border: 1px solid var(--semaforo-amarillo); }
+        .badge-rojo { background: rgba(231, 76, 60, 0.2); color: var(--semaforo-rojo); border: 1px solid var(--semaforo-rojo); }
+
+        .estado-verde { color: var(--semaforo-verde); font-weight: bold; }
+        .estado-rojo { color: var(--semaforo-rojo); font-weight: bold; }
+        
+        .col-fija { position: sticky; left: 0; background: var(--celda-oscura); z-index: 2; border-right: 2px solid var(--border-color); }
+        .col-fija-2 { position: sticky; left: 220px; background: var(--celda-oscura); z-index: 2; border-right: 2px solid var(--border-color); }
+
+    </style>
+</head>
+<body>
+    <div class="header-container">
+        <div>
+            <h1 style="margin:0; font-size:24px; color:var(--gpl-dorado);"><i class="fa-solid fa-chart-line"></i> Rendimiento Semestral</h1>
+            <p style="margin:5px 0 0 0; color:var(--text-muted); font-size:14px;">Seguimiento mensual plano consolidado.</p>
+        </div>
+        <a href="panel_gerencia.html" class="btn-volver"><i class="fa-solid fa-arrow-left"></i> Volver a Gerencia</a>
+    </div>
+
+    <div class="filtros-container">
+        <div>
+            <label style="color:var(--text-muted); font-size:12px; display:block; margin-bottom:4px;">Sucursal</label>
+            <select id="selSucursal" onchange="actualizarEquiposDropdown()"><option value="TODAS">Todas las Sucursales</option></select>
+        </div>
+        <div>
+            <label style="color:var(--text-muted); font-size:12px; display:block; margin-bottom:4px;">Equipo</label>
+            <select id="selEquipo" onchange="renderSemestre()"><option value="TODOS">Todos los Equipos</option></select>
+        </div>
+        <div>
+            <label style="color:var(--text-muted); font-size:12px; display:block; margin-bottom:4px;">Rendimiento</label>
+            <select id="selRiesgo" onchange="renderSemestre()">
+                <option value="TODOS">Todos los Asesores</option>
+                <option value="ROJO">Sanción (5 a 6 meses fallados)</option>
+                <option value="AMARILLO">Alerta Temprana (3 a 4 meses fallados)</option>
+                <option value="VERDE">Saludable (0 a 2 meses fallados)</option>
+            </select>
+        </div>
+        <div style="margin-top:20px; margin-left:auto; display:flex; gap:10px;">
+            <button class="btn-import" onclick="document.getElementById('modalImportHist').style.display='flex'" style="background:#e67e22; color:white; border:none; padding:8px 12px; border-radius:6px; font-weight:bold; cursor:pointer;"><i class="fa-solid fa-upload"></i> Subir Mes Histórico</button>
+            <button class="btn-excel" onclick="exportarExcel()"><i class="fa-solid fa-file-excel"></i> Excel</button>
+            <button class="btn-png" onclick="exportarPNG()"><i class="fa-solid fa-camera"></i> Captura PNG</button>
+            <button onclick="toggleTheme()" style="background:#f39c12; color:white; border:none;"><i class="fa-solid fa-moon" id="themeIcon"></i> Tono</button>
+        </div>
+    </div>
+
+    <div id="loading" style="text-align:center; padding:40px; color:var(--text-muted);">
+        <i class="fa-solid fa-spinner fa-spin fa-2x"></i><br><br>Sincronizando métricas...
+    </div>
+
+    <div id="mainContainer" class="table-container" style="display:none;">
+        <table id="tablaSemaforo">
+            <thead id="tablaHead"></thead>
+            <tbody id="tablaBody"></tbody>
+        </table>
+    </div>
+
+    
+    <div id="modalImportHist" class="modal-obj" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:1000;">
+        <div class="modal-obj-content" style="background:var(--celda-oscura); padding:20px; border-radius:8px; width:400px; text-align:center; border:1px solid var(--border-color);">
+            <h3 style="margin-top:0; color:var(--gpl-dorado);">Cargar Mes Histórico</h3>
+            <p style="font-size:12px; color:var(--text-muted); text-align:left; line-height:1.4;">Sube un archivo Excel (.xlsx) con el consolidado del mes. Las columnas deben ser:<br><b>- Nombre</b> (vacío o con título)<br><b>- OBJETIVO</b><br><b>- VENTAS</b></p>
+            
+            <div style="display:flex; gap:10px; margin-bottom:10px;">
+                <select id="selImportMes" style="flex:1; padding:8px; background:var(--fondo-oscuro); color:var(--text-color); border:1px solid var(--border-color);">
+                    <option value="Mayo">Mayo</option>
+                    <option value="Junio">Junio</option>
+                    <option value="Julio">Julio</option>
+                    <option value="Agosto">Agosto</option>
+                </select>
+                <select id="selImportAnio" style="flex:1; padding:8px; background:var(--fondo-oscuro); color:var(--text-color); border:1px solid var(--border-color);">
+                    <option value="2026">2026</option>
+                </select>
+            </div>
+            
+            <input type="file" id="fileImportHist" accept=".xlsx, .xls" style="width:100%; box-sizing:border-box; margin-bottom:15px; color:var(--text-color);">
+            
+            <div style="display:flex; gap:10px;">
+                <button style="flex:1; background:#555; color:white; border:none; padding:8px; border-radius:4px; cursor:pointer;" onclick="document.getElementById('modalImportHist').style.display='none'">Cancelar</button>
+                <button style="flex:1; background:var(--gpl-petroleo); color:white; border:none; padding:8px; border-radius:4px; cursor:pointer;" onclick="procesarExcelHistorico()">Procesar y Subir</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const clienteSupabase = supabase.createClient('https://pumpwqyazqaxeeknrhyo.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1bXB3cXlhenFheGVla25yaHlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MjQ4ODEsImV4cCI6MjA5NDIwMDg4MX0.-AQZZYAt-uskDLUpbiafJXbHgW0lErf8bwEnk7eq1DE');
+
+        let dbData = { perfiles: [], equipos: [], agencias: [], semanas: [], ventas: [], historialObj: [] };
+        
+        // Escala Mensual
+        const ALERTA_ROJA = 5;
+        const ALERTA_AMARILLA = 3;
+
+        
+        function actualizarEquiposDropdown() {
+            const suc = document.getElementById('selSucursal').value;
+            const selEq = document.getElementById('selEquipo');
+            let eqFiltrados = dbData.equipos;
+            if(suc !== 'TODAS') {
+                eqFiltrados = eqFiltrados.filter(e => e.agencia_id === suc);
+            }
+            selEq.innerHTML = '<option value="TODOS">Todos los Equipos</option>' + eqFiltrados.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('');
+            renderSemestre();
+        }
+        
+        async function procesarExcelHistorico() {
+            const file = document.getElementById('fileImportHist').files[0];
+            if(!file) return alert('Seleccione un archivo Excel');
+            
+            const mes = document.getElementById('selImportMes').value;
+            const anio = document.getElementById('selImportAnio').value;
+            const campana = `Campaña ${mes} ${anio}`;
+            
+            const mesesMap = { 'Enero':1, 'Febrero':2, 'Marzo':3, 'Abril':4, 'Mayo':5, 'Junio':6, 'Julio':7, 'Agosto':8, 'Septiembre':9, 'Octubre':10, 'Noviembre':11, 'Diciembre':12 };
+            const numMes = mesesMap[mes];
+            const fechaInicio = `${anio}-${String(numMes).padStart(2, '0')}-01`;
+            const ultimoDia = new Date(anio, numMes, 0).getDate();
+            const fechaFin = `${anio}-${String(numMes).padStart(2, '0')}-${ultimoDia}`;
+            const midDate = `${anio}-${String(numMes).padStart(2, '0')}-15T12:00:00.000Z`;
+            
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const json = XLSX.utils.sheet_to_json(sheet, {header: 1});
+                    
+                    let headerRow = -1;
+                    for(let i=0; i<json.length; i++){
+                        let row = json[i];
+                        if(row && row.some(cell => typeof cell === 'string' && cell.toUpperCase().includes('OBJETIVO'))) {
+                            headerRow = i; break;
+                        }
+                    }
+                    if(headerRow === -1) headerRow = 0;
+                    
+                    let headers = json[headerRow] || [];
+                    let colObj = -1, colVentas = -1, colNombre = 0;
+                    
+                    headers.forEach((h, idx) => {
+                        if(typeof h === 'string') {
+                            let text = h.toUpperCase();
+                            if(text.includes('OBJETIVO')) colObj = idx;
+                            if(text.includes('VENTA')) colVentas = idx;
+                        }
+                    });
+                    
+                    if(colObj === -1) colObj = 1; 
+                    if(colVentas === -1) colVentas = 2;
+                    
+                    let operaciones = [];
+                    let objetivoGlobal = 0;
+                    
+                    for(let i = headerRow + 1; i < json.length; i++) {
+                        let row = json[i];
+                        if(!row || !row[colNombre]) continue;
+                        
+                        let nombreStr = String(row[colNombre]).trim().toUpperCase();
+                        let obj = parseInt(row[colObj]) || 0;
+                        let ventas = parseInt(row[colVentas]) || 0;
+                        
+                        if(obj > objetivoGlobal) objetivoGlobal = obj; 
+                        
+                        let vend = dbData.perfiles.find(p => p.nombre.trim().toUpperCase() === nombreStr);
+                        if(vend) {
+                            operaciones.push({
+                                vendedor_id: vend.id,
+                                ventas_cerradas: ventas,
+                                bajas: 0,
+                                entrevistas: 0,
+                                monto: 0,
+                                semana: 1,
+                                campana: campana,
+                                es_anulada: false,
+                                numero_solicitud: `HIST-${mes.toUpperCase()}-${anio}-${vend.id}`,
+                                created_at: midDate
+                            });
+                        }
+                    }
+                    
+                    if(operaciones.length === 0) return alert("No se encontraron vendedores válidos en el archivo. Verifica que los nombres coincidan exactamente con el sistema.");
+                    
+                    if(!confirm(`Se encontraron ${operaciones.length} asesores. El objetivo detectado es ${objetivoGlobal}. ¿Subir a ${campana}?`)) return;
+                    
+                    document.getElementById('loading').style.display = 'block';
+                    document.getElementById('mainContainer').style.display = 'none';
+                    document.getElementById('modalImportHist').style.display = 'none';
+                    
+                    const { data: semExistente } = await clienteSupabase.from('semanas_config').select('id').eq('campana', campana).limit(1);
+                        
+                    if(semExistente && semExistente.length > 0) {
+                        await clienteSupabase.from('semanas_config').update({ objetivo: objetivoGlobal }).eq('id', semExistente[0].id);
+                    } else {
+                        await clienteSupabase.from('semanas_config').insert([{
+                            campana: campana,
+                            nombre_semana: 'Mes Completo Histórico',
+                            fecha_inicio: fechaInicio,
+                            fecha_fin: fechaFin,
+                            objetivo: objetivoGlobal
+                        }]);
+                    }
+                    
+                    await clienteSupabase.from('registro_ventas').delete().like('numero_solicitud', `HIST-${mes.toUpperCase()}-${anio}-%`);
+                        
+                    // Insertar en chunks
+                    let step = 500;
+                    for (let i = 0; i < operaciones.length; i += step) {
+                        let chunk = operaciones.slice(i, i + step);
+                        const { error: errInsert } = await clienteSupabase.from('registro_ventas').insert(chunk);
+                        if (errInsert) throw errInsert;
+                    }
+                    
+                    alert(`Carga de ${campana} finalizada correctamente.`);
+                    location.reload();
+                } catch(err) {
+                    console.error(err);
+                    alert("Error procesando Excel: " + err.message);
+                    location.reload();
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        async function init() {
+            try {
+                const [resPerf, resEq, resAg, resSem, resHist] = await Promise.all([
+                    clienteSupabase.from('perfiles').select('*'),
+                    clienteSupabase.from('equipos').select('*'),
+                    clienteSupabase.from('agencias').select('*'),
+                    clienteSupabase.from('semanas_config').select('*').order('fecha_inicio', { ascending: true }),
+                    clienteSupabase.from('historial_objetivos').select('*')
+                ]);
+
+                dbData.perfiles = resPerf.data || [];
+                dbData.equipos = resEq.data || [];
+                dbData.agencias = resAg.data || [];
+                dbData.semanas = resSem.data || [];
+                dbData.historialObj = resHist.data || [];
+
+                
+                const params = new URLSearchParams(window.location.search);
+                const queryAgencia = params.get('agencia_id');
+                const btnVolver = document.querySelector('.btn-volver');
+                
+                const selSuc = document.getElementById('selSucursal');
+                if (queryAgencia) {
+                    let ag = dbData.agencias.find(a => a.id === queryAgencia);
+                    if (ag) {
+                        selSuc.innerHTML = `<option value="${ag.id}">${ag.nombre}</option>`;
+                        selSuc.disabled = true;
+                        document.querySelector('.btn-import').style.display = 'none';
+                        
+                        btnVolver.innerHTML = '<i class="fa-solid fa-arrow-left"></i> Volver a mi Panel';
+                        // Como supervisor y coordinador son lo mismo en la jerarquia, los mandamos al panel_supervisor que es la interfaz correcta
+                        btnVolver.href = 'panel_supervisor.html?id=' + ag.supervisor_id;
+                    }
+                } else {
+                    selSuc.innerHTML += dbData.agencias.map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
+                }
+                
+                const selEq = document.getElementById('selEquipo');
+                if (queryAgencia) {
+                    let eqAg = dbData.equipos.filter(e => e.agencia_id === queryAgencia);
+                    selEq.innerHTML = '<option value="TODOS">Todos los Equipos</option>' + eqAg.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('');
+                } else {
+                    selEq.innerHTML = '<option value="TODOS">Todos los Equipos</option>' + dbData.equipos.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('');
+                }
+
+
+                let vtas = [];
+                let step = 1000, fromRow = 0;
+                while (true) {
+                    const { data } = await clienteSupabase.from('registro_ventas')
+                        .select('vendedor_id, created_at, ventas_cerradas, bajas, campana')
+                        .range(fromRow, fromRow + step - 1);
+                    if (!data || data.length === 0) break;
+                    vtas = vtas.concat(data);
+                    if (data.length < step) break;
+                    fromRow += step;
+                }
+                dbData.ventas = vtas;
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('mainContainer').style.display = 'block';
+                
+                renderSemestre();
+            } catch (err) {
+                console.error(err);
+                alert("Error al cargar datos: " + err.message + "\n" + err.stack);
+            }
+        }
+
+        function getVentasNetas(vendedorId, campana, dInicio, dFin) {
+            let v = dbData.ventas.filter(x => 
+                x.vendedor_id === vendedorId && 
+                x.campana === campana && 
+                x.created_at >= dInicio + 'T00:00:00' && 
+                x.created_at <= dFin + 'T23:59:59'
+            );
+            let brutas = v.reduce((sum, item) => sum + (item.ventas_cerradas || 0), 0);
+            let bajas = v.reduce((sum, item) => sum + (item.bajas || 0), 0);
+            return brutas - bajas;
+        }
+
+        
+                        function getObjetivoMensual(vendedorId, campana, semanasCampana) {
+            let hist = dbData.historialObj.find(h => h.vendedor_id === vendedorId && h.campana === campana);
+            let sumSem = semanasCampana.reduce((sum, sem) => sum + (sem.objetivo || 0), 0);
+            
+            let result = sumSem;
+            if (hist && hist.objetivo_ventas > 0) result = hist.objetivo_ventas;
+            
+            // Only alert once for debug if it's 0 to catch the bug
+            if(result === 0 && !window._debugAlerted && vendedorId === '6eb46c08-0b1f-47e4-a0b2-9c53f410d047') {
+                window._debugAlerted = true;
+                alert("DEBUG ZERO: campana=" + campana + "\n hist=" + JSON.stringify(hist) + "\n sumSem=" + sumSem + "\n semanasCampana=" + JSON.stringify(semanasCampana));
+            }
+            return result;
+        }
+
+        function getObjetivo(vendedorId, sem) {
+            let hist = dbData.historialObj.find(h => h.vendedor_id === vendedorId && h.campana === sem.campana);
+            return hist ? hist.objetivo_ventas : (sem.objetivo || 0);
+        }
+
+        async function editarObjetivo(vendedorId, nombre, campana, objActual) {
+            if(document.querySelector('.btn-import').style.display === 'none') return; // Bloquear a coordinadores
+            
+            let nuevoObj = prompt(`Modificar objetivo de ${nombre} para la ${campana}:\n(Actualmente: ${objActual})`, objActual);
+            if(nuevoObj === null || nuevoObj.trim() === '') return;
+            let val = parseInt(nuevoObj);
+            if(isNaN(val)) return alert("Número inválido.");
+            
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('mainContainer').style.display = 'none';
+            
+            // Upsert in historial_objetivos
+            const { data: exist } = await clienteSupabase.from('historial_objetivos').select('id').eq('vendedor_id', vendedorId).eq('campana', campana).limit(1);
+            if(exist && exist.length > 0) {
+                const { error } = await clienteSupabase.from('historial_objetivos').update({ objetivo_ventas: val }).eq('id', exist[0].id); if(error) { alert('Error al guardar: ' + error.message); return location.reload(); }
+            } else {
+                const { error } = await clienteSupabase.from('historial_objetivos').upsert([{ vendedor_id: vendedorId, campana: campana, objetivo_ventas: val }], { onConflict: 'vendedor_id,campana' }); if(error) { alert('Error al guardar: ' + error.message); return location.reload(); }
+            }
+            
+            location.reload();
+        }
+
+        function getRowDataForWeek(rowDef, sem, vendsSeniors) {
+            let netas = 0; let obj = 0; let isActive = false;
+            let semFin = new Date(sem.fecha_fin + 'T23:59:59');
+            let isHistorico = sem.nombre_semana === 'Mes Completo Histórico';
+            
+            if (rowDef.tipo === 'senior') {
+                let considerActive = new Date(rowDef.refObj.created_at || '2000-01-01T00:00:00Z') <= semFin;
+                if(isHistorico) {
+                    considerActive = dbData.ventas.some(x => x.vendedor_id === rowDef.id && x.campana === sem.campana);
+                }
+                
+                if (considerActive) {
+                    netas = getVentasNetas(rowDef.id, sem.campana, sem.fecha_inicio, sem.fecha_fin);
+                    
+                    isActive = true;
+                }
+            } 
+            else if (rowDef.tipo === 'lider_equipo') {
+                let vendsEq = vendsSeniors.filter(p => p.equipo_id === rowDef.eqId);
+                vendsEq.forEach(v => {
+                    let considerActive = new Date(v.created_at || '2000-01-01T00:00:00Z') <= semFin;
+                    if(isHistorico) {
+                        considerActive = dbData.ventas.some(x => x.vendedor_id === v.id && x.campana === sem.campana);
+                    }
+                    if (considerActive) {
+                        netas += getVentasNetas(v.id, sem.campana, sem.fecha_inicio, sem.fecha_fin);
+                        
+                        isActive = true;
+                    }
+                });
+            }
+            else if (rowDef.tipo === 'coordinador') {
+                let eqIds = dbData.equipos.filter(e => e.agencia_id === rowDef.agId).map(e => e.id);
+                let vendsAg = vendsSeniors.filter(p => eqIds.includes(p.equipo_id));
+                vendsAg.forEach(v => {
+                    let considerActive = new Date(v.created_at || '2000-01-01T00:00:00Z') <= semFin;
+                    if(isHistorico) {
+                        considerActive = dbData.ventas.some(x => x.vendedor_id === v.id && x.campana === sem.campana);
+                    }
+                    if (considerActive) {
+                        netas += getVentasNetas(v.id, sem.campana, sem.fecha_inicio, sem.fecha_fin);
+                        
+                        isActive = true;
+                    }
+                });
+            }
+            
+            return { netas, obj, isActive };
+        }
+
+        function getRowsToRender(selSuc) {
+            let selEqObj = document.getElementById('selEquipo');
+            let selEq = selEqObj ? selEqObj.value : 'TODOS';
+            let vendsGlobal = dbData.perfiles.filter(p => (p.rol || '').toLowerCase() === 'vendedor' && !p.nombre.includes('(BAJA)') && !p.nombre.includes('(OCULTO)'));
+            let seniorsOnly = vendsGlobal.filter(p => (p.categoria || '').toLowerCase() === 'senior');
+            
+            let rowsToRender = [];
+            
+            seniorsOnly.forEach(s => {
+                if(!s.equipo_id) return;
+                if(selEq !== 'TODOS' && s.equipo_id !== selEq) return;
+                if(selSuc !== 'TODAS') {
+                    let eq = dbData.equipos.find(e => e.id === s.equipo_id);
+                    if(!eq || eq.agencia_id !== selSuc) return;
+                }
+                rowsToRender.push({ tipo: 'senior', id: s.id, nombre: s.nombre, refObj: s });
+            });
+            
+            dbData.equipos.forEach(eq => {
+                if(selSuc !== 'TODAS' && eq.agencia_id !== selSuc) return;
+                if(selEq !== 'TODOS' && eq.id !== selEq) return;
+                if(eq.lider_id) {
+                    let lider = dbData.perfiles.find(p => p.id === eq.lider_id);
+                    if(lider && !lider.nombre.includes('(BAJA)')) {
+                        rowsToRender.push({ tipo: 'lider_equipo', id: lider.id, nombre: lider.nombre + ' (Líder Eq)', eqId: eq.id });
+                    }
+                }
+            });
+            
+            dbData.agencias.forEach(ag => {
+                if(selSuc !== 'TODAS' && ag.id !== selSuc) return;
+                if(selEq !== 'TODOS') return; 
+                if(ag.supervisor_id) {
+                    let coord = dbData.perfiles.find(p => p.id === ag.supervisor_id);
+                    if(coord && !coord.nombre.includes('(BAJA)')) {
+                        rowsToRender.push({ tipo: 'coordinador', id: coord.id, nombre: coord.nombre + ' (Coord Suc)', agId: ag.id });
+                    }
+                }
+            });
+            
+            return { rowsToRender, seniorsOnly };
+        }
+
+        function renderSemestre() {
+            const selSuc = document.getElementById('selSucursal').value;
+            const selRiesgo = document.getElementById('selRiesgo').value;
+            const hoy = new Date().toISOString().split('T')[0];
+            
+            const campanasOrdenadas = [...new Set(dbData.semanas.map(s => s.campana))].reverse();
+            
+            let { rowsToRender, seniorsOnly } = getRowsToRender(selSuc);
+            
+            let mapRiesgo = {};
+            let mapSaldo = {};
+            
+            rowsToRender.forEach(rowDef => {
+                let falladasMeses = 0;
+                let saldoAcum = 0;
+                
+                campanasOrdenadas.forEach(campana => {
+                    let semanasCampana = dbData.semanas.filter(s => s.campana === campana);
+                    let netasMes = 0;
+                    let objMes = 0;
+                    let isActiveMes = false;
+                    let maxFechaFinMes = '';
+                    
+                    semanasCampana.forEach(sem => {
+                        let { netas, isActive } = getRowDataForWeek(rowDef, sem, seniorsOnly);
+                        if(isActive) isActiveMes = true;
+                        netasMes += netas;
+                        if(sem.fecha_fin > maxFechaFinMes) maxFechaFinMes = sem.fecha_fin;
+                    });
+                    
+                    if (rowDef.tipo === 'senior') {
+                        objMes = getObjetivoMensual(rowDef.id, campana, semanasCampana);
+                    } else if (rowDef.tipo === 'lider_equipo') {
+                        let vendsEq = seniorsOnly.filter(p => p.equipo_id === rowDef.eqId);
+                        vendsEq.forEach(v => {
+                            let considerActive = new Date(v.created_at || '2000-01-01T00:00:00Z') <= new Date(maxFechaFinMes + 'T23:59:59Z');
+                            if(campana.includes('Histórico')) considerActive = dbData.ventas.some(x => x.vendedor_id === v.id && x.campana === campana);
+                            if(considerActive) objMes += getObjetivoMensual(v.id, campana, semanasCampana);
+                        });
+                    } else if (rowDef.tipo === 'coordinador') {
+                        let eqIds = dbData.equipos.filter(e => e.agencia_id === rowDef.agId).map(e => e.id);
+                        let vendsAg = seniorsOnly.filter(p => eqIds.includes(p.equipo_id));
+                        vendsAg.forEach(v => {
+                            let considerActive = new Date(v.created_at || '2000-01-01T00:00:00Z') <= new Date(maxFechaFinMes + 'T23:59:59Z');
+                            if(campana.includes('Histórico')) considerActive = dbData.ventas.some(x => x.vendedor_id === v.id && x.campana === campana);
+                            if(considerActive) objMes += getObjetivoMensual(v.id, campana, semanasCampana);
+                        });
+                    }
+                    
+                    if(isActiveMes) {
+                        let mesTerminado = hoy > maxFechaFinMes;
+                        let objetivoLogrado = netasMes >= objMes;
+                        let isEvaluated = mesTerminado || objetivoLogrado;
+                        
+                        if(isEvaluated) {
+                            if(!objetivoLogrado) falladasMeses++;
+                            saldoAcum += (netasMes - objMes);
+                        }
+                    }
+                });
+                
+                mapRiesgo[rowDef.id] = falladasMeses;
+                mapSaldo[rowDef.id] = saldoAcum;
+            });
+            
+            let tr1 = `<tr>
+                <th class="col-fija" style="width:220px;">Asesor / Líder</th>
+                <th class="col-fija-2" style="width:160px; text-align:center;">Fallas (Meses) / Riesgo</th>
+                <th style="width:80px; text-align:center;">Saldo<br>Hist.</th>`;
+            
+            campanasOrdenadas.forEach(campana => {
+                tr1 += `<th class="th-campana">${campana}</th>`;
+            });
+            tr1 += `</tr>`;
+            document.getElementById('tablaHead').innerHTML = tr1;
+            
+            let tbodyHtml = '';
+            
+            rowsToRender.forEach(rowDef => {
+                let falladas = mapRiesgo[rowDef.id];
+                let saldo = mapSaldo[rowDef.id];
+                
+                if (selRiesgo === 'ROJO' && falladas < ALERTA_ROJA) return;
+                if (selRiesgo === 'AMARILLO' && (falladas < ALERTA_AMARILLA || falladas >= ALERTA_ROJA)) return;
+                if (selRiesgo === 'VERDE' && falladas >= ALERTA_AMARILLA) return;
+                
+                let badgeRiesgo = '';
+                if (falladas >= ALERTA_ROJA) badgeRiesgo = `<span class="badge badge-rojo">${falladas} Meses (Sanción)</span>`;
+                else if (falladas >= ALERTA_AMARILLA) badgeRiesgo = `<span class="badge badge-amarillo">${falladas} Meses (Alerta)</span>`;
+                else badgeRiesgo = `<span class="badge badge-verde">${falladas} Meses (Saludable)</span>`;
+                
+                let subTitulo = '-';
+                if(rowDef.tipo === 'senior') {
+                    let eq = dbData.equipos.find(e => e.id === rowDef.refObj.equipo_id);
+                    if(eq) subTitulo = eq.nombre;
+                } else if(rowDef.tipo === 'lider_equipo') {
+                    let eq = dbData.equipos.find(e => e.id === rowDef.eqId);
+                    if(eq) subTitulo = 'Eq: ' + eq.nombre;
+                } else if(rowDef.tipo === 'coordinador') {
+                    let ag = dbData.agencias.find(a => a.id === rowDef.agId);
+                    if(ag) subTitulo = 'Suc: ' + ag.nombre;
+                }
+                
+                let bgStyle = '';
+                if(rowDef.tipo === 'lider_equipo') bgStyle = 'background: rgba(164, 42, 104, 0.05); border-top: 2px solid rgba(164, 42, 104, 0.2);';
+                if(rowDef.tipo === 'coordinador') bgStyle = 'background: rgba(0, 103, 121, 0.08); border-top: 2px solid rgba(0, 103, 121, 0.3);';
+                
+                let row = `<tr style="${bgStyle}">
+                    <td class="col-fija" style="${bgStyle}"><b>${rowDef.nombre}</b><br><span style="font-size:10px; color:var(--text-muted);">${subTitulo}</span></td>
+                    <td class="col-fija-2" style="${bgStyle}; text-align:center;">${badgeRiesgo}</td>
+                    <td style="text-align:center; font-size:15px; ${bgStyle} ${saldo >= 0 ? 'color:var(--semaforo-verde);' : 'color:var(--semaforo-rojo);'}"><b>${saldo > 0 ? '+' : ''}${saldo}</b></td>`;
+                
+                campanasOrdenadas.forEach(campana => {
+                    let semanasCampana = dbData.semanas.filter(s => s.campana === campana);
+                    
+                    let netasMes = 0;
+                    let objMes = 0;
+                    let isActiveMes = false;
+                    let maxFechaFinMes = '';
+                    
+                                        semanasCampana.forEach(sem => {
+                        let { netas, isActive } = getRowDataForWeek(rowDef, sem, seniorsOnly);
+                        if(isActive) isActiveMes = true;
+                        netasMes += netas;
+                        if(sem.fecha_fin > maxFechaFinMes) maxFechaFinMes = sem.fecha_fin;
+                    });
+                    
+                    if (rowDef.tipo === 'senior') {
+                        objMes = getObjetivoMensual(rowDef.id, campana, semanasCampana);
+                    } else if (rowDef.tipo === 'lider_equipo') {
+                        let vendsEq = seniorsOnly.filter(p => p.equipo_id === rowDef.eqId);
+                        vendsEq.forEach(v => {
+                            let considerActive = new Date(v.created_at || '2000-01-01T00:00:00Z') <= new Date(maxFechaFinMes + 'T23:59:59Z');
+                            if(campana.includes('Histórico')) considerActive = dbData.ventas.some(x => x.vendedor_id === v.id && x.campana === campana);
+                            if(considerActive) objMes += getObjetivoMensual(v.id, campana, semanasCampana);
+                        });
+                    } else if (rowDef.tipo === 'coordinador') {
+                        let eqIds = dbData.equipos.filter(e => e.agencia_id === rowDef.agId).map(e => e.id);
+                        let vendsAg = seniorsOnly.filter(p => eqIds.includes(p.equipo_id));
+                        vendsAg.forEach(v => {
+                            let considerActive = new Date(v.created_at || '2000-01-01T00:00:00Z') <= new Date(maxFechaFinMes + 'T23:59:59Z');
+                            if(campana.includes('Histórico')) considerActive = dbData.ventas.some(x => x.vendedor_id === v.id && x.campana === campana);
+                            if(considerActive) objMes += getObjetivoMensual(v.id, campana, semanasCampana);
+                        });
+                    }
+                    
+                    let mesTerminado = hoy > maxFechaFinMes;
+                    let objetivoLogrado = netasMes >= objMes;
+                    let isEvaluated = isActiveMes && (mesTerminado || objetivoLogrado);
+                    
+                    let claseMes = '';
+                    let estiloExtra = '';
+                    let displayNetas = netasMes;
+                    
+                    if (!isActiveMes) {
+                        claseMes = '';
+                        estiloExtra = 'color: #ccc; font-weight: normal;';
+                        displayNetas = '-';
+                    }
+                    else if (objetivoLogrado) {
+                        claseMes = 'estado-verde';
+                    } else if (!mesTerminado) {
+                        claseMes = ''; 
+                        estiloExtra = 'color: #999; font-weight: normal;';
+                    } else {
+                        claseMes = 'estado-rojo';
+                    }
+                    
+                    if(isActiveMes) {
+                        let objClickable = rowDef.tipo === 'senior' ? `cursor:pointer; text-decoration:underline;` : ``;
+                        let onClickObj = rowDef.tipo === 'senior' ? `onclick="editarObjetivo('${rowDef.id}', '${rowDef.nombre}', '${campana}', ${objMes})"` : ``;
+                        row += `<td class="col-resumen ${claseMes}" style="${estiloExtra}"><span style="font-size:16px; font-weight:bold;">${displayNetas}</span> <span style="font-size:12px; font-weight:bold; color:var(--text-muted); ${objClickable}" ${onClickObj} title="Click para editar objetivo">/ ${objMes}</span></td>`;
+                    } else {
+                        row += `<td class="col-resumen" style="${estiloExtra}"><span style="font-size:14px; font-weight:bold;">- (No Activo)</span></td>`;
+                    }
+                });
+                
+                row += `</tr>`;
+                tbodyHtml += row;
+            });
+            
+            if(tbodyHtml === '') tbodyHtml = `<tr><td colspan="100" style="text-align:center; padding:30px;">No hay datos para los filtros seleccionados.</td></tr>`;
+            
+            document.getElementById('tablaBody').innerHTML = tbodyHtml;
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-theme');
+            let icon = document.getElementById('themeIcon');
+            if(document.body.classList.contains('light-theme')) {
+                icon.className = 'fa-solid fa-sun';
+            } else {
+                icon.className = 'fa-solid fa-moon';
+            }
+        }
+        
+        function exportarExcel() {
+            let dataArr = [];
+            const selSuc = document.getElementById('selSucursal').value;
+            const selRiesgo = document.getElementById('selRiesgo').value;
+            const hoy = new Date().toISOString().split('T')[0];
+            
+            const campanasOrdenadas = [...new Set(dbData.semanas.map(s => s.campana))].reverse();
+            let { rowsToRender, seniorsOnly } = getRowsToRender(selSuc);
+            
+            rowsToRender.forEach(rowDef => {
+                let falladasMeses = 0;
+                let saldoAcum = 0;
+                
+                let subTitulo = '-';
+                if(rowDef.tipo === 'senior') {
+                    let eq = dbData.equipos.find(e => e.id === rowDef.refObj.equipo_id);
+                    if(eq) subTitulo = eq.nombre;
+                } else if(rowDef.tipo === 'lider_equipo') {
+                    let eq = dbData.equipos.find(e => e.id === rowDef.eqId);
+                    if(eq) subTitulo = 'Eq: ' + eq.nombre;
+                } else if(rowDef.tipo === 'coordinador') {
+                    let ag = dbData.agencias.find(a => a.id === rowDef.agId);
+                    if(ag) subTitulo = 'Suc: ' + ag.nombre;
+                }
+                
+                let rowData = {
+                    "Nombre": rowDef.nombre,
+                    "Equipo/Sucursal": subTitulo
+                };
+                
+                campanasOrdenadas.forEach(campana => {
+                    let semanasCampana = dbData.semanas.filter(s => s.campana === campana);
+                    let netasMes = 0, objMes = 0, isActiveMes = false, maxFechaFinMes = '';
+                    
+                                        semanasCampana.forEach(sem => {
+                        let { netas, isActive } = getRowDataForWeek(rowDef, sem, seniorsOnly);
+                        if(isActive) isActiveMes = true;
+                        netasMes += netas;
+                        if(sem.fecha_fin > maxFechaFinMes) maxFechaFinMes = sem.fecha_fin;
+                    });
+                    
+                    if (rowDef.tipo === 'senior') {
+                        objMes = getObjetivoMensual(rowDef.id, campana, semanasCampana);
+                    } else if (rowDef.tipo === 'lider_equipo') {
+                        let vendsEq = seniorsOnly.filter(p => p.equipo_id === rowDef.eqId);
+                        vendsEq.forEach(v => {
+                            let considerActive = new Date(v.created_at || '2000-01-01T00:00:00Z') <= new Date(maxFechaFinMes + 'T23:59:59Z');
+                            if(campana.includes('Histórico')) considerActive = dbData.ventas.some(x => x.vendedor_id === v.id && x.campana === campana);
+                            if(considerActive) objMes += getObjetivoMensual(v.id, campana, semanasCampana);
+                        });
+                    } else if (rowDef.tipo === 'coordinador') {
+                        let eqIds = dbData.equipos.filter(e => e.agencia_id === rowDef.agId).map(e => e.id);
+                        let vendsAg = seniorsOnly.filter(p => eqIds.includes(p.equipo_id));
+                        vendsAg.forEach(v => {
+                            let considerActive = new Date(v.created_at || '2000-01-01T00:00:00Z') <= new Date(maxFechaFinMes + 'T23:59:59Z');
+                            if(campana.includes('Histórico')) considerActive = dbData.ventas.some(x => x.vendedor_id === v.id && x.campana === campana);
+                            if(considerActive) objMes += getObjetivoMensual(v.id, campana, semanasCampana);
+                        });
+                    }
+                    
+                    if(isActiveMes) {
+                        let mesTerminado = hoy > maxFechaFinMes;
+                        let objetivoLogrado = netasMes >= objMes;
+                        let isEvaluated = mesTerminado || objetivoLogrado;
+                        
+                        if(isEvaluated) {
+                            if(!objetivoLogrado) falladasMeses++;
+                            saldoAcum += (netasMes - objMes);
+                        }
+                        
+                        rowData[campana] = `${netasMes} / ${objMes} ${!isEvaluated ? '(Pendiente)' : ''}`;
+                    } else {
+                        rowData[campana] = '- (No Activo)';
+                    }
+                });
+                
+                if (selRiesgo === 'ROJO' && falladasMeses < ALERTA_ROJA) return;
+                if (selRiesgo === 'AMARILLO' && (falladasMeses < ALERTA_AMARILLA || falladasMeses >= ALERTA_ROJA)) return;
+                if (selRiesgo === 'VERDE' && falladasMeses >= ALERTA_AMARILLA) return;
+                
+                let rowDataFinal = {
+                    "Nombre": rowData["Nombre"],
+                    "Equipo/Sucursal": rowData["Equipo/Sucursal"],
+                    "Meses Fallados": falladasMeses,
+                    "Saldo Histórico": saldoAcum,
+                    "Estado de Riesgo": falladasMeses >= ALERTA_ROJA ? "Sanción (Rojo)" : (falladasMeses >= ALERTA_AMARILLA ? "Alerta (Amarillo)" : "Saludable (Verde)")
+                };
+                
+                Object.keys(rowData).forEach(k => {
+                    if(!rowDataFinal.hasOwnProperty(k)) rowDataFinal[k] = rowData[k];
+                });
+                
+                dataArr.push(rowDataFinal);
+            });
+            
+            if(dataArr.length === 0) return alert("No hay datos para exportar.");
+            
+            const ws = XLSX.utils.json_to_sheet(dataArr);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Rendimiento Mensual Plano");
+            XLSX.writeFile(wb, "Rendimiento_Mensual_Plano.xlsx");
+        }
+        
+        async function exportarPNG() {
+            try {
+                let canvas = await html2canvas(document.getElementById('tablaSemaforo'), { backgroundColor: document.body.classList.contains('light-theme') ? '#f4f6f8' : '#121a1f' });
+                let imgData = canvas.toDataURL("image/png");
+                let a = document.createElement('a');
+                a.href = imgData;
+                a.download = "Rendimiento_Semestral.png";
+                a.click();
+            } catch(e) {
+                alert("Error generando PNG: " + e.message);
+            }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

@@ -739,8 +739,8 @@
                 // Guardar en el historial
                 const { data: perfiles } = await clienteSupabase.from('perfiles').select('id, objetivo_campana');
                 if (perfiles) {
-                    const historial = perfiles.map(p => ({ vendedor_id: p.id, campana: campanaActual, objetivo_ventas: p.objetivo_campana || 0 }));
-                    await clienteSupabase.from('historial_objetivos').upsert(historial, { onConflict: 'vendedor_id,campana' });
+                    const historial = perfiles.filter(p => p.objetivo_campana > 0).map(p => ({ vendedor_id: p.id, campana: campanaActual, objetivo_ventas: p.objetivo_campana }));
+                    if(historial.length > 0) await clienteSupabase.from('historial_objetivos').upsert(historial, { onConflict: 'vendedor_id,campana' });
                 }
             }
 
