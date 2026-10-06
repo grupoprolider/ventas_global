@@ -505,6 +505,10 @@
             <button class="btn-accion btn-ver-tablero" onclick="window.location.href='seguimiento.html'" style="background: linear-gradient(45deg, #006779, #004d5a); color: white; box-shadow: 0 4px 15px rgba(0,103,121,0.4);">
                 <i class="fa-solid fa-table-list"></i> Ver Tablero de Seguimiento
             </button>
+            
+            <button id="btnVerRendimientoBottom" class="btn-accion" onclick="abrirRendimiento()" style="display:none; background: linear-gradient(45deg, #A42A68, #72224c); color: white; box-shadow: 0 4px 15px rgba(164,42,104,0.4);">
+                <i class="fa-solid fa-chart-line"></i> VER RENDIMIENTO SEMESTRAL
+            </button>
             <button class="btn-accion btn-mi-panel" onclick="irAMiPanel()" style="background: var(--gpl-dorado); color: white;">
                 <i class="fa-solid fa-user-gear"></i> Cargar mis propias ventas
             </button>
@@ -646,6 +650,15 @@
         }
 
         let globalAgencias = [];
+        
+        let globalAgenciaId = null;
+
+        function abrirRendimiento() {
+            if(globalAgenciaId) {
+                window.location.href = 'rendimiento_semestral.html?agencia_id=' + globalAgenciaId;
+            }
+        }
+
         let globalEquipos = [];
         let globalIntegrantes = [];
         let globalVentas = [];
@@ -669,6 +682,11 @@
                 }
                 
                 globalAgencias = agencias;
+                if(agencias && agencias.length > 0) {
+                    globalAgenciaId = agencias[0].id;
+                    const btn = document.getElementById('btnVerRendimientoBottom');
+                    if(btn) btn.style.display = 'inline-block';
+                }
 
                 const idsAgencias = agencias.map(a => a.id);
 
@@ -710,6 +728,21 @@
                     fromRow += step;
                 }
                 globalVentas = todasVentas;
+                
+                // Ajustar objetivo de inactivos (BAJA)
+                let mapBajasNetas = {};
+                globalVentas.forEach(v => {
+                    mapBajasNetas[v.vendedor_id] = (mapBajasNetas[v.vendedor_id] || 0) + (v.ventas_cerradas || 0) - (v.bajas || 0);
+                });
+                if(typeof globalIntegrantes !== 'undefined') {
+                    globalIntegrantes.forEach(p => {
+                        if (p.nombre && p.nombre.includes('(BAJA)')) {
+                            let objAjustado = mapBajasNetas[p.id] || 0;
+                            if (objAjustado < 0) objAjustado = 0;
+                            p.objetivo_campana = objAjustado;
+                        }
+                    });
+                }
 
                 globalNetasEmpresa = 0;
                 globalVentas.forEach(v => {
