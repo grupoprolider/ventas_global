@@ -410,6 +410,11 @@
                             <option value="ventas">Solo Ventas</option>
                             <option value="bajas">Solo Bajas</option>
                         </select>
+                        <div style="display:flex; align-items:center; gap:6px; background:white; padding: 2px 8px; border-radius: 4px; border: 1px solid #ccc;">
+                            <i class="fa-solid fa-hashtag" style="color: #888; font-size:12px;"></i>
+                            <input type="text" id="filtro_id_audit" placeholder="Buscar ID Solicitud..." style="color: #333; border:none; outline:none; padding:4px 0; font-size:13px; background:transparent; width: 160px;" onkeydown="if(event.key==='Enter') cargarAuditoria()">
+                            <button type="button" onclick="document.getElementById('filtro_id_audit').value=''; cargarAuditoria();" title="Limpiar ID" style="background:none; border:none; color:#999; cursor:pointer; padding:0 2px; font-size:12px;"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
                         <button onclick="cargarAuditoria()" style="padding: 5px 15px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;"><i class="fa-solid fa-search"></i> Filtrar</button>
                     </div>
                 </div>
@@ -875,17 +880,30 @@
             let fechaHasta = dHasta ? dHasta.value : '';
             let vendedorId = document.getElementById('filtro_vendedor_audit').value;
             let tipoOp = document.getElementById('filtro_tipo_audit') ? document.getElementById('filtro_tipo_audit').value : '';
+            let idFiltro = document.getElementById('filtro_id_audit') ? document.getElementById('filtro_id_audit').value.trim() : '';
 
             const hoy = new Date();
             const campanaActual = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
 
-            let query = clienteSupabase.from('registro_ventas').select('*').eq('campana', campanaActual).order('created_at', { ascending: false });
+            let query = clienteSupabase.from('registro_ventas').select('*').order('created_at', { ascending: false });
+
+            if (idFiltro) {
+                // Al filtrar por ID Solicitud, permitimos encontrar la operación en cualquier campaña
+                const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                let orFilter = `numero_solicitud.ilike.%${idFiltro}%,beneficio.ilike.%${idFiltro}%`;
+                if (uuidRegex.test(idFiltro)) {
+                    orFilter += `,id.eq.${idFiltro}`;
+                }
+                query = query.or(orFilter);
+            } else {
+                query = query.eq('campana', campanaActual);
+            }
 
             if (vendedorId) query = query.eq('vendedor_id', vendedorId);
             if (fechaDesde) query = query.gte('created_at', fechaDesde + "T00:00:00");
             if (fechaHasta) query = query.lte('created_at', fechaHasta + "T23:59:59");
             
-            if (fechaDesde || fechaHasta || tipoOp === 'bajas') {
+            if (idFiltro || fechaDesde || fechaHasta || tipoOp === 'bajas') {
                 
                 let vtas = [];
                 let step = 1000, fromRow = 0;
@@ -922,7 +940,7 @@
 
             let tb = document.querySelector('#tabla_auditoria tbody');
             if (!datosReales || datosReales.length === 0) {
-                tb.innerHTML = '<tr><td colspan="5" class="empty-state">No hay registros con esos filtros.</td></tr>';
+                tb.innerHTML = '<tr><td colspan="6" class="empty-state">No hay registros con esos filtros.</td></tr>';
                 return;
             }
 
@@ -972,6 +990,7 @@
                 monto: -(venta.monto || 0),
                 semana: venta.semana,
                 campana: venta.campana,
+                numero_solicitud: venta.numero_solicitud || null,
                 beneficio: `BAJA (por Admin Central) - Reversión de op orig. del ${new Date(venta.created_at).toLocaleDateString()}`,
                 medio_pago: 'Reversión'
             };

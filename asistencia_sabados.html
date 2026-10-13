@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Lista Asistencia Sábados - Grupo ProLíder</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -42,13 +45,6 @@
         th { color: var(--text-muted); }
         select { color: var(--text-color); }
         .agencia-header span { text-shadow: none !important; }
-        
-            --gpl-petroleo: #006779;
-            --gpl-dorado: #A42A68;
-            --gpl-borravino: #72224c;
-            --fondo-oscuro: #121a1f;
-            --celda-oscura: #1e2933;
-        }
 
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -312,14 +308,16 @@
         }
 
         function getVentasNetas(vendedorId, dInicio, dFin) {
-            let v = dbData.ventas.filter(x => 
-                x.vendedor_id === vendedorId &&
-                x.created_at >= dInicio + 'T00:00:00' && 
-                x.created_at <= dFin + 'T23:59:59'
-            );
-            let brutas = v.reduce((sum, item) => sum + (item.ventas_cerradas || 0), 0);
-            let bajas = v.reduce((sum, item) => sum + (item.bajas || 0), 0);
-            return brutas - bajas;
+            let dIni = new Date(dInicio + 'T00:00:00');
+            let dFinDate = new Date(dFin + 'T23:59:59.999');
+            let v = dbData.ventas.filter(x => {
+                if (x.vendedor_id !== vendedorId) return false;
+                let d = new Date(x.created_at);
+                return d >= dIni && d <= dFinDate;
+            });
+            let brutas = v.reduce((sum, item) => sum + Number(item.ventas_cerradas || 0), 0);
+            let bajas = v.reduce((sum, item) => sum + Number(item.bajas || 0), 0);
+            return { brutas: brutas, bajas: bajas };
         }
 
         function renderGrid() {
@@ -359,8 +357,10 @@
                     );
                     
                     vends.forEach(v => {
-                        let netas = getVentasNetas(v.id, dInicio, dFin);
-                        let asiste = netas < objSemana;
+                        let stats = getVentasNetas(v.id, dInicio, dFin);
+                        let brutas = stats.brutas;
+                        let bajas = stats.bajas;
+                        let asiste = brutas < objSemana;
                         
                         totalesEquipo.seniors++;
                         if (!asiste) totalesEquipo.cumplidores++;
@@ -372,7 +372,8 @@
                         rowsVend += `
                             <tr>
                                 <td><i class="fa-solid fa-user" style="color:#aaa; margin-right:5px;"></i> ${v.nombre}</td>
-                                <td>${netas}</td>
+                                <td>${brutas}</td>
+                                <td style="color:#e74c3c;">${bajas > 0 ? bajas : '-'}</td>
                                 <td>${objSemana}</td>
                                 <td>${badge}</td>
                             </tr>
@@ -403,14 +404,15 @@
                                 <table>
                                     <thead>
                                         <tr>
-                                            <th style="width: 40%">Vendedor Senior</th>
+                                            <th style="width: 30%">Vendedor Senior</th>
                                             <th style="width: 20%">Ventas Sem.</th>
-                                            <th style="width: 20%">Objetivo Sem.</th>
+                                            <th style="width: 15%">Bajas</th>
+                                            <th style="width: 15%">Objetivo Sem.</th>
                                             <th style="width: 20%">Estado</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        ${rowsVend || '<tr><td colspan="4" style="text-align:center; color:#777;">No hay vendedores Seniors activos en este equipo.</td></tr>'}
+                                        ${rowsVend || '<tr><td colspan="5" style="text-align:center; color:#777;">No hay vendedores Seniors activos en este equipo.</td></tr>'}
                                     </tbody>
                                 </table>
                             </div>
@@ -475,7 +477,9 @@
                     
                     let totalesEquipo = { seniors: 0, cumplidores: 0 };
                     vends.forEach(v => {
-                        let netas = getVentasNetas(v.id, dInicio, dFin);
+                        let stats = getVentasNetas(v.id, dInicio, dFin);
+                        let netas = stats.brutas;
+                        let bajas = stats.bajas;
                         let asiste = netas < objSemana;
                         totalesEquipo.seniors++;
                         totalesAgencia.seniors++;
@@ -487,6 +491,7 @@
                             'Equipo': eq.nombre,
                             'Sucursal': ag.nombre,
                             'Ventas Sem.': netas,
+                            'Bajas': bajas,
                             'Obj. Sem.': objSemana,
                             'Resultado': asiste ? 'ASISTE SÁBADO' : 'LIBERADO'
                         });

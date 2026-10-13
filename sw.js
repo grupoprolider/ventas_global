@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gpl-cache-v1';
+const CACHE_NAME = 'gpl-cache-v1789743200436';
 
 self.addEventListener('install', (event) => {
     // Instalación rápida sin esperar
@@ -6,8 +6,18 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
-    // Reclama el control inmediatamente
-    event.waitUntil(clients.claim());
+    // Reclama el control inmediatamente y purga cachés viejas
+    event.waitUntil(
+        caches.keys().then((cacheNames) => {
+            return Promise.all(
+                cacheNames.map((cacheName) => {
+                    if (cacheName !== CACHE_NAME) {
+                        return caches.delete(cacheName);
+                    }
+                })
+            );
+        }).then(() => clients.claim())
+    );
 });
 
 self.addEventListener('fetch', (event) => {
