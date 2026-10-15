@@ -1132,6 +1132,18 @@
         window.operacionesExcelPendientes = [];
         window.reversionesExcelPendientes = [];
 
+        function normalizarNombreParaMatch(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/\(BAJA\)/gi, '')
+                .replace(/\(OCULTO\)/gi, '')
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                .replace(/[^a-zA-Z0-9\s]/g, '')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .toLowerCase();
+        }
+
         async function procesarImportacion() {
             const fileInput = document.getElementById('archivoImportacion');
             const resultDiv = document.getElementById('resultadoImportacion');
@@ -1218,15 +1230,8 @@
                         let entKey = getKey(["entidad", "banco", "medio de pago", "tarjeta"]);
                         let entidad = entKey ? row[entKey] : "N/A";
                         
-                        if(!nomVendedor || !nroSol) {
-                            msjs.push("Fila " + (i+2) + ": Ignorada (falta Vendedor o ID de Solicitud).");
-                            errores++;
-                            continue;
-                        }
-
-                        let vendMatch = perfilesDB.find(p => p.nombre.replace('(BAJA)', '').toLowerCase().trim() === String(nomVendedor).toLowerCase().trim());
-                        if(!vendMatch) {
-                            msjs.push("Fila " + (i+2) + ": Vendedor '" + nomVendedor + "' no encontrado en el sistema.");
+                        if(!nroSol) {
+                            msjs.push("Fila " + (i+2) + ": Ignorada (falta ID de Solicitud).");
                             errores++;
                             continue;
                         }
@@ -1234,6 +1239,8 @@
                         let fechaDB = new Date();
                         if (fechaExcel instanceof Date) {
                             fechaDB = fechaExcel;
+                        } else if (typeof fechaExcel === 'number') {
+                            fechaDB = new Date(Math.round((fechaExcel - 25569) * 86400 * 1000));
                         } else if (typeof fechaExcel === 'string') {
                             let p = fechaExcel.split('/');
                             if(p.length === 3) {
@@ -1256,8 +1263,18 @@
                         let existeEnDB = dbVenta && dbVenta.length > 0;
                         let altaPendiente = window.operacionesExcelPendientes.find(op => op.data && op.data.numero_solicitud === nroSol && op.tipo === 'insert');
                         let existe = existeEnDB || altaPendiente;
-                        
+
+                        // Buscar vendedor en perfiles (incluso si está marcado con BAJA u OCULTO)
+                        let normVendedor = normalizarNombreParaMatch(nomVendedor);
+                        let candidatos = perfilesDB.filter(p => normalizarNombreParaMatch(p.nombre) === normVendedor);
+                        let vendMatch = candidatos.find(p => !p.nombre.includes('(BAJA)') && !p.nombre.includes('(OCULTO)')) || candidatos[0];
+
                         if (!esBaja) {
+                            if (!vendMatch) {
+                                msjs.push("Fila " + (i+2) + ": Vendedor '" + (nomVendedor || 'vacío') + "' no encontrado en el sistema.");
+                                errores++;
+                                continue;
+                            }
                             if (existe) {
                                 ignoradasVentas++;
                             } else {
