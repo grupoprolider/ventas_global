@@ -1181,6 +1181,7 @@
                     let bajasNuevas = 0;
                     let errores = 0;
                     let msjs = [];
+                    let bajasDetalles = [];
 
                     const { data: perfilesDB } = await clienteSupabase.from('perfiles').select('id, nombre, equipo_id');
                     
@@ -1259,25 +1260,34 @@
                         
                         let esBaja = estadoStr.includes('baja') || estadoStr.includes('rechazad') || estadoStr.includes('anulad') || estadoStr.includes('caida');
                         
-                        const { data: dbVenta } = await clienteSupabase.from('registro_ventas').select('*').eq('numero_solicitud', nroSol);
-                        let existeEnDB = dbVenta && dbVenta.length > 0;
-                        let altaPendiente = window.operacionesExcelPendientes.find(op => op.data && op.data.numero_solicitud === nroSol && op.tipo === 'insert');
-                        let existe = existeEnDB || altaPendiente;
+                        // Buscar en DB todos los registros asociados a este ID de solicitud (tanto el alta como cualquier baja previa)
+                        const { data: dbVenta } = await clienteSupabase.from('registro_ventas')
+                            .select('*')
+                            .or(`numero_solicitud.eq.${nroSol},numero_solicitud.eq.${nroSol}_BAJA`);
+                        
+                        let records = dbVenta || [];
+                        let altaVenta = records.find(r => r.ventas_cerradas > 0 && !(r.numero_solicitud && r.numero_solicitud.endsWith('_BAJA')));
+                        let bajaExistente = records.find(r => r.bajas > 0 || r.monto < 0 || (r.numero_solicitud && r.numero_solicitud.endsWith('_BAJA')) || (r.beneficio && r.beneficio.includes('BAJA')));
 
-                        // Buscar vendedor en perfiles (incluso si está marcado con BAJA u OCULTO)
-                        let normVendedor = normalizarNombreParaMatch(nomVendedor);
-                        let candidatos = perfilesDB.filter(p => normalizarNombreParaMatch(p.nombre) === normVendedor);
-                        let vendMatch = candidatos.find(p => !p.nombre.includes('(BAJA)') && !p.nombre.includes('(OCULTO)')) || candidatos[0];
+                        let altaPendiente = window.operacionesExcelPendientes.find(op => op.data && op.data.numero_solicitud === nroSol && op.tipo === 'insert' && op.data.ventas_cerradas > 0);
+                        let bajaPendiente = window.operacionesExcelPendientes.find(op => op.data && op.tipo === 'insert' && (op.data.numero_solicitud === nroSol + '_BAJA' || op.data.numero_solicitud === nroSol) && op.data.bajas > 0);
 
                         if (!esBaja) {
-                            if (!vendMatch) {
-                                msjs.push("Fila " + (i+2) + ": Vendedor '" + (nomVendedor || 'vacío') + "' no encontrado en el sistema.");
-                                errores++;
-                                continue;
-                            }
-                            if (existe) {
+                            let yaExisteAlta = altaVenta || altaPendiente;
+                            if (yaExisteAlta) {
                                 ignoradasVentas++;
                             } else {
+                                // Buscar vendedor en perfiles (incluso si está marcado con BAJA u OCULTO)
+                                let normVendedor = normalizarNombreParaMatch(nomVendedor);
+                                let candidatos = perfilesDB.filter(p => normalizarNombreParaMatch(p.nombre) === normVendedor);
+                                let vendMatch = candidatos.find(p => !p.nombre.includes('(BAJA)') && !p.nombre.includes('(OCULTO)')) || candidatos[0];
+
+                                if (!vendMatch) {
+                                    msjs.push("Fila " + (i+2) + ": Vendedor '" + (nomVendedor || 'vacío') + "' no encontrado en el sistema.");
+                                    errores++;
+                                    continue;
+                                }
+
                                 const objVenta = {
                                     vendedor_id: vendMatch.id,
                                     ventas_cerradas: 1,
@@ -1296,62 +1306,71 @@
                                 procesadas++;
                             }
                         } else {
-                            if (!existe) {
-                                msjs.push("Fila " + (i+2) + ": Baja ignorada. No existe el ALTA (Auditada) previa para la solicitud " + nroSol + ".");
-                                errores++;
+                            // ES BAJA: Se busca únicamente a través del alta previa por el ID de solicitud
+                            let yaTieneBaja = bajaExistente || bajaPendiente || (altaVenta && altaVenta.es_anulada) || (altaPendiente && altaPendiente.data.es_anulada);
+
+                            if (yaTieneBaja) {
+                                ignoradasVentas++;
+                            } else if (altaVenta) {
+                                // Se encontró el alta en la base de datos y aún no fue dada de baja
+                                const objContra = {
+                                    vendedor_id: altaVenta.vendedor_id,
+                                    ventas_cerradas: 0,
+                                    entrevistas: 0,
+                                    bajas: altaVenta.ventas_cerradas || 1,
+                                    monto: -(altaVenta.monto || 0),
+                                    semana: altaVenta.semana,
+                                    campana: altaVenta.campana,
+                                    beneficio: (altaVenta.beneficio ? altaVenta.beneficio + " " : "") + "(ANULACIÓN EXCEL)",
+                                    medio_pago: altaVenta.medio_pago,
+                                    es_anulada: false,
+                                    created_at: altaVenta.created_at,
+                                    numero_solicitud: nroSol + "_BAJA"
+                                };
+                                window.operacionesExcelPendientes.push({ tipo: 'insert', data: objContra });
+                                window.operacionesExcelPendientes.push({ tipo: 'update', id: altaVenta.id, data: { es_anulada: true } });
+                                bajasNuevas++;
+                                bajasDetalles.push(`Fila ${i+2}: ID ${nroSol} (${nomVendedor || 'Venta original'})`);
+                            } else if (altaPendiente) {
+                                // El alta vino en este mismo archivo Excel
+                                altaPendiente.data.es_anulada = true;
+                                const objContra = {
+                                    vendedor_id: altaPendiente.data.vendedor_id,
+                                    ventas_cerradas: 0,
+                                    entrevistas: 0,
+                                    bajas: 1,
+                                    monto: -(altaPendiente.data.monto || 0),
+                                    semana: altaPendiente.data.semana,
+                                    campana: altaPendiente.data.campana,
+                                    beneficio: (altaPendiente.data.beneficio ? altaPendiente.data.beneficio + " " : "") + "(ANULACIÓN EXCEL)",
+                                    medio_pago: altaPendiente.data.medio_pago,
+                                    es_anulada: false,
+                                    created_at: altaPendiente.data.created_at,
+                                    numero_solicitud: nroSol + "_BAJA"
+                                };
+                                window.operacionesExcelPendientes.push({ tipo: 'insert', data: objContra });
+                                bajasNuevas++;
+                                bajasDetalles.push(`Fila ${i+2}: ID ${nroSol} (${nomVendedor || 'Mismo archivo'})`);
                             } else {
-                                if (existeEnDB) {
-                                    let orig = dbVenta[0];
-                                    if(orig.es_anulada) {
-                                        ignoradasVentas++;
-                                    } else {
-                                        const objContra = {
-                                            vendedor_id: orig.vendedor_id,
-                                            ventas_cerradas: 0,
-                                            entrevistas: 0,
-                                            bajas: orig.ventas_cerradas || 1,
-                                            monto: -(orig.monto || 0),
-                                            semana: orig.semana,
-                                            campana: orig.campana,
-                                            beneficio: orig.beneficio + " (ANULACIÓN EXCEL)",
-                                            medio_pago: orig.medio_pago,
-                                            es_anulada: false,
-                                            created_at: orig.created_at,
-                                            numero_solicitud: nroSol + "_BAJA"
-                                        };
-                                        window.operacionesExcelPendientes.push({ tipo: 'insert', data: objContra });
-                                        window.operacionesExcelPendientes.push({ tipo: 'update', id: orig.id, data: { es_anulada: true } });
-                                        bajasNuevas++;
-                                    }
-                                } else if (altaPendiente) {
-                                    if (altaPendiente.data.es_anulada) {
-                                        ignoradasVentas++;
-                                    } else {
-                                        // El alta está en el mismo Excel
-                                        altaPendiente.data.es_anulada = true; // La marcamos como anulada desde el inicio
-                                        const objContra = {
-                                            vendedor_id: altaPendiente.data.vendedor_id,
-                                            ventas_cerradas: 0,
-                                            entrevistas: 0,
-                                            bajas: 1,
-                                            monto: -(altaPendiente.data.monto || 0),
-                                            semana: altaPendiente.data.semana,
-                                            campana: altaPendiente.data.campana,
-                                            beneficio: altaPendiente.data.beneficio + " (ANULACIÓN EXCEL)",
-                                            medio_pago: altaPendiente.data.medio_pago,
-                                            es_anulada: false,
-                                            created_at: altaPendiente.data.created_at,
-                                            numero_solicitud: nroSol + "_BAJA"
-                                        };
-                                        window.operacionesExcelPendientes.push({ tipo: 'insert', data: objContra });
-                                        bajasNuevas++;
-                                    }
-                                }
+                                // No existe el alta previa para este ID
+                                msjs.push("Fila " + (i+2) + ": Baja ignorada. No existe el ALTA previa para la solicitud " + nroSol + (nomVendedor ? " (" + nomVendedor + ")" : "") + ".");
+                                errores++;
                             }
                         }
                     }
 
-                    resultDiv.innerHTML = "<h4 style='margin:0 0 10px 0; color:#f39c12;'>Previsualización de Subida</h4><p style='margin:0;'>Ventas nuevas listas para registrar: <b>" + procesadas + "</b></p><p style='margin:0;'>Bajas/Anulaciones listas para aplicar: <b>" + bajasNuevas + "</b></p><p style='margin:0; color:#aaa;'>Ventas/Bajas ignoradas (ya existían): <b>" + ignoradasVentas + "</b></p><p style='margin:0; color:#e74c3c;'>Errores (filas saltadas): <b>" + errores + "</b></p><div style='margin-top:10px; max-height:150px; overflow-y:auto; font-size:11px; color:#aaa; line-height: 1.5;'>" + msjs.join('<br>') + "</div>";
+                    let detalleBajasHtml = '';
+                    if (bajasDetalles.length > 0) {
+                        detalleBajasHtml = "<div style='margin-top:10px; max-height:120px; overflow-y:auto; color:#2ecc71; font-size:12px; background:#1b2a22; padding:8px; border-radius:4px;'><b><i class='fa-solid fa-circle-check'></i> Bajas listas para aplicar (" + bajasDetalles.length + "):</b><br>" + bajasDetalles.join('<br>') + "</div>";
+                    }
+
+                    resultDiv.innerHTML = "<h4 style='margin:0 0 10px 0; color:#f39c12;'>Previsualización de Subida</h4>" +
+                        "<p style='margin:0;'>Ventas nuevas listas para registrar: <b>" + procesadas + "</b></p>" +
+                        "<p style='margin:0;'>Bajas/Anulaciones listas para aplicar: <b>" + bajasNuevas + "</b></p>" +
+                        "<p style='margin:0; color:#aaa;'>Ventas/Bajas ignoradas (ya existían): <b>" + ignoradasVentas + "</b></p>" +
+                        "<p style='margin:0; color:#e74c3c;'>Errores (filas saltadas): <b>" + errores + "</b></p>" +
+                        detalleBajasHtml +
+                        (msjs.length > 0 ? "<div style='margin-top:10px; max-height:150px; overflow-y:auto; font-size:11px; color:#e74c3c; line-height: 1.5;'>" + msjs.join('<br>') + "</div>" : "");
                     
                     if (window.operacionesExcelPendientes.length > 0) {
                         btnAccion.style.display = 'block';
