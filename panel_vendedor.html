@@ -534,7 +534,10 @@
         }
 
         function abrirRanking() {
-            document.getElementById('iframeRanking').src = 'ranking_vendedores.html?rol=vendedor';
+            const hoy = new Date();
+            const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+            const campanaStr = `Campaña ${meses[hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
+            document.getElementById('iframeRanking').src = 'ranking_vendedores.html?rol=vendedor&v=' + Date.now() + '&campana=' + encodeURIComponent(campanaStr);
             document.getElementById('modalRanking').style.display = 'flex';
         }
 

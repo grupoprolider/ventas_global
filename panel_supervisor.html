@@ -590,7 +590,8 @@
         }
 
         function abrirRanking() {
-            document.getElementById('iframeRanking').src = 'ranking_vendedores.html';
+            const camp = campanaGlobal || document.getElementById('selectCampana')?.value || '';
+            document.getElementById('iframeRanking').src = 'ranking_vendedores.html?v=' + Date.now() + (camp ? '&campana=' + encodeURIComponent(camp) : '');
             document.getElementById('modalRanking').style.display = 'flex';
         }
 

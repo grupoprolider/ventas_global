@@ -379,8 +379,10 @@
         </div>
 
         <div style="margin-bottom: 20px;">
+            <div style="margin-bottom: 20px;">
             <select id="selectCampana" onchange="cambiarCampana()" style="padding: 12px; font-size: 14px; font-weight: bold; border-radius: 8px; width: 100%; box-sizing: border-box; outline: none; border: 1px solid #ccc;">
             </select>
+        </div>
         </div>
 
         <div class="card-metricas">
@@ -436,6 +438,10 @@
         <div class="botones-accion">
             <button class="btn-accion btn-ver-ranking" onclick="abrirRanking()">
                 <i class="fa-solid fa-trophy"></i> Ver Ranking Nacional
+            </button>
+            
+            <button id="btnVerRendimientoBottom" class="btn-accion" onclick="abrirRendimiento()" style="display:none; background: linear-gradient(45deg, #A42A68, #72224c); color: white; box-shadow: 0 4px 15px rgba(164,42,104,0.4);">
+                <i class="fa-solid fa-chart-line"></i> VER RENDIMIENTO SEMESTRAL
             </button>
             <button class="btn-accion btn-mi-panel" onclick="irAMiPanel()" style="background: var(--gpl-dorado); color: white;">
                 <i class="fa-solid fa-user-gear"></i> Cargar mis propias ventas
@@ -525,7 +531,8 @@
         }
 
         function abrirRanking() {
-            document.getElementById('iframeRanking').src = 'ranking_vendedores.html';
+            const camp = campanaGlobal || document.getElementById('selectCampana')?.value || '';
+            document.getElementById('iframeRanking').src = 'ranking_vendedores.html?v=' + Date.now() + (camp ? '&campana=' + encodeURIComponent(camp) : '');
             document.getElementById('modalRanking').style.display = 'flex';
         }
 
@@ -584,6 +591,15 @@
             cargarDatosCoordinador(idSeguroURL, campanaGlobal);
         }
 
+        
+        let globalAgenciaId = null;
+
+        function abrirRendimiento() {
+            if(globalAgenciaId) {
+                window.location.href = 'rendimiento_semestral.html?agencia_id=' + globalAgenciaId;
+            }
+        }
+
         let globalEquipos = [];
         let globalIntegrantes = [];
         let globalVentas = [];
@@ -596,6 +612,9 @@
                 
                 document.getElementById('txtNombreSupervisor').textContent = perfil.nombre;
 
+                
+
+
                 // 2. Buscar equipos
                 const { data: equipos, error: errEquipos } = await clienteSupabase.from('equipos').select('*').eq('coordinador_id', idCoordinador);
                 
@@ -606,6 +625,15 @@
                 }
                 
                 globalEquipos = equipos;
+                if (equipos && equipos.length > 0 && equipos[0].agencia_id) {
+                    globalAgenciaId = equipos[0].agencia_id;
+                    const btn = document.getElementById('btnVerRendimientoBottom');
+                    if(btn) btn.style.display = 'inline-block';
+                }
+                if (equipos.length > 0 && equipos[0].agencia_id) {
+                    globalAgenciaId = equipos[0].agencia_id;
+                    document.getElementById('btnVerRendimientoBottom').style.display = 'inline-block';
+                }
                 document.getElementById('txtNombreAgencia').textContent = `Equipos Asignados: ${equipos.length}`;
 
                 // 3. Obtener perfiles
