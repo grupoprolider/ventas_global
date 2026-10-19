@@ -739,12 +739,26 @@
             ventas: []
         };
 
-        // Campañas oficiales activas (Mayo y Junio excluidos por ser pruebas)
-        const campanasOrden = [
+        const mesesMap = {
+            'enero': 1, 'febrero': 2, 'marzo': 3, 'abril': 4, 'mayo': 5, 'junio': 6,
+            'julio': 7, 'agosto': 8, 'septiembre': 9, 'octubre': 10, 'noviembre': 11, 'diciembre': 12
+        };
+
+        function parseCampanaDate(campStr) {
+            if (!campStr) return 0;
+            const clean = campStr.replace('Campaña ', '').trim().split(' ');
+            const mes = mesesMap[clean[0]?.toLowerCase()] || 0;
+            const anio = parseInt(clean[1]) || 2026;
+            return anio * 100 + mes;
+        }
+
+        // Campañas oficiales activas (Mayo y Junio excluidos por ser pruebas; dinámico de Julio 2026 en adelante)
+        let campanasOrden = [
             'Campaña Julio 2026',
             'Campaña Agosto 2026',
             'Campaña Septiembre 2026',
-            'Campaña Octubre 2026'
+            'Campaña Octubre 2026',
+            'Campaña Noviembre 2026'
         ];
 
         let campanasSeleccionadas = [...campanasOrden];
@@ -797,6 +811,22 @@
             dbData.agencias = resA.data || [];
             dbData.semanas = resS.data || [];
             dbData.historial = resH.data || [];
+
+            // Descubrir todas las campañas oficiales (Julio 2026 en adelante, excluyendo Mayo y Junio por ser pruebas)
+            const setCampanas = new Set(campanasOrden);
+            (dbData.semanas || []).forEach(s => { if (s.campana) setCampanas.add(s.campana.trim()); });
+            (dbData.historial || []).forEach(h => { if (h.campana) setCampanas.add(h.campana.trim()); });
+
+            const hoy = new Date();
+            const mesesNombres = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+            const campanaActualCalculada = `Campaña ${mesesNombres[hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
+            setCampanas.add(campanaActualCalculada);
+
+            campanasOrden = Array.from(setCampanas)
+                .filter(c => parseCampanaDate(c) >= 202607)
+                .sort((a, b) => parseCampanaDate(a) - parseCampanaDate(b));
+
+            campanasSeleccionadas = [...campanasOrden];
 
             let todasVentas = [];
             for (let c of campanasOrden) {
