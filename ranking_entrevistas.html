@@ -654,24 +654,269 @@
             margin-bottom: 14px;
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 680px) {
             header {
-                padding: 12px 16px;
+                flex-direction: column;
+                align-items: stretch;
+                padding: 10px 14px;
+                gap: 10px;
             }
-            .header-titles h1 {
-                font-size: 17px;
+            .header-brand {
+                gap: 10px;
             }
             .header-brand img {
-                height: 36px;
+                height: 34px;
             }
+            .header-titles h1 {
+                font-size: 16px;
+            }
+            .header-titles p {
+                font-size: 11px;
+            }
+            .header-actions {
+                display: grid;
+                grid-template-columns: 42px 1fr 1fr 42px;
+                gap: 6px;
+                width: 100%;
+            }
+            .header-actions .btn {
+                padding: 8px 6px;
+                font-size: 11px;
+                justify-content: center;
+                gap: 5px;
+            }
+            .header-actions .btn-theme {
+                padding: 8px;
+            }
+            .header-actions .btn-volver {
+                padding: 8px;
+            }
+            .btn-text {
+                display: none;
+            }
+
             .container {
-                padding: 0 12px 40px 12px;
+                margin: 14px auto;
+                padding: 0 10px 40px 10px;
             }
+
+            /* KPIS EN 2x2 */
+            .kpis-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+                margin-bottom: 16px;
+            }
+            .kpi-card {
+                padding: 10px 12px;
+                gap: 10px;
+                border-radius: 10px;
+            }
+            .kpi-icon {
+                width: 36px;
+                height: 36px;
+                font-size: 15px;
+                border-radius: 8px;
+            }
+            .kpi-info h4 {
+                font-size: 9px;
+            }
+            .kpi-info .kpi-value {
+                font-size: 18px;
+                margin: 2px 0 0 0;
+            }
+            .kpi-info .kpi-sub {
+                font-size: 9px;
+            }
+
+            /* CONTROL / FILTROS */
             .card-control {
-                padding: 16px;
+                padding: 12px;
+                border-radius: 12px;
+                margin-bottom: 16px;
             }
+            .tabs-periodo {
+                width: 100%;
+                display: flex;
+                gap: 4px;
+                padding: 3px;
+                margin-bottom: 12px;
+            }
+            .tab-btn {
+                flex: 1;
+                padding: 7px 4px;
+                font-size: 11px;
+                justify-content: center;
+                gap: 4px;
+            }
+            .filtros-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+            .filtro-full-mobile {
+                grid-column: span 2;
+            }
+            .filtro-group label {
+                font-size: 10px;
+            }
+            .filtro-group select,
+            .filtro-group input {
+                padding: 8px 10px;
+                font-size: 12px;
+            }
+
+            /* RANKING CAPTURA */
             #capturaRanking {
-                padding: 16px;
+                padding: 12px;
+                border-radius: 12px;
+            }
+            .ranking-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 6px;
+                padding-bottom: 10px;
+                margin-bottom: 12px;
+            }
+            .ranking-header-title h2 {
+                font-size: 16px;
+            }
+            .ranking-header-title span {
+                font-size: 11px;
+            }
+            .ranking-badge-meta {
+                font-size: 10px;
+                padding: 4px 10px;
+            }
+
+            /* FORMATO DE FILAS EN TARJETAS PARA CELULAR */
+            .table-responsive {
+                overflow-x: visible;
+            }
+            #tablaRanking thead {
+                display: none;
+            }
+            #tablaRanking {
+                display: block;
+                width: 100%;
+                border-spacing: 0;
+            }
+            #tablaRanking tbody {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                width: 100%;
+            }
+            #tablaRanking tbody tr.ranking-row {
+                display: grid;
+                grid-template-columns: 44px 1fr auto;
+                grid-template-areas:
+                    "pos asesor calif"
+                    "bar bar bar";
+                gap: 8px 10px;
+                padding: 12px;
+                background: var(--bg-card);
+                border: 1px solid var(--border-color);
+                border-radius: 12px;
+                box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+                align-items: center;
+                width: 100%;
+                box-sizing: border-box;
+            }
+            body.dark-mode #tablaRanking tbody tr.ranking-row {
+                background: var(--bg-card-hover);
+                border-color: var(--border-color);
+            }
+            #tablaRanking tbody td {
+                padding: 0 !important;
+                border: none !important;
+                background: transparent !important;
+            }
+            .col-pos {
+                grid-area: pos;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 15px;
+                font-weight: 800;
+                background: rgba(196, 156, 72, 0.12);
+                color: var(--gpl-dorado);
+                border-radius: 8px;
+                height: 42px;
+                width: 42px;
+            }
+            .col-pos .pos-1 { font-size: 20px; }
+            .col-pos .pos-2 { font-size: 18px; }
+            .col-pos .pos-3 { font-size: 17px; }
+            
+            .col-asesor {
+                grid-area: asesor;
+                min-width: 0;
+            }
+            .col-asesor .asesor-nombre {
+                font-size: 13px;
+                font-weight: 700;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                display: block;
+                color: var(--text-primary);
+            }
+            .col-asesor .asesor-tags {
+                display: flex;
+                gap: 4px;
+                flex-wrap: wrap;
+                margin-top: 2px;
+            }
+            .col-asesor .tag-pill {
+                font-size: 9px;
+                padding: 1px 5px;
+            }
+            
+            .col-calif {
+                grid-area: calif;
+                display: flex;
+                justify-content: flex-end;
+                align-items: center;
+            }
+            .col-calif .calif-pill {
+                font-size: 12px;
+                padding: 4px 8px;
+            }
+            .col-calif .calif-count {
+                font-size: 9px;
+                text-align: right;
+            }
+            
+            .col-entrevistas {
+                grid-area: bar;
+                width: 100%;
+                padding-top: 6px !important;
+                border-top: 1px dashed var(--border-color) !important;
+                min-width: 0 !important;
+            }
+            .col-entrevistas .entrevistas-cant {
+                display: flex;
+                justify-content: space-between;
+                align-items: baseline;
+                margin-bottom: 4px;
+            }
+            .col-entrevistas .entrevistas-num {
+                font-size: 16px;
+                font-weight: 800;
+            }
+            .col-entrevistas .entrevistas-meta-txt {
+                font-size: 11px;
+            }
+            .col-entrevistas .barra-contenedor {
+                height: 6px;
+            }
+            #tablaRanking tbody tr:not(.ranking-row) {
+                display: block;
+                width: 100%;
+            }
+            #tablaRanking tbody tr:not(.ranking-row) td {
+                display: block;
+                width: 100%;
+                padding: 30px 15px !important;
             }
         }
     </style>
@@ -707,13 +952,13 @@
                 <i class="fa-solid fa-moon"></i>
             </button>
             <button class="btn btn-png" onclick="solicitarDescarga('png')">
-                <i class="fa-solid fa-camera"></i> Descargar PNG
+                <i class="fa-solid fa-camera"></i> <span class="btn-text">Descargar </span>PNG
             </button>
             <button class="btn btn-excel" onclick="solicitarDescarga('excel')">
-                <i class="fa-solid fa-file-excel"></i> Descargar Excel
+                <i class="fa-solid fa-file-excel"></i> <span class="btn-text">Descargar </span>Excel
             </button>
-            <a href="index.html" class="btn btn-volver">
-                <i class="fa-solid fa-arrow-left"></i> Inicio
+            <a href="index.html" class="btn btn-volver" title="Volver al Inicio">
+                <i class="fa-solid fa-arrow-left"></i> <span class="btn-text">Inicio</span>
             </a>
         </div>
     </header>
@@ -802,13 +1047,13 @@
                 </div>
 
                 <!-- Buscador de Asesor -->
-                <div class="filtro-group">
+                <div class="filtro-group filtro-full-mobile">
                     <label>Buscar Asesor</label>
                     <input type="text" id="filtroBusqueda" placeholder="Nombre del vendedor..." onkeyup="aplicarFiltros()">
                 </div>
 
                 <!-- Ocultar Asesores en 0 -->
-                <div class="filtro-group" style="justify-content: flex-end;">
+                <div class="filtro-group filtro-full-mobile" style="justify-content: flex-end;">
                     <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; text-transform: none; font-size: 13px; font-weight: 500; margin-bottom: 8px;">
                         <input type="checkbox" id="filtroOcultarCero" onchange="aplicarFiltros()" style="width: 17px; height: 17px; cursor: pointer; accent-color: var(--gpl-dorado);">
                         Ocultar sin entrevistas (0)
@@ -1277,9 +1522,9 @@
                 }
 
                 return `
-                    <tr>
-                        <td>${posHtml}</td>
-                        <td>
+                    <tr class="ranking-row">
+                        <td class="col-pos">${posHtml}</td>
+                        <td class="col-asesor">
                             <div class="asesor-info">
                                 <span class="asesor-nombre">${a.nombre}</span>
                                 <div class="asesor-tags">
@@ -1288,7 +1533,7 @@
                                 </div>
                             </div>
                         </td>
-                        <td class="entrevistas-cell">
+                        <td class="col-entrevistas entrevistas-cell">
                             <div class="entrevistas-cant">
                                 <span class="entrevistas-num">${a.total}</span>
                                 <span class="entrevistas-meta-txt">${metaTxt}</span>
@@ -1297,7 +1542,7 @@
                                 <div class="barra-fill ${barraClase}" style="width: ${barraPct}%;"></div>
                             </div>
                         </td>
-                        <td>
+                        <td class="col-calif">
                             ${califHtml}
                         </td>
                     </tr>
@@ -1390,7 +1635,7 @@
             const watermark = document.getElementById('capturaWatermark');
             const btn = document.querySelector('button[onclick="solicitarDescarga(\'png\')"]');
             const txtOriginal = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generando imagen...';
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span class="btn-text">Generando imagen...</span>';
 
             watermark.style.display = 'block';
             document.getElementById('txtWatermarkFecha').textContent = `Generado el ${new Date().toLocaleString('es-AR')}`;
