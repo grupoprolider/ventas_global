@@ -1,0 +1,1480 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ranking de Entrevistas | ProLider GPL</title>
+    <link rel="apple-touch-icon" href="LOGO-gpl.png">
+    
+    <!-- Librerías Externas -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Configuración para iOS Safari -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Suite GPL">
+
+    <style>
+        :root {
+            --bg-body: #f4f6f9;
+            --bg-card: #ffffff;
+            --bg-card-hover: #fcfdfe;
+            --bg-input: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --border-color: #e2e8f0;
+            --gpl-petroleo: #0a3a46;
+            --gpl-petroleo-light: #14596b;
+            --gpl-dorado: #c49c48;
+            --gpl-verde: #10b981;
+            --gpl-amarillo: #f59e0b;
+            --gpl-rojo: #ef4444;
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.04);
+            --shadow-md: 0 6px 18px rgba(0,0,0,0.06);
+            --shadow-lg: 0 12px 28px rgba(0,0,0,0.1);
+        }
+
+        body.dark-mode {
+            --bg-body: #0b131e;
+            --bg-card: #152232;
+            --bg-card-hover: #1b2b3f;
+            --bg-input: #1a293c;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-color: #22344a;
+            --gpl-petroleo: #14596b;
+            --gpl-petroleo-light: #1abc9c;
+            --gpl-dorado: #eab308;
+            --shadow-sm: 0 2px 6px rgba(0,0,0,0.3);
+            --shadow-md: 0 6px 20px rgba(0,0,0,0.4);
+            --shadow-lg: 0 12px 30px rgba(0,0,0,0.5);
+        }
+
+        * {
+            box-sizing: border-box;
+            transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg-body);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        /* HEADER */
+        header {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header-brand img {
+            height: 44px;
+        }
+
+        .header-titles h1 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: var(--gpl-dorado);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-titles p {
+            margin: 2px 0 0 0;
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            border: none;
+            padding: 9px 16px;
+            border-radius: 8px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: transform 0.15s, opacity 0.15s, box-shadow 0.15s;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            opacity: 0.95;
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-volver {
+            background: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .btn-theme {
+            background: var(--bg-input);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 9px 12px;
+        }
+
+        .btn-png {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+
+        .btn-excel {
+            background: linear-gradient(135deg, #0284c7, #0369a1);
+            color: white;
+        }
+
+        /* CONTAINER */
+        .container {
+            max-width: 1240px;
+            margin: 24px auto;
+            padding: 0 20px 60px 20px;
+        }
+
+        /* KPIS CARDS */
+        .kpis-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 18px 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: var(--shadow-sm);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--kpi-color, var(--gpl-dorado));
+        }
+
+        .kpi-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            background: rgba(196, 156, 72, 0.12);
+            color: var(--kpi-color, var(--gpl-dorado));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .kpi-info h4 {
+            margin: 0;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .kpi-info .kpi-value {
+            margin: 3px 0 0 0;
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--text-primary);
+            line-height: 1.1;
+        }
+
+        .kpi-info .kpi-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* PANEL DE CONTROL / FILTROS */
+        .card-control {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 22px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .tabs-periodo {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            background: var(--bg-body);
+            padding: 5px;
+            border-radius: 10px;
+            width: fit-content;
+            border: 1px solid var(--border-color);
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 7px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: var(--bg-card);
+            color: var(--gpl-dorado);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .filtros-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            align-items: flex-end;
+        }
+
+        .filtro-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .filtro-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .filtro-group select,
+        .filtro-group input {
+            background: var(--bg-input);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            outline: none;
+        }
+
+        .filtro-group select:focus,
+        .filtro-group input:focus {
+            border-color: var(--gpl-dorado);
+            box-shadow: 0 0 0 2px rgba(196, 156, 72, 0.2);
+        }
+
+        /* CAPTURA RANKING WRAPPER */
+        #capturaRanking {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 24px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .ranking-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 16px;
+            margin-bottom: 18px;
+            border-bottom: 2px solid var(--border-color);
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .ranking-header-title h2 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        .ranking-header-title span {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .ranking-badge-meta {
+            background: rgba(16, 185, 129, 0.12);
+            color: #10b981;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        /* TABLA DE RANKING */
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 8px;
+            font-size: 13px;
+        }
+
+        thead th {
+            color: var(--text-secondary);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 10px 14px;
+            text-align: left;
+            border: none;
+            background: transparent;
+        }
+
+        tbody tr {
+            background: var(--bg-card);
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+            transition: transform 0.12s, box-shadow 0.12s;
+        }
+
+        body.dark-mode tbody tr {
+            background: var(--bg-card-hover);
+        }
+
+        tbody tr:hover {
+            transform: scale(1.002);
+            box-shadow: var(--shadow-sm);
+        }
+
+        tbody td {
+            padding: 14px;
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+
+        tbody td:first-child {
+            border-left: 1px solid var(--border-color);
+            border-top-left-radius: 10px;
+            border-bottom-left-radius: 10px;
+            font-weight: 800;
+            font-size: 15px;
+            text-align: center;
+            width: 60px;
+        }
+
+        tbody td:last-child {
+            border-right: 1px solid var(--border-color);
+            border-top-right-radius: 10px;
+            border-bottom-right-radius: 10px;
+        }
+
+        /* TOP 3 PODIO */
+        .pos-1 { color: #f59e0b; font-size: 20px; }
+        .pos-2 { color: #94a3b8; font-size: 18px; }
+        .pos-3 { color: #d97706; font-size: 17px; }
+
+        .asesor-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .asesor-nombre {
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .asesor-tags {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 3px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .tag-pill {
+            background: var(--border-color);
+            color: var(--text-secondary);
+            padding: 1px 7px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        /* CONTADOR Y BARRA */
+        .entrevistas-cell {
+            min-width: 170px;
+        }
+
+        .entrevistas-cant {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            margin-bottom: 4px;
+        }
+
+        .entrevistas-num {
+            font-size: 20px;
+            font-weight: 900;
+            color: var(--gpl-dorado);
+            line-height: 1;
+        }
+
+        .entrevistas-meta-txt {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .barra-contenedor {
+            width: 100%;
+            height: 7px;
+            background: var(--border-color);
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .barra-fill {
+            height: 100%;
+            border-radius: 10px;
+            background: linear-gradient(90deg, #10b981, #059669);
+            transition: width 0.8s ease-in-out;
+        }
+
+        .barra-fill.incompleto {
+            background: linear-gradient(90deg, #3b82f6, #0284c7);
+        }
+
+        /* CALIFICACIÓN */
+        .calif-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-weight: 800;
+            font-size: 14px;
+        }
+
+        .calif-alta {
+            background: rgba(16, 185, 129, 0.12);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .calif-media {
+            background: rgba(245, 158, 11, 0.12);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .calif-baja {
+            background: rgba(239, 68, 68, 0.12);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .calif-vacia {
+            background: var(--border-color);
+            color: var(--text-muted);
+        }
+
+        .calif-count {
+            font-size: 10px;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-top: 2px;
+        }
+
+        /* MODAL DE AUTORIZACIÓN DE DESCARGA */
+        #modalAuth {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 20, 30, 0.75);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 99999;
+        }
+
+        .modal-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 30px;
+            border-radius: 14px;
+            box-shadow: var(--shadow-lg);
+            max-width: 420px;
+            width: 90%;
+            text-align: center;
+            position: relative;
+        }
+
+        .modal-box i.icon-lock {
+            font-size: 40px;
+            color: var(--gpl-dorado);
+            margin-bottom: 12px;
+        }
+
+        .modal-box h3 {
+            margin: 0 0 8px 0;
+            color: var(--text-primary);
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .modal-box p {
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin: 0 0 20px 0;
+            line-height: 1.4;
+        }
+
+        .modal-box input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-input);
+            color: var(--text-primary);
+            font-size: 16px;
+            text-align: center;
+            outline: none;
+            margin-bottom: 16px;
+            font-family: inherit;
+        }
+
+        .modal-box input:focus {
+            border-color: var(--gpl-dorado);
+        }
+
+        .modal-error {
+            color: var(--gpl-rojo);
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: none;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .modal-actions button {
+            flex: 1;
+            padding: 12px;
+            font-size: 13px;
+        }
+
+        /* WATERMARK CAPTURA */
+        .captura-watermark {
+            display: none;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px dashed var(--border-color);
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        /* SPINNER */
+        .loading-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--text-secondary);
+        }
+
+        .loading-state i {
+            color: var(--gpl-dorado);
+            font-size: 36px;
+            margin-bottom: 14px;
+        }
+
+        @media (max-width: 768px) {
+            header {
+                padding: 12px 16px;
+            }
+            .header-titles h1 {
+                font-size: 17px;
+            }
+            .header-brand img {
+                height: 36px;
+            }
+            .container {
+                padding: 0 12px 40px 12px;
+            }
+            .card-control {
+                padding: 16px;
+            }
+            #capturaRanking {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- MODAL DE PIN PARA DESCARGAS -->
+    <div id="modalAuth">
+        <div class="modal-box">
+            <i class="fa-solid fa-shield-halved icon-lock"></i>
+            <h3>Autorización Requerida</h3>
+            <p>La visualización es pública para todo el equipo. Para <b>descargar PNG o Excel</b>, ingresá tu PIN de Líder de Sucursal o Gerencia:</p>
+            <input type="password" id="inputPinAuth" placeholder="Ingresá tu PIN..." onkeyup="if(event.key === 'Enter') procesarAuthDescarga()">
+            <div id="msgErrorAuth" class="modal-error">PIN no autorizado para descargas.</div>
+            <div class="modal-actions">
+                <button class="btn btn-volver" onclick="cerrarModalAuth()">Cancelar</button>
+                <button class="btn btn-png" onclick="procesarAuthDescarga()"><i class="fa-solid fa-unlock"></i> Desbloquear</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- HEADER SUPERIOR -->
+    <header>
+        <div class="header-brand">
+            <img src="LOGO-gpl.png" alt="ProLider GPL">
+            <div class="header-titles">
+                <h1><i class="fa-solid fa-comments"></i> Ranking de Entrevistas</h1>
+                <p>Auditoría y control de meta diaria (5/día) y acumulado de campaña</p>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-theme" onclick="toggleTheme()" title="Cambiar tema claro/oscuro" id="btnTheme">
+                <i class="fa-solid fa-moon"></i>
+            </button>
+            <button class="btn btn-png" onclick="solicitarDescarga('png')">
+                <i class="fa-solid fa-camera"></i> Descargar PNG
+            </button>
+            <button class="btn btn-excel" onclick="solicitarDescarga('excel')">
+                <i class="fa-solid fa-file-excel"></i> Descargar Excel
+            </button>
+            <a href="index.html" class="btn btn-volver">
+                <i class="fa-solid fa-arrow-left"></i> Inicio
+            </a>
+        </div>
+    </header>
+
+    <div class="container">
+        
+        <!-- CARDS DE KPIS -->
+        <div class="kpis-grid">
+            <div class="kpi-card" style="--kpi-color: #10b981;">
+                <div class="kpi-icon"><i class="fa-solid fa-bullhorn"></i></div>
+                <div class="kpi-info">
+                    <h4>Total Entrevistas</h4>
+                    <div class="kpi-value" id="kpiTotalEntrevistas">0</div>
+                    <div class="kpi-sub" id="kpiSubPeriodo">Cargando datos...</div>
+                </div>
+            </div>
+            <div class="kpi-card" style="--kpi-color: #f59e0b;">
+                <div class="kpi-icon"><i class="fa-solid fa-bullseye"></i></div>
+                <div class="kpi-info">
+                    <h4 id="kpiTituloMeta">Meta Cumplida (≥ 5)</h4>
+                    <div class="kpi-value" id="kpiAsesoresMeta">0</div>
+                    <div class="kpi-sub" id="kpiSubMeta">Asesores con objetivo</div>
+                </div>
+            </div>
+            <div class="kpi-card" style="--kpi-color: #eab308;">
+                <div class="kpi-icon"><i class="fa-solid fa-star"></i></div>
+                <div class="kpi-info">
+                    <h4>Calificación Promedio</h4>
+                    <div class="kpi-value" id="kpiPromedioGeneral">-</div>
+                    <div class="kpi-sub" id="kpiSubCalificadas">0 evaluadas</div>
+                </div>
+            </div>
+            <div class="kpi-card" style="--kpi-color: #8b5cf6;">
+                <div class="kpi-icon"><i class="fa-solid fa-trophy"></i></div>
+                <div class="kpi-info">
+                    <h4>Líder del Ranking</h4>
+                    <div class="kpi-value" id="kpiTopAsesor" style="font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px;">-</div>
+                    <div class="kpi-sub" id="kpiTopAsesorDato">0 entrevistas</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FILTROS Y CONTROLES -->
+        <div class="card-control">
+            <div class="tabs-periodo">
+                <button class="tab-btn active" id="tabHoy" onclick="cambiarPeriodo('hoy')">
+                    <i class="fa-solid fa-calendar-day"></i> Hoy (Meta 5)
+                </button>
+                <button class="tab-btn" id="tabCampana" onclick="cambiarPeriodo('campana')">
+                    <i class="fa-solid fa-calendar-check"></i> Por Campaña
+                </button>
+                <button class="tab-btn" id="tabFecha" onclick="cambiarPeriodo('fecha')">
+                    <i class="fa-solid fa-calendar"></i> Fecha Específica
+                </button>
+            </div>
+
+            <div class="filtros-grid">
+                <!-- Selector de Campaña -->
+                <div class="filtro-group" id="groupCampana" style="display: none;">
+                    <label>Campaña</label>
+                    <select id="filtroCampana" onchange="aplicarFiltros()">
+                        <option value="">Cargando campañas...</option>
+                    </select>
+                </div>
+
+                <!-- Selector de Fecha Específica -->
+                <div class="filtro-group" id="groupFecha" style="display: none;">
+                    <label>Fecha a Auditar</label>
+                    <input type="date" id="filtroFechaDia" onchange="aplicarFiltros()">
+                </div>
+
+                <!-- Selector de Sucursal -->
+                <div class="filtro-group">
+                    <label>Sucursal</label>
+                    <select id="filtroSucursal" onchange="onSucursalChange()">
+                        <option value="todas">Todas las Sucursales</option>
+                    </select>
+                </div>
+
+                <!-- Selector de Equipo -->
+                <div class="filtro-group">
+                    <label>Equipo</label>
+                    <select id="filtroEquipo" onchange="aplicarFiltros()">
+                        <option value="todos">Todos los Equipos</option>
+                    </select>
+                </div>
+
+                <!-- Buscador de Asesor -->
+                <div class="filtro-group">
+                    <label>Buscar Asesor</label>
+                    <input type="text" id="filtroBusqueda" placeholder="Nombre del vendedor..." onkeyup="aplicarFiltros()">
+                </div>
+
+                <!-- Ocultar Asesores en 0 -->
+                <div class="filtro-group" style="justify-content: flex-end;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; text-transform: none; font-size: 13px; font-weight: 500; margin-bottom: 8px;">
+                        <input type="checkbox" id="filtroOcultarCero" onchange="aplicarFiltros()" style="width: 17px; height: 17px; cursor: pointer; accent-color: var(--gpl-dorado);">
+                        Ocultar sin entrevistas (0)
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN DE RANKING (ÁREA CAPTURABLE PARA PNG) -->
+        <div id="capturaRanking">
+            <div class="ranking-header">
+                <div class="ranking-header-title">
+                    <h2 id="tituloVistaRanking">Ranking Diario de Entrevistas</h2>
+                    <span id="subtituloVistaRanking">Período: Hoy | Objetivo mínimo recomendado: 5 entrevistas diarias</span>
+                </div>
+                <div class="ranking-badge-meta" id="badgeMetaVisual">
+                    <i class="fa-solid fa-flag-checkered"></i> Objetivo Clave: 5 entrevistas / día
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table id="tablaRanking">
+                    <thead>
+                        <tr>
+                            <th style="width: 60px; text-align: center;">POS</th>
+                            <th>NOMBRE DEL VENDEDOR</th>
+                            <th style="min-width: 200px;">CANTIDAD DE ENTREVISTAS</th>
+                            <th style="width: 190px;">PROMEDIO DE CALIFICACIÓN</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rankingBody">
+                        <tr>
+                            <td colspan="4">
+                                <div class="loading-state">
+                                    <i class="fa-solid fa-circle-notch fa-spin"></i>
+                                    <div>Cargando datos de entrevistas en tiempo real...</div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Marca de agua en PNG exportado -->
+            <div class="captura-watermark" id="capturaWatermark">
+                <span id="txtWatermarkFecha">Suite Comercial ProLider GPL</span> | Ranking Oficial de Entrevistas
+            </div>
+        </div>
+
+    </div>
+
+    <!-- SCRIPT PRINCIPAL -->
+    <script>
+        const clienteSupabase = supabase.createClient(
+            'https://pumpwqyazqaxeeknrhyo.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1bXB3cXlhenFheGVla25yaHlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MjQ4ODEsImV4cCI6MjA5NDIwMDg4MX0.-AQZZYAt-uskDLUpbiafJXbHgW0lErf8bwEnk7eq1DE'
+        );
+
+        let globalPerfiles = [];
+        let globalEquipos = [];
+        let globalAgencias = [];
+        let globalEntrevistas = [];
+        let globalCampanaActual = '';
+        let periodoSeleccionado = 'hoy'; // 'hoy', 'campana', 'fecha'
+        let tipoDescargaPendiente = null;
+        let datosExportarCache = [];
+
+        // Inicialización
+        window.onload = async function() {
+            initTema();
+            initFechaHoyInput();
+            await cargarCatalogos();
+            await cargarEntrevistas();
+        };
+
+        // Manejo de Tema Claro / Oscuro
+        function initTema() {
+            const temaGuardado = localStorage.getItem('gpl_tema_entrevistas') || 'light';
+            if (temaGuardado === 'dark') {
+                document.body.classList.add('dark-mode');
+                document.getElementById('btnTheme').innerHTML = '<i class="fa-solid fa-sun"></i>';
+            } else {
+                document.body.classList.remove('dark-mode');
+                document.getElementById('btnTheme').innerHTML = '<i class="fa-solid fa-moon"></i>';
+            }
+        }
+
+        function toggleTheme() {
+            const esDark = document.body.classList.toggle('dark-mode');
+            localStorage.setItem('gpl_tema_entrevistas', esDark ? 'dark' : 'light');
+            document.getElementById('btnTheme').innerHTML = esDark 
+                ? '<i class="fa-solid fa-sun"></i>' 
+                : '<i class="fa-solid fa-moon"></i>';
+        }
+
+        function initFechaHoyInput() {
+            const hoy = new Date();
+            const y = hoy.getFullYear();
+            const m = String(hoy.getMonth() + 1).padStart(2, '0');
+            const d = String(hoy.getDate()).padStart(2, '0');
+            document.getElementById('filtroFechaDia').value = `${y}-${m}-${d}`;
+            
+            // Campaña actual (corte el día 16)
+            let mesCamp = hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth();
+            let anioCamp = hoy.getFullYear();
+            if (mesCamp > 11) { mesCamp = 0; anioCamp++; }
+            const mesesNombres = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+            globalCampanaActual = `Campaña ${mesesNombres[mesCamp]} ${anioCamp}`;
+        }
+
+        // Cargar Agencias, Equipos y Perfiles
+        async function cargarCatalogos() {
+            try {
+                const [resAgencias, resEquipos, resPerfiles] = await Promise.all([
+                    clienteSupabase.from('agencias').select('id, nombre').order('nombre'),
+                    clienteSupabase.from('equipos').select('id, nombre, agencia_id').order('nombre'),
+                    clienteSupabase.from('perfiles').select('id, nombre, equipo_id, rol, pin_acceso').order('nombre')
+                ]);
+
+                globalAgencias = resAgencias.data || [];
+                globalEquipos = resEquipos.data || [];
+                // Excluir terminantemente perfiles dados de baja u ocultos
+                globalPerfiles = (resPerfiles.data || []).filter(p => {
+                    const nom = (p.nombre || '').toUpperCase();
+                    return !nom.includes('(BAJA)') && !nom.includes('(OCULTO)');
+                });
+
+                // Llenar select Sucursales
+                const selSuc = document.getElementById('filtroSucursal');
+                selSuc.innerHTML = '<option value="todas">Todas las Sucursales</option>' + 
+                    globalAgencias.map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
+
+                // Llenar select Equipos
+                poblarSelectEquipos('todas');
+
+            } catch (err) {
+                console.error("Error cargando catálogos:", err);
+            }
+        }
+
+        function poblarSelectEquipos(agenciaId) {
+            const selEq = document.getElementById('filtroEquipo');
+            let equiposFiltrados = globalEquipos;
+            if (agenciaId !== 'todas') {
+                equiposFiltrados = globalEquipos.filter(e => e.agencia_id === agenciaId);
+            }
+            selEq.innerHTML = '<option value="todos">Todos los Equipos</option>' + 
+                equiposFiltrados.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('');
+        }
+
+        function onSucursalChange() {
+            const sucId = document.getElementById('filtroSucursal').value;
+            poblarSelectEquipos(sucId);
+            aplicarFiltros();
+        }
+
+        // Cargar Entrevistas (Paginado para no perder registros)
+        async function cargarEntrevistas() {
+            try {
+                let todasEntrevistas = [];
+                let page = 0;
+                let pageSize = 1000;
+                let hasMore = true;
+
+                while (hasMore) {
+                    const { data, error } = await clienteSupabase
+                        .from('registro_entrevistas')
+                        .select('id, vendedor_id, dni, created_at, campana, estado')
+                        .order('created_at', { ascending: false })
+                        .range(page * pageSize, (page + 1) * pageSize - 1);
+
+                    if (error) throw error;
+
+                    if (data && data.length > 0) {
+                        todasEntrevistas = todasEntrevistas.concat(data);
+                        if (data.length < pageSize) hasMore = false;
+                        else page++;
+                    } else {
+                        hasMore = false;
+                    }
+                }
+
+                globalEntrevistas = todasEntrevistas;
+
+                // Extraer campañas únicas
+                let campanasUnicas = [...new Set(globalEntrevistas.map(e => e.campana).filter(Boolean))];
+                if (!campanasUnicas.includes(globalCampanaActual)) {
+                    campanasUnicas.unshift(globalCampanaActual);
+                }
+                campanasUnicas.sort((a,b) => b.localeCompare(a));
+
+                const selCamp = document.getElementById('filtroCampana');
+                selCamp.innerHTML = campanasUnicas.map(c => 
+                    `<option value="${c}" ${c === globalCampanaActual ? 'selected' : ''}>${c}</option>`
+                ).join('');
+
+                aplicarFiltros();
+
+            } catch (err) {
+                console.error("Error al cargar entrevistas:", err);
+                document.getElementById('rankingBody').innerHTML = `
+                    <tr><td colspan="4" style="text-align:center; color:#ef4444; padding:30px;">
+                        Error al cargar entrevistas: ${err.message}
+                    </td></tr>
+                `;
+            }
+        }
+
+        // Manejo de tabs de período
+        function cambiarPeriodo(tipo) {
+            periodoSeleccionado = tipo;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+            const gCampana = document.getElementById('groupCampana');
+            const gFecha = document.getElementById('groupFecha');
+
+            if (tipo === 'hoy') {
+                document.getElementById('tabHoy').classList.add('active');
+                gCampana.style.display = 'none';
+                gFecha.style.display = 'none';
+                document.getElementById('tituloVistaRanking').textContent = 'Ranking Diario de Entrevistas';
+                document.getElementById('subtituloVistaRanking').textContent = 'Período: Hoy | Meta clave recomendada: 5 entrevistas por día';
+                document.getElementById('badgeMetaVisual').style.display = 'inline-flex';
+                document.getElementById('kpiTituloMeta').textContent = 'Meta Cumplida (≥ 5)';
+                document.getElementById('kpiSubMeta').textContent = 'Asesores con 5+ hoy';
+            } else if (tipo === 'campana') {
+                document.getElementById('tabCampana').classList.add('active');
+                gCampana.style.display = 'flex';
+                gFecha.style.display = 'none';
+                document.getElementById('tituloVistaRanking').textContent = 'Ranking Acumulado de Campaña';
+                document.getElementById('subtituloVistaRanking').textContent = 'Total de entrevistas acumuladas en la campaña seleccionada';
+                document.getElementById('badgeMetaVisual').style.display = 'none';
+                document.getElementById('kpiTituloMeta').textContent = 'Asesores Activos';
+                document.getElementById('kpiSubMeta').textContent = 'Con al menos 1 entrevista';
+            } else if (tipo === 'fecha') {
+                document.getElementById('tabFecha').classList.add('active');
+                gCampana.style.display = 'none';
+                gFecha.style.display = 'flex';
+                document.getElementById('tituloVistaRanking').textContent = 'Ranking de Entrevistas por Fecha';
+                document.getElementById('subtituloVistaRanking').textContent = 'Auditoría diaria para la fecha seleccionada';
+                document.getElementById('badgeMetaVisual').style.display = 'inline-flex';
+                document.getElementById('kpiTituloMeta').textContent = 'Meta Cumplida (≥ 5)';
+                document.getElementById('kpiSubMeta').textContent = 'Asesores con 5+ en este día';
+            }
+
+            aplicarFiltros();
+        }
+
+        // Aplicación de Filtros y Renderizado
+        function aplicarFiltros() {
+            if (!globalEntrevistas) return;
+
+            const sucId = document.getElementById('filtroSucursal').value;
+            const eqId = document.getElementById('filtroEquipo').value;
+            const busq = document.getElementById('filtroBusqueda').value.toLowerCase().trim();
+            const campSeleccionada = document.getElementById('filtroCampana').value;
+            const fechaDiaSeleccionada = document.getElementById('filtroFechaDia').value;
+
+            // 1. Filtrar entrevistas por fecha / período
+            let entrevistasFiltradas = [];
+
+            if (periodoSeleccionado === 'hoy') {
+                const hoyStr = new Date().toLocaleDateString('es-AR');
+                entrevistasFiltradas = globalEntrevistas.filter(e => {
+                    if (!e.created_at) return false;
+                    return new Date(e.created_at).toLocaleDateString('es-AR') === hoyStr;
+                });
+                document.getElementById('kpiSubPeriodo').textContent = `Hoy (${hoyStr})`;
+            } else if (periodoSeleccionado === 'campana') {
+                entrevistasFiltradas = globalEntrevistas.filter(e => e.campana === campSeleccionada);
+                document.getElementById('kpiSubPeriodo').textContent = campSeleccionada || 'Campaña';
+            } else if (periodoSeleccionado === 'fecha') {
+                entrevistasFiltradas = globalEntrevistas.filter(e => {
+                    if (!e.created_at || !fechaDiaSeleccionada) return false;
+                    const d = new Date(e.created_at);
+                    const y = d.getFullYear();
+                    const m = String(d.getMonth() + 1).padStart(2, '0');
+                    const dia = String(d.getDate()).padStart(2, '0');
+                    return `${y}-${m}-${dia}` === fechaDiaSeleccionada;
+                });
+                const dFormateada = fechaDiaSeleccionada.split('-').reverse().join('/');
+                document.getElementById('kpiSubPeriodo').textContent = `Día: ${dFormateada}`;
+            }
+
+            // 2. Asociar asesores y armar estadísticas (excluyendo bajas)
+            const activeProfileIds = new Set(globalPerfiles.map(p => p.id));
+            const ocultarCero = document.getElementById('filtroOcultarCero') ? document.getElementById('filtroOcultarCero').checked : false;
+            const statsMap = {};
+
+            entrevistasFiltradas.forEach(e => {
+                if (!e.vendedor_id) return;
+                // Excluir entrevistas si el asesor está dado de baja o no es activo
+                if (!activeProfileIds.has(e.vendedor_id)) return;
+
+                if (!statsMap[e.vendedor_id]) {
+                    statsMap[e.vendedor_id] = { total: 0, sumaCalif: 0, cantCalif: 0 };
+                }
+                statsMap[e.vendedor_id].total++;
+
+                // Extraer calificación desde DNI (formato JSON)
+                if (e.dni && e.dni.startsWith('{')) {
+                    try {
+                        const meta = JSON.parse(e.dni);
+                        const num = parseFloat(meta.calificacion);
+                        if (!isNaN(num) && num >= 1 && num <= 5) {
+                            statsMap[e.vendedor_id].sumaCalif += num;
+                            statsMap[e.vendedor_id].cantCalif++;
+                        }
+                    } catch(err) {}
+                }
+            });
+
+            // 3. Crear lista de asesores filtrados por organización
+            let asesoresProcesados = [];
+
+            globalPerfiles.forEach(p => {
+                const nomUpper = (p.nombre || '').toUpperCase();
+                if (nomUpper.includes('(BAJA)') || nomUpper.includes('(OCULTO)')) return;
+
+                // Filtro búsqueda por nombre
+                if (busq && !p.nombre.toLowerCase().includes(busq)) return;
+
+                // Buscar equipo y agencia
+                const eq = globalEquipos.find(e => e.id === p.equipo_id);
+                const ag = eq ? globalAgencias.find(a => a.id === eq.agencia_id) : null;
+
+                // Filtro Sucursal
+                if (sucId !== 'todas') {
+                    if (!ag || ag.id !== sucId) return;
+                }
+
+                // Filtro Equipo
+                if (eqId !== 'todos') {
+                    if (!eq || eq.id !== eqId) return;
+                }
+
+                const stats = statsMap[p.id] || { total: 0, sumaCalif: 0, cantCalif: 0 };
+
+                // Si está activado el filtro para ocultar asesores en 0
+                if (ocultarCero && stats.total === 0) return;
+
+                const prom = stats.cantCalif > 0 ? (stats.sumaCalif / stats.cantCalif).toFixed(1) : null;
+
+                asesoresProcesados.push({
+                    id: p.id,
+                    nombre: p.nombre,
+                    equipoNombre: eq ? eq.nombre : 'Sin Equipo',
+                    agenciaNombre: ag ? ag.nombre : 'Sin Sucursal',
+                    total: stats.total,
+                    promedioCalif: prom,
+                    cantCalif: stats.cantCalif
+                });
+            });
+
+            // 4. Ordenamiento: Por Cantidad descendente, luego por promedio de calificación
+            asesoresProcesados.sort((a,b) => {
+                if (b.total !== a.total) return b.total - a.total;
+                const pA = a.promedioCalif ? parseFloat(a.promedioCalif) : 0;
+                const pB = b.promedioCalif ? parseFloat(b.promedioCalif) : 0;
+                return pB - pA;
+            });
+
+            datosExportarCache = asesoresProcesados;
+
+            // 5. Actualizar KPIs (sólo asesores activos)
+            let totalEntrevistas = 0;
+            entrevistasFiltradas.forEach(e => {
+                if (e.vendedor_id && activeProfileIds.has(e.vendedor_id)) {
+                    totalEntrevistas++;
+                }
+            });
+            document.getElementById('kpiTotalEntrevistas').textContent = totalEntrevistas;
+
+            let sumaPromedios = 0;
+            let asesoresConPromedio = 0;
+            let asesoresMeta = 0;
+
+            asesoresProcesados.forEach(a => {
+                if (periodoSeleccionado === 'campana') {
+                    if (a.total > 0) asesoresMeta++;
+                } else {
+                    if (a.total >= 5) asesoresMeta++;
+                }
+
+                if (a.promedioCalif !== null) {
+                    sumaPromedios += parseFloat(a.promedioCalif) * a.cantCalif;
+                    asesoresConPromedio += a.cantCalif;
+                }
+            });
+
+            document.getElementById('kpiAsesoresMeta').textContent = asesoresMeta;
+
+            const promedioGeneral = asesoresConPromedio > 0 
+                ? (sumaPromedios / asesoresConPromedio).toFixed(1) 
+                : '-';
+            document.getElementById('kpiPromedioGeneral').textContent = promedioGeneral !== '-' ? `⭐ ${promedioGeneral}` : '-';
+            document.getElementById('kpiSubCalificadas').textContent = `${asesoresConPromedio} evaluaciones`;
+
+            if (asesoresProcesados.length > 0 && asesoresProcesados[0].total > 0) {
+                document.getElementById('kpiTopAsesor').textContent = asesoresProcesados[0].nombre;
+                document.getElementById('kpiTopAsesorDato').textContent = `${asesoresProcesados[0].total} entrevistas`;
+            } else {
+                document.getElementById('kpiTopAsesor').textContent = 'Sin registros';
+                document.getElementById('kpiTopAsesorDato').textContent = '0 entrevistas';
+            }
+
+            // 6. Renderizar tabla
+            renderTabla(asesoresProcesados);
+        }
+
+        function renderTabla(asesores) {
+            const tbody = document.getElementById('rankingBody');
+
+            if (!asesores || asesores.length === 0) {
+                tbody.innerHTML = `
+                    <tr><td colspan="4" style="text-align:center; padding:35px; color:var(--text-muted);">
+                        <i class="fa-solid fa-folder-open" style="font-size:28px; margin-bottom:8px; opacity:0.5;"></i><br>
+                        No se encontraron asesores con los filtros seleccionados.
+                    </td></tr>
+                `;
+                return;
+            }
+
+            const maxTotal = asesores.length > 0 && asesores[0].total > 0 ? asesores[0].total : 5;
+
+            tbody.innerHTML = asesores.map((a, idx) => {
+                const pos = idx + 1;
+                let posHtml = `#${pos}`;
+                if (pos === 1) posHtml = `<i class="fa-solid fa-trophy pos-1" title="1° Lugar"></i>`;
+                else if (pos === 2) posHtml = `<i class="fa-solid fa-medal pos-2" title="2° Lugar"></i>`;
+                else if (pos === 3) posHtml = `<i class="fa-solid fa-medal pos-3" title="3° Lugar"></i>`;
+
+                // Meta y barra
+                let barraPct = 0;
+                let metaTxt = '';
+                let barraClase = '';
+
+                if (periodoSeleccionado === 'campana') {
+                    barraPct = Math.min(100, Math.round((a.total / maxTotal) * 100));
+                    metaTxt = `${barraPct}% del líder`;
+                } else {
+                    // Modo diario: objetivo de 5
+                    barraPct = Math.min(100, Math.round((a.total / 5) * 100));
+                    if (a.total >= 5) {
+                        metaTxt = `<span style="color:#10b981; font-weight:700;"><i class="fa-solid fa-circle-check"></i> 5/5 ¡Cumplido!</span>`;
+                    } else {
+                        barraClase = 'incompleto';
+                        metaTxt = `Faltan ${5 - a.total} para la meta`;
+                    }
+                }
+
+                // Calificación Pill
+                let califHtml = `<span class="calif-pill calif-vacia">S/C</span>`;
+                if (a.promedioCalif !== null) {
+                    const numCalif = parseFloat(a.promedioCalif);
+                    let colorClase = 'calif-alta';
+                    if (numCalif < 3.5) colorClase = 'calif-baja';
+                    else if (numCalif < 4.5) colorClase = 'calif-media';
+
+                    califHtml = `
+                        <div>
+                            <span class="calif-pill ${colorClase}"><i class="fa-solid fa-star"></i> ${a.promedioCalif}</span>
+                            <div class="calif-count">${a.cantCalif} evaluada${a.cantCalif > 1 ? 's' : ''}</div>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <tr>
+                        <td>${posHtml}</td>
+                        <td>
+                            <div class="asesor-info">
+                                <span class="asesor-nombre">${a.nombre}</span>
+                                <div class="asesor-tags">
+                                    <span class="tag-pill"><i class="fa-solid fa-building"></i> ${a.agenciaNombre}</span>
+                                    <span class="tag-pill"><i class="fa-solid fa-users"></i> ${a.equipoNombre}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="entrevistas-cell">
+                            <div class="entrevistas-cant">
+                                <span class="entrevistas-num">${a.total}</span>
+                                <span class="entrevistas-meta-txt">${metaTxt}</span>
+                            </div>
+                            <div class="barra-contenedor">
+                                <div class="barra-fill ${barraClase}" style="width: ${barraPct}%;"></div>
+                            </div>
+                        </td>
+                        <td>
+                            ${califHtml}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // =========================================================================
+        // CONTROL DE ACCESO / DESCARGAS (Líderes de Sucursal y Gerencia)
+        // =========================================================================
+        function solicitarDescarga(tipo) {
+            tipoDescargaPendiente = tipo;
+            const autorizada = sessionStorage.getItem('descarga_autorizada_entrevistas') === 'true';
+
+            if (autorizada) {
+                ejecutarDescarga(tipo);
+            } else {
+                document.getElementById('inputPinAuth').value = '';
+                document.getElementById('msgErrorAuth').style.display = 'none';
+                document.getElementById('modalAuth').style.display = 'flex';
+                document.getElementById('inputPinAuth').focus();
+            }
+        }
+
+        function cerrarModalAuth() {
+            document.getElementById('modalAuth').style.display = 'none';
+            tipoDescargaPendiente = null;
+        }
+
+        async function procesarAuthDescarga() {
+            const pin = document.getElementById('inputPinAuth').value.trim();
+            const msgError = document.getElementById('msgErrorAuth');
+            msgError.style.display = 'none';
+
+            if (!pin) {
+                msgError.textContent = "Por favor, ingresá un PIN.";
+                msgError.style.display = 'block';
+                return;
+            }
+
+            // 1. PINs Maestros y Gerenciales de Sistema
+            if (pin === 'gpl2026' || pin === '1234' || pin === 'gplgerente' || pin === '5678') {
+                sessionStorage.setItem('descarga_autorizada_entrevistas', 'true');
+                cerrarModalAuth();
+                ejecutarDescarga(tipoDescargaPendiente);
+                return;
+            }
+
+            // 2. Verificar contra perfiles de Supabase con rol de Líder de Sucursal, Gerencia o Coordinación
+            try {
+                const { data, error } = await clienteSupabase
+                    .from('perfiles')
+                    .select('nombre, rol, pin_acceso')
+                    .eq('pin_acceso', pin);
+
+                if (error) throw error;
+
+                const perfilAut = (data || []).find(p => {
+                    const rol = (p.rol || '').toLowerCase();
+                    return rol.includes('lider') || rol.includes('líder') || 
+                           rol.includes('sucursal') || rol.includes('geren') || 
+                           rol.includes('coordinador') || rol.includes('admin');
+                });
+
+                if (perfilAut) {
+                    sessionStorage.setItem('descarga_autorizada_entrevistas', 'true');
+                    cerrarModalAuth();
+                    ejecutarDescarga(tipoDescargaPendiente);
+                } else {
+                    msgError.textContent = "El PIN ingresado no tiene permisos de Líder de Sucursal o Gerencia.";
+                    msgError.style.display = 'block';
+                }
+            } catch (err) {
+                console.error("Error al validar PIN:", err);
+                msgError.textContent = "Error al verificar PIN. Intentá nuevamente.";
+                msgError.style.display = 'block';
+            }
+        }
+
+        function ejecutarDescarga(tipo) {
+            if (tipo === 'png') exportarPNG();
+            else if (tipo === 'excel') exportarExcel();
+        }
+
+        // =========================================================================
+        // EXPORTACIÓN A PNG (html2canvas)
+        // =========================================================================
+        async function exportarPNG() {
+            const captura = document.getElementById('capturaRanking');
+            const watermark = document.getElementById('capturaWatermark');
+            const btn = document.querySelector('button[onclick="solicitarDescarga(\'png\')"]');
+            const txtOriginal = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generando imagen...';
+
+            watermark.style.display = 'block';
+            document.getElementById('txtWatermarkFecha').textContent = `Generado el ${new Date().toLocaleString('es-AR')}`;
+
+            const isDark = document.body.classList.contains('dark-mode');
+            const bgColor = isDark ? "#0b131e" : "#f4f6f9";
+
+            try {
+                const canvas = await html2canvas(captura, {
+                    scale: 3, // Máxima nitidez para enviar por WhatsApp
+                    useCORS: true,
+                    backgroundColor: bgColor
+                });
+
+                canvas.toBlob(async function(blob) {
+                    const filename = `Ranking_Entrevistas_${new Date().toISOString().split('T')[0]}.png`;
+                    const file = new File([blob], filename, { type: 'image/png' });
+
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        try {
+                            await navigator.share({
+                                files: [file],
+                                title: 'Ranking de Entrevistas ProLider GPL',
+                                text: 'Comparto el ranking oficial de entrevistas ProLider GPL.'
+                            });
+                        } catch (err) {
+                            descargarBlob(blob, filename);
+                        }
+                    } else {
+                        descargarBlob(blob, filename);
+                    }
+                    btn.innerHTML = txtOriginal;
+                    watermark.style.display = 'none';
+                }, 'image/png');
+
+            } catch (err) {
+                alert("Error al exportar PNG: " + err.message);
+                btn.innerHTML = txtOriginal;
+                watermark.style.display = 'none';
+            }
+        }
+
+        function descargarBlob(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // =========================================================================
+        // EXPORTACIÓN A EXCEL (SheetJS)
+        // =========================================================================
+        function exportarExcel() {
+            if (!datosExportarCache || datosExportarCache.length === 0) {
+                alert("No hay datos para exportar.");
+                return;
+            }
+
+            const periodoTxt = periodoSeleccionado === 'hoy' 
+                ? 'Hoy' 
+                : (periodoSeleccionado === 'campana' ? document.getElementById('filtroCampana').value : document.getElementById('filtroFechaDia').value);
+
+            const filas = datosExportarCache.map((a, idx) => ({
+                "Posición": idx + 1,
+                "Asesor / Vendedor": a.nombre,
+                "Sucursal": a.agenciaNombre,
+                "Equipo": a.equipoNombre,
+                "Entrevistas Realizadas": a.total,
+                "Meta Diaria (5)": periodoSeleccionado !== 'campana' ? (a.total >= 5 ? 'Cumplida' : 'Pendiente') : 'N/A',
+                "Promedio Calificación": a.promedioCalif || 'Sin Calificación',
+                "Cant. Evaluaciones": a.cantCalif,
+                "Período Auditado": periodoTxt,
+                "Fecha Reporte": new Date().toLocaleDateString('es-AR')
+            }));
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(filas);
+            XLSX.utils.book_append_sheet(wb, ws, "Ranking Entrevistas");
+            XLSX.writeFile(wb, `Ranking_Entrevistas_${new Date().toISOString().split('T')[0]}.xlsx`);
+        }
+    </script>
+</body>
+</html>

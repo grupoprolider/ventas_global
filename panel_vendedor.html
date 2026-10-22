@@ -623,7 +623,7 @@
                 
                 return `<div style="background:#f9f9f9; padding:10px; border-radius:6px; margin-bottom:10px; border:1px solid #eee; font-size:13px;">
                     <div style="font-weight:bold; color:#333;">${p.nombre_apellido}</div>
-                    <div style="color:#666; margin-bottom:5px;"><i class="fa-solid fa-phone"></i> ${p.telefono} ${p.dni ? ' | DNI: ' + p.dni : ''}</div>
+                    <div style="color:#666; margin-bottom:5px;"><i class="fa-solid fa-phone"></i> ${p.telefono}${p.dni ? (p.dni.startsWith('{') ? (function(){ try { let m = JSON.parse(p.dni); let res = ''; if (m.email) res += ' | ' + m.email; if (m.con_lider && m.con_lider.toLowerCase() === 'si') res += ' | Con Líder'; return res; } catch(e){ return ''; } })() : ' | DNI: ' + p.dni) : ''}</div>
                     <div>${selectHtml}</div>
                 </div>`;
             }).join('');

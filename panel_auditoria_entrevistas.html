@@ -205,6 +205,28 @@
             color: #888;
             font-style: italic;
         }
+
+        .badge-lider {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            text-align: center;
+            white-space: nowrap;
+        }
+        .badge-lider-si {
+            background: #e8f8f5;
+            color: #16a085;
+            border: 1px solid #a3e4d7;
+        }
+        .badge-lider-no {
+            background: #fdf2e9;
+            color: #d35400;
+            border: 1px solid #edbb99;
+        }
     </style>
 
     <!-- Configuración para iOS Safari (iPhone/iPad) -->
@@ -264,24 +286,32 @@
                 <div>
                     <button class="btn btn-excel" onclick="descargarExcel()"><i class="fa-solid fa-file-excel"></i> Exportar</button>
                 </div>
+                <div>
+                    <label for="importSheets" class="btn" style="background:#27ae60; color:white; cursor:pointer; display:inline-block;">
+                        <i class="fa-solid fa-upload"></i> Importar Datos
+                    </label>
+                    <input type="file" id="importSheets" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" style="display:none;" onchange="importarDatosSheets(event)">
+                </div>
             </div>
 
             <div style="overflow-x: auto;">
                 <table id="tabla_auditoria">
                     <thead>
                         <tr>
-                            <th>Fecha Carga</th>
-                            <th>Campaña</th>
-                            <th>Vendedor</th>
-                            <th>Prospecto</th>
-                            <th>DNI</th>
+                            <th>Fecha</th>
+                            <th>Vendedor Evaluado</th>
+                            <th>Con Líder</th>
                             <th>Teléfono</th>
-                            <th>Estado Actual</th>
+                            <th>Email</th>
+                            <th>Calificación</th>
+                            <th>Motivo</th>
+                            <th>Sugerencia</th>
+                            <th>Estado (Venta Digital)</th>
                             <th>Acción</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr><td colspan="8" class="empty-state">Utilizá los filtros y presioná Buscar.</td></tr>
+                        <tr><td colspan="10" class="empty-state">Utilizá los filtros y presioná Buscar.</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -304,6 +334,7 @@
         async function init() {
             // Cargar Vendedores
             const { data: perfiles } = await clienteSupabase.from('perfiles').select('id, nombre').order('nombre');
+            window.globalPerfiles = perfiles || [];
             if(perfiles) {
                 document.getElementById('filtro_vend').innerHTML = '<option value="">Todos los vendedores</option>' + perfiles.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
             }
@@ -311,13 +342,21 @@
             // Cargar Campañas de la BD (solo las usadas)
             const { data: cData } = await clienteSupabase.from('registro_entrevistas').select('campana');
             if(cData) {
-                const unicas = [...new Set(cData.map(c => c.campana))];
+                const hoy = new Date();
+                let mIndex = hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth();
+                let anio = hoy.getFullYear();
+                if(mIndex > 11) { mIndex = 0; anio++; }
+                const campanaActual = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][mIndex]} ${anio}`;
+                
+                let unicas = [...new Set(cData.map(c => c.campana).filter(Boolean))];
+                if(!unicas.includes(campanaActual)) unicas.push(campanaActual);
+                // Sort backwards so newest is likely first
+                unicas.sort((a,b) => b.localeCompare(a));
                 document.getElementById('filtro_camp').innerHTML = '<option value="TODAS">Todas</option>' + unicas.map(c => `<option value="${c}">${c}</option>`).join('');
                 
                 // Set default to current campaign
-                const hoy = new Date();
-                const campanaActual = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
-                if(unicas.includes(campanaActual)) document.getElementById('filtro_camp').value = campanaActual;
+                
+                document.getElementById('filtro_camp').value = campanaActual;
             }
             
             // Cargar Estados
@@ -326,6 +365,9 @@
                 globalEstados = estados.map(e => e.nombre);
                 document.getElementById('filtro_est').innerHTML = '<option value="TODOS">Todos los Estados</option>' + globalEstados.map(e => `<option value="${e}">${e}</option>`).join('');
             }
+            
+            // Auto-load on startup
+            setTimeout(() => cargarAuditoriaEntrevistas(), 300);
         }
 
         async function cargarAuditoriaEntrevistas() {
@@ -363,7 +405,7 @@
             }
 
             if(!dataFiltrada || dataFiltrada.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No se encontraron resultados.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="10" class="empty-state">No se encontraron resultados.</td></tr>';
                 return;
             }
             
@@ -382,16 +424,59 @@
                 selectHtml += opts.map(e => `<option value="${e}" ${v.estado === e ? 'selected' : ''}>${e}</option>`).join('');
                 selectHtml += `</select>`;
                 
+                let extraData = {};
+                try {
+                    extraData = v.dni ? JSON.parse(v.dni) : {};
+                } catch(e) {
+                    extraData = { motivo: v.dni || '-', mejora: '-', calificacion: '-' };
+                }
+
+                let califLabel = extraData.calificacion || '-';
+                let colorCalif = '#777';
+                if(califLabel == '5') colorCalif = '#27ae60';
+                if(califLabel == '4') colorCalif = '#f1c40f';
+                if(califLabel == '3' || califLabel == '2' || califLabel == '1') colorCalif = '#e74c3c';
+                
+                let conLiderRaw = String(extraData.con_lider || extraData.conLider || '').trim();
+                let esConLider = conLiderRaw.toLowerCase() === 'si' || conLiderRaw.toLowerCase() === 'sí';
+                let conLiderBadge = '<span style="color:#aaa;">-</span>';
+                if (conLiderRaw) {
+                    conLiderBadge = esConLider 
+                        ? `<span class="badge-lider badge-lider-si"><i class="fa-solid fa-users"></i> Sí</span>`
+                        : `<span class="badge-lider badge-lider-no"><i class="fa-solid fa-user"></i> No</span>`;
+                }
+
+                let emailStr = extraData.email || extraData.correo || '';
+                let emailHtml = emailStr 
+                    ? `<a href="mailto:${emailStr}" title="${emailStr}" style="color:#2980b9; text-decoration:none; font-size:12px; display:inline-flex; align-items:center; gap:4px;"><i class="fa-regular fa-envelope"></i> ${emailStr}</a>`
+                    : `<span style="color:#aaa;">-</span>`;
+                
                 return `<tr>
-                    <td style="color:#777;">${fecha}</td>
-                    <td>${v.campana}</td>
-                    <td><b>${v.perfiles ? v.perfiles.nombre : 'S/N'}</b></td>
-                    <td style="color:var(--gpl-petroleo); font-weight:600;">${v.nombre_apellido}</td>
-                    <td>${v.dni || '-'}</td>
-                    <td><a href="https://wa.me/${v.telefono}" target="_blank" style="color:#2980b9; text-decoration:none;"><i class="fa-brands fa-whatsapp"></i> ${v.telefono}</a></td>
+                    <td style="color:#777; font-size:12px;">${fecha}</td>
+                    <td>
+                        <div id="vend_text_${v.id}">
+                            <b>${v.perfiles ? v.perfiles.nombre : 'S/N'}</b> 
+                            <button onclick="editVendedor('${v.id}')" style="background:none; border:none; cursor:pointer; color:#3498db;" title="Editar Vendedor"><i class="fa-solid fa-pencil"></i></button>
+                        </div>
+                        <div id="vend_edit_${v.id}" style="display:none;">
+                            <select id="vend_sel_${v.id}" style="border:1px solid #ccc; border-radius:4px; padding:2px; font-size:12px; font-weight:bold; color:var(--gpl-petroleo); max-width: 150px;">
+                                <option value="">Seleccionar...</option>
+                                ${window.globalPerfiles.map(p => `<option value="${p.id}" ${v.vendedor_id === p.id ? 'selected' : ''}>${p.nombre}</option>`).join('')}
+                            </select>
+                            <button onclick="saveVendedor('${v.id}')" style="background:none; border:none; cursor:pointer; color:#27ae60;" title="Guardar"><i class="fa-solid fa-check"></i></button>
+                            <button onclick="cancelEditVendedor('${v.id}')" style="background:none; border:none; cursor:pointer; color:#e74c3c;" title="Cancelar"><i class="fa-solid fa-times"></i></button>
+                        </div>
+                    </td>
+                    <td style="text-align:center;">${conLiderBadge}</td>
+                    <td><a href="https://wa.me/${(v.telefono || '').replace(/[^0-9]/g, '')}" target="_blank" style="color:#2980b9; text-decoration:none;"><i class="fa-brands fa-whatsapp"></i> ${v.telefono || '-'}</a></td>
+                    <td>${emailHtml}</td>
+                    <td style="color:${colorCalif}; font-weight:bold; font-size:16px;">⭐ ${califLabel}</td>
+                    <td style="max-width: 200px; white-space: normal; font-size:12px;">${extraData.motivo || '-'}</td>
+                    <td style="max-width: 200px; white-space: normal; font-size:12px;">${extraData.mejora || '-'}</td>
                     <td>${selectHtml}</td>
                     <td><button class="btn-delete" onclick="eliminarProspecto('${v.id}')"><i class="fa-solid fa-trash"></i></button></td>
                 </tr>`;
+
             }).join('');
         }
 
@@ -405,6 +490,33 @@
             if(error) alert("Error al guardar en base de datos: " + error.message);
         }
 
+        function editVendedor(id) {
+            document.getElementById('vend_text_' + id).style.display = 'none';
+            document.getElementById('vend_edit_' + id).style.display = 'flex';
+            document.getElementById('vend_edit_' + id).style.alignItems = 'center';
+            document.getElementById('vend_edit_' + id).style.gap = '5px';
+        }
+
+        function cancelEditVendedor(id) {
+            document.getElementById('vend_edit_' + id).style.display = 'none';
+            document.getElementById('vend_text_' + id).style.display = 'block';
+        }
+
+        async function saveVendedor(id) {
+            const sel = document.getElementById('vend_sel_' + id);
+            const nuevoId = sel.value;
+            const nuevoNombre = sel.options[sel.selectedIndex].text;
+            if(!nuevoId) return;
+            
+            const { error } = await clienteSupabase.from('registro_entrevistas').update({ vendedor_id: nuevoId }).eq('id', id);
+            if(error) {
+                alert("Error: " + error.message);
+            } else {
+                document.getElementById('vend_text_' + id).innerHTML = '<b>' + nuevoNombre + '</b> <button onclick="editVendedor(\'' + id + '\')" style="background:none; border:none; cursor:pointer; color:#3498db;"><i class="fa-solid fa-pencil"></i></button>';
+                cancelEditVendedor(id);
+            }
+        }
+
         async function eliminarProspecto(id) {
             if(!confirm("⚠️ ¿Estás seguro de que querés borrar permanentemente este prospecto? No se puede deshacer.")) return;
             const { error } = await clienteSupabase.from('registro_entrevistas').delete().eq('id', id);
@@ -414,15 +526,26 @@
 
         function descargarExcel() {
             if(!window.datosExcel || window.datosExcel.length === 0) return alert("Hacé una búsqueda primero antes de exportar.");
-            let hoja = window.datosExcel.map(v => ({
-                "Fecha Ingreso": new Date(v.created_at).toLocaleString('es-AR'),
-                "Campaña": v.campana,
-                "Vendedor": v.perfiles ? v.perfiles.nombre : 'Desconocido',
-                "Prospecto": v.nombre_apellido,
-                "DNI": v.dni || '-',
-                "Teléfono": v.telefono,
-                "Estado CRM": v.estado
-            }));
+            let hoja = window.datosExcel.map(v => {
+                let extraData = {};
+                try {
+                    extraData = v.dni ? JSON.parse(v.dni) : {};
+                } catch(e) {
+                    extraData = { motivo: v.dni || '', mejora: '', calificacion: '' };
+                }
+                return {
+                    "Fecha Ingreso": new Date(v.created_at).toLocaleString('es-AR'),
+                    "Campaña": v.campana,
+                    "Vendedor": v.perfiles ? v.perfiles.nombre : 'Desconocido',
+                    "Con Líder": extraData.con_lider || 'No',
+                    "Teléfono": v.telefono,
+                    "Email": extraData.email || '',
+                    "Calificación": extraData.calificacion || '',
+                    "Motivo": extraData.motivo || '',
+                    "Mejora Sugerida": extraData.mejora || '',
+                    "Estado CRM": v.estado
+                };
+            });
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(hoja), "Auditoria");
             XLSX.writeFile(wb, `Auditoria_Prospectos_${obtenerFechaLocal()}.xlsx`);
@@ -438,6 +561,178 @@
         }
 
         // init(); // Se llama después de poner la clave
-    </script>
+    
+        async function importarDatosSheets(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const rows = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+                    
+                    if(rows.length === 0) return alert("El archivo está vacío.");
+                    
+                    const { data: perfiles } = await clienteSupabase.from('perfiles').select('id, nombre');
+                    
+                    // Traer teléfonos ya existentes en Supabase desde el 16/10 para evitar duplicados
+                    const { data: existentes } = await clienteSupabase
+                        .from('registro_entrevistas')
+                        .select('telefono')
+                        .gte('created_at', '2026-10-16T00:00:00Z');
+                    const telSet = new Set((existentes || []).map(x => String(x.telefono).replace(/\D/g, '')).filter(Boolean));
+                    
+                    let successCount = 0;
+                    let skippedNoVend = [];
+                    let batchInsert = [];
+                    const mesesNombres = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+                    
+                    function getCol(row, nombres) {
+                        for (let k in row) {
+                            let cleanK = k.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                            for (let n of nombres) {
+                                let cleanN = n.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                                if (cleanK === cleanN) return row[k];
+                            }
+                        }
+                        return '';
+                    }
+
+                    function parsearFechaExcel(val) {
+                        if (!val) return new Date();
+                        if (val instanceof Date && !isNaN(val.getTime())) return val;
+                        if (typeof val === 'number') {
+                            const d = new Date((val - (25567 + 2)) * 86400 * 1000);
+                            return isNaN(d.getTime()) ? new Date() : d;
+                        }
+                        if (typeof val === 'string') {
+                            const str = val.trim();
+                            if (str.includes('/')) {
+                                const parts = str.split(' ');
+                                const dParts = parts[0].split('/');
+                                const timePart = parts[1] || '12:00:00';
+                                if (dParts.length === 3) {
+                                    const day = parseInt(dParts[0], 10);
+                                    const month = parseInt(dParts[1], 10) - 1;
+                                    let year = parseInt(dParts[2], 10);
+                                    if (year < 100) year += 2000;
+                                    const tParts = timePart.split(':');
+                                    const hr = parseInt(tParts[0] || '12', 10);
+                                    const min = parseInt(tParts[1] || '0', 10);
+                                    const sec = parseInt(tParts[2] || '0', 10);
+                                    const d = new Date(year, month, day, hr, min, sec);
+                                    if (!isNaN(d.getTime())) return d;
+                                }
+                            }
+                            const d = new Date(str);
+                            if (!isNaN(d.getTime())) return d;
+                        }
+                        return new Date();
+                    }
+
+                    for(let r of rows) {
+                        let vendedorNombre = String(getCol(r, ['Vendedor', 'Asesor', 'Vendedor Evaluado'])).trim();
+                        let tel = String(getCol(r, ['Telefono', 'Teléfono', 'Celular', 'Numero'])).replace(/\D/g, '');
+                        if(!tel || tel.length < 6) continue;
+                        
+                        // Si ya existe en Supabase, no duplicar
+                        if(telSet.has(tel)) continue;
+                        
+                        // Match vendedor en perfiles
+                        let vendId = null;
+                        if(vendedorNombre && perfiles) {
+                            let vNameSearch = vendedorNombre.toUpperCase();
+                            let vend = perfiles.find(p => p.nombre.toUpperCase() === vNameSearch);
+                            if(!vend) {
+                                let searchWords = vNameSearch.split(' ').filter(w => w.length > 2);
+                                if(searchWords.length > 0) {
+                                    vend = perfiles.find(p => {
+                                        let pName = p.nombre.toUpperCase();
+                                        return searchWords.every(w => pName.includes(w));
+                                    });
+                                }
+                            }
+                            if(vend) vendId = vend.id;
+                        }
+                        
+                        // OBLIGATORIO: Supabase exige que vendedor_id no sea null
+                        if(!vendId) {
+                            skippedNoVend.push(vendedorNombre || 'Sin Nombre');
+                            continue;
+                        }
+                        
+                        let fechaOriginal = getCol(r, ['Fecha', 'Fecha Ingreso', 'Date']);
+                        let fechaObj = parsearFechaExcel(fechaOriginal);
+                        
+                        let mCamp = fechaObj.getDate() >= 16 ? fechaObj.getMonth() + 1 : fechaObj.getMonth();
+                        let yCamp = fechaObj.getFullYear();
+                        if(mCamp > 11) { mCamp = 0; yCamp++; }
+                        let campanaFila = `Campaña ${mesesNombres[mCamp]} ${yCamp}`;
+                        
+                        let conLider = String(getCol(r, ['Con Líder', 'Con Lider', 'Vendedor con lider', 'Líder', 'Lider'])).trim();
+                        let email = String(getCol(r, ['Email', 'Correo', 'Correo Electrónico', 'Mail'])).trim();
+                        let motivo = String(getCol(r, ['Motivo', 'Razón'])).trim();
+                        let mejora = String(getCol(r, ['Mejora Sugerida', 'Mejora'])).trim();
+                        let calificacion = String(getCol(r, ['Calificación', 'Calificacion', 'Puntaje', 'Nota'])).trim();
+                        
+                        let extraData = {
+                            motivo: motivo,
+                            mejora: mejora,
+                            calificacion: calificacion,
+                            con_lider: conLider,
+                            email: email
+                        };
+                        
+                        batchInsert.push({
+                            vendedor_id: vendId,
+                            campana: campanaFila,
+                            nombre_apellido: 'Feedback de ' + vendedorNombre,
+                            telefono: tel,
+                            estado: 'Pendiente de Contacto',
+                            dni: JSON.stringify(extraData),
+                            created_at: fechaObj.toISOString()
+                        });
+                        
+                        telSet.add(tel);
+                        successCount++;
+                    }
+                    
+                    if(batchInsert.length > 0) {
+                        for(let i = 0; i < batchInsert.length; i += 50) {
+                            const chunk = batchInsert.slice(i, i + 50);
+                            const { error: insErr } = await clienteSupabase.from('registro_entrevistas').insert(chunk);
+                            if(insErr) {
+                                console.error("Error al insertar lote:", insErr);
+                                alert("Error al guardar registros: " + insErr.message);
+                                return;
+                            }
+                        }
+                        let msg = `¡Éxito! Se importaron ${successCount} registros nuevos correctamente.`;
+                        if(skippedNoVend.length > 0) {
+                            msg += `\n(Se omitieron ${skippedNoVend.length} filas porque el vendedor no existe en la base: ${[...new Set(skippedNoVend)].join(', ')})`;
+                        }
+                        alert(msg);
+                        cargarAuditoriaEntrevistas();
+                    } else {
+                        let msg = "No se encontraron registros nuevos para importar (o todos los números ya estaban cargados).";
+                        if(skippedNoVend.length > 0) {
+                            msg += `\nAtención: Se omitieron ${skippedNoVend.length} filas porque el nombre del vendedor no coincide con ningún asesor registrado: ${[...new Set(skippedNoVend)].join(', ')}`;
+                        }
+                        alert(msg);
+                    }
+                } catch(err) {
+                    console.error("Error en importarDatosSheets:", err);
+                    alert("Ocurrió un error al procesar el archivo: " + err.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+            event.target.value = ''; // reset
+        }
+
+</script>
 </body>
 </html>
