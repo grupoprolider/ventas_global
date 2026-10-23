@@ -227,6 +227,44 @@
             color: #d35400;
             border: 1px solid #edbb99;
         }
+    
+        @media (max-width: 680px) {
+            header {
+                flex-direction: column !important;
+                gap: 10px !important;
+                padding: 12px 14px !important;
+                text-align: center;
+            }
+            .header-left {
+                flex-direction: column !important;
+                gap: 6px !important;
+            }
+            .header-left h1 {
+                font-size: 16px !important;
+                text-align: center;
+            }
+            .container {
+                margin: 12px auto !important;
+                padding: 0 8px !important;
+            }
+            .card {
+                padding: 14px 10px !important;
+                border-radius: 10px !important;
+            }
+            .filtro-item {
+                min-width: 100% !important;
+            }
+            .filtros-container {
+                flex-direction: column !important;
+                gap: 10px !important;
+                align-items: stretch !important;
+            }
+            .btn {
+                width: 100% !important;
+                justify-content: center !important;
+            }
+        }
+    
     </style>
 
     <!-- Configuración para iOS Safari (iPhone/iPad) -->

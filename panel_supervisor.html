@@ -342,6 +342,50 @@
         }
         
         .empty-state { text-align: center; padding: 30px 20px; color: #777; font-weight: bold; font-size: 13px; }
+    
+        /* RESPONSIVE MOBILE STYLES */
+        @media (max-width: 500px) {
+            body {
+                padding: 10px 8px !important;
+            }
+            .container {
+                max-width: 100% !important;
+            }
+            .btn-logout {
+                top: 12px !important;
+                right: 12px !important;
+                font-size: 10px !important;
+                padding: 4px 8px !important;
+            }
+            h2 {
+                font-size: 18px !important;
+                padding-right: 60px !important;
+            }
+            .metricas-grid {
+                grid-template-columns: 1fr 1fr !important;
+                gap: 8px !important;
+            }
+            .metrica-box {
+                padding: 10px 6px !important;
+            }
+            .metrica-box strong {
+                font-size: 18px !important;
+            }
+            .metrica-monto {
+                grid-column: span 2 !important;
+            }
+            .metrica-monto strong {
+                font-size: 20px !important;
+            }
+            .integrante-item {
+                padding: 10px 12px !important;
+            }
+            .btn-accion {
+                padding: 12px !important;
+                font-size: 13px !important;
+            }
+        }
+        
     </style>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#A42A68">

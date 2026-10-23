@@ -45,13 +45,28 @@
 
         .nav-tabs {
             display: flex;
-            justify-content: center;
+            justify-content: flex-start;
             background: #111;
             list-style: none;
             margin: 0;
-            padding: 0;
+            padding: 0 10px;
             border-bottom: 1px solid #444;
             overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+        }
+
+        .nav-tabs::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .nav-tabs::-webkit-scrollbar-thumb {
+            background: var(--gpl-dorado);
+            border-radius: 4px;
+        }
+
+        .nav-tabs li {
+            flex-shrink: 0;
         }
 
         .nav-tabs li {
@@ -215,6 +230,91 @@
             padding: 20px;
             font-style: italic;
         }
+    
+        /* RESPONSIVE TABLES & MOBILE LAYOUT */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-top: 10px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            background: rgba(0,0,0,0.15);
+        }
+
+        .table-responsive::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .table-responsive::-webkit-scrollbar-thumb {
+            background: var(--gpl-dorado);
+            border-radius: 4px;
+        }
+
+        .table-responsive table {
+            margin-top: 0;
+            min-width: 600px;
+        }
+
+        #tabla_auditoria {
+            min-width: 950px;
+        }
+
+        @media (max-width: 768px) {
+            .header-admin {
+                padding: 12px 10px;
+            }
+            .header-admin img {
+                max-width: 110px;
+            }
+            .header-admin h1 {
+                font-size: 16px;
+            }
+            .nav-tabs li {
+                padding: 12px 14px;
+                font-size: 11px;
+            }
+            .container {
+                margin: 10px auto;
+                padding: 0 8px;
+            }
+            .card-admin {
+                padding: 14px;
+                border-radius: 10px;
+                margin-bottom: 15px;
+            }
+            .form-row {
+                grid-template-columns: 1fr !important;
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 12px !important;
+                padding: 12px !important;
+            }
+            .form-row > div {
+                width: 100% !important;
+            }
+            .form-row button {
+                width: 100% !important;
+                padding: 12px !important;
+                font-size: 13px !important;
+                margin-top: 6px !important;
+            }
+            button {
+                min-height: 38px;
+            }
+            input, select {
+                padding: 10px;
+                font-size: 14px;
+            }
+            .filtro-responsive-stack {
+                flex-direction: column !important;
+            }
+            .filtro-responsive-stack > * {
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+        }
+
     </style>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#A42A68">
@@ -270,7 +370,7 @@
                     <div><label>Color Hex</label><input type="color" id="ag_color" value="#0a3a46"></div>
                     <button class="btn-add" onclick="crearAgencia()">Crear Agencia</button>
                 </div>
-                <table id="tabla_agencias">
+                <div class="table-responsive"><table id="tabla_agencias">
                     <thead>
                         <tr>
                             <th>Agencia</th>
@@ -281,7 +381,7 @@
                         </tr>
                     </thead>
                     <tbody></tbody>
-                </table>
+                </table></div>
             </div>
         </div>
 
@@ -295,7 +395,7 @@
                     <div><label>Agencia</label><select id="eq_agencia"></select></div>
                     <button class="btn-add" onclick="crearEquipo()">Crear Equipo</button>
                 </div>
-                <table id="tabla_equipos">
+                <div class="table-responsive"><table id="tabla_equipos">
                     <thead>
                         <tr>
                             <th>Equipo</th>
@@ -306,7 +406,7 @@
                         </tr>
                     </thead>
                     <tbody></tbody>
-                </table>
+                </table></div>
             </div>
         </div>
 
@@ -339,7 +439,7 @@
 
             <div class="card-admin">
                 <h3>Gestión y Asignación de Equipos</h3>
-                <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                <div class="filtro-responsive-stack" style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
                     <select id="filtro_estado_personal" onchange="aplicarFiltrosPersonal()" style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Poppins', sans-serif; font-weight: bold;">
                         <option value="ACTIVOS">Solo Activos</option>
                         <option value="BAJAS">Solo Bajas</option>
@@ -352,7 +452,7 @@
                         <option value="TODOS">Todos los Equipos</option>
                     </select>
                 </div>
-                <table id="tabla_personal">
+                <div class="table-responsive"><table id="tabla_personal">
                     <thead>
                         <tr>
                             <th>Nombre</th>
@@ -364,7 +464,7 @@
                         </tr>
                     </thead>
                     <tbody></tbody>
-                </table>
+                </table></div>
             </div>
         </div>
 
@@ -418,8 +518,7 @@
                         <button onclick="cargarAuditoria()" style="padding: 5px 15px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;"><i class="fa-solid fa-search"></i> Filtrar</button>
                     </div>
                 </div>
-                <div style="overflow-x: auto;">
-                    <table id="tabla_auditoria">
+                <div class="table-responsive"><table id="tabla_auditoria">
                         <thead>
                             <tr>
                                 <th>Fecha</th>
@@ -431,12 +530,7 @@
                             </tr>
                         </thead>
                         <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-                    </thead>
-                    <tbody></tbody>
-                </table>
+                    </table></div>
             </div>
         </div>
 
@@ -444,7 +538,7 @@
             <div class="card-admin">
                 <h2>Importación Masiva de Ventas y Bajas (Excel)</h2>
                 <p style="color:#aaa; font-size:12px; margin-bottom:15px;">Formato soportado: .xlsx. Columnas obligatorias: <b>Vendedor, Fecha, id, Importe, estado, Beneficio, Entidad</b>.</p>
-                <div style="display:flex; gap:10px; align-items:center;">
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
                     <input type="file" id="archivoImportacion" accept=".xlsx, .xls" style="max-width:300px; padding:5px; background: #111; color: white;">
                     <button class="btn-save" onclick="procesarImportacion()" id="btnImportar"><i class="fa-solid fa-eye"></i> Previsualizar Subida</button>
                     <button class="btn-delete" onclick="revertirImportacion()" id="btnRevertir" style="background-color: #c0392b; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold;"><i class="fa-solid fa-undo"></i> Eliminar Archivo Subido</button>
@@ -499,7 +593,7 @@
         <div id="tab7" class="tab-content">
             <div class="card-admin">
                 <h2>Crear Nueva Competencia</h2>
-                <div class="form-row" style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <div class="form-row" style="margin-bottom: 20px;">
                     <div style="flex: 2;">
                         <label style="display:block; margin-bottom:5px; color:#aaa; font-size:12px;">Título de la Competencia</label>
                         <input type="text" id="comp_titulo" placeholder="Ej: Pelea de Gallos">
@@ -531,8 +625,7 @@
             </div>
             <div class="card-admin">
                 <h2>Competencias Activas e Historial</h2>
-                <div style="overflow-x: auto;">
-                    <table class="data-table" id="tabla_competencias">
+                <div class="table-responsive"><table class="data-table" id="tabla_competencias">
                         <thead>
                             <tr>
                                 <th>Título</th>
@@ -544,8 +637,7 @@
                             </tr>
                         </thead>
                         <tbody></tbody>
-                    </table>
-                </div>
+                    </table></div>
             </div>
         </div>
  
@@ -584,7 +676,7 @@
 
         <div class="card-admin">
             <h2><i class="fa-solid fa-list-check"></i> Semanas Configuradas</h2>
-            <table>
+            <div class="table-responsive"><table>
                 <thead>
                     <tr>
                         <th>Campaña</th>
@@ -598,7 +690,7 @@
                 <tbody id="lista-semanas">
                     <tr><td colspan="6" class="empty-state">Cargando semanas...</td></tr>
                 </tbody>
-            </table>
+            </table></div>
         </div>
     </div> <!-- Cierre Tab 8 -->
    </div>
