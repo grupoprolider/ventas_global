@@ -132,73 +132,7 @@
             animation: none !important;
             transition: none !important;
         }
-        .tema-claro .monto-col { color: #12873B; font-weight: 900; }
-    
-        /* RESPONSIVE TABLE & MOBILE STYLES */
-        .table-responsive {
-            width: 100%;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            border-radius: 8px;
-        }
-
-        @media (max-width: 600px) {
-            .header-ranking {
-                padding: 14px 10px;
-            }
-            .header-ranking img {
-                max-width: 110px;
-            }
-            .header-ranking h2 {
-                font-size: 16px;
-            }
-            .container-ranking {
-                padding: 8px 4px;
-            }
-            .nav-rankings li {
-                padding: 10px 4px;
-                font-size: 10px;
-                letter-spacing: 0;
-            }
-            .nav-rankings i {
-                font-size: 13px;
-                margin-bottom: 2px;
-            }
-            td {
-                padding: 10px 6px;
-                font-size: 12px;
-            }
-            th {
-                padding: 8px 6px;
-                font-size: 9px;
-            }
-            .posicion {
-                width: 32px;
-                font-size: 14px;
-            }
-            .col-nombre {
-                font-size: 11px;
-            }
-            .sub-txt {
-                font-size: 9px;
-            }
-            .vts-neta {
-                font-size: 14px;
-            }
-            td.vts-netas-col, td.bajas-col {
-                width: 42px;
-            }
-            .monto-col {
-                font-size: 11px;
-            }
-            .btn-excel, .btn-png {
-                padding: 10px 14px;
-                font-size: 11px;
-                width: 95%;
-            }
-        }
-
-    </style>
+        .tema-claro .monto-col { color: #12873B; font-weight: 900; }</style>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#A42A68">
     <link rel="apple-touch-icon" href="LOGO-gpl.png">
@@ -273,39 +207,39 @@
 
     <div class="container-ranking">
         <div id="rank0" class="tab-ranking active">
-            <div class="table-responsive"><table>
+            <table>
                 <thead>
                     <tr><th>Pos</th><th onclick="ordenarVendedores('nom')" style="cursor:pointer;" title="Ordenar A-Z">Asesor/a / Equipo <i class="fa-solid fa-sort" style="color:#777; margin-left:3px;"></i></th><th class="vts-netas-col" onclick="ordenarVendedores('neta')" style="cursor:pointer;" title="Ordenar por Ventas Netas">Ventas Netas <i class="fa-solid fa-sort" style="color:#777; margin-left:3px;"></i></th><th class="bajas-col" onclick="ordenarVendedores('bajas')" style="cursor:pointer; color:#e74c3c;" title="Ordenar por Bajas">Bajas <i class="fa-solid fa-sort" style="color:#777; margin-left:3px;"></i></th><th class="monto-col">Importe</th><th style="display:none; text-align:center; cursor:pointer;" onclick="ordenarVendedores('ent')" title="Ordenar por Entrevistas">Entr <i class="fa-solid fa-sort" style="color:#777; margin-left:3px;"></i></th><th style="text-align:center; cursor:pointer;" onclick="ordenarVendedores('prom')" title="Ordenar por Promedio">Promedio <i class="fa-solid fa-sort" style="color:#777; margin-left:3px;"></i></th></tr>
                 </thead>
                 <tbody id="cuerpoNacional"><tr><td colspan="5"><div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i>Cargando rankings...</div></td></tr></tbody>
-            </table></div>
+            </table>
         </div>
 
         <div id="rank1" class="tab-ranking">
-            <div class="table-responsive"><table>
+            <table>
                 <thead>
                     <tr><th>Pos</th><th>Sucursal / Líder de Sucursal</th><th class="vts-netas-col">Ventas Netas</th><th class="bajas-col" style="color: #e74c3c;">Bajas</th><th class="monto-col th-gerencia" style="display:none;">Importe</th></tr>
                 </thead>
                 <tbody id="cuerpoAgencias"></tbody>
-            </table></div>
+            </table>
         </div>
 
         <div id="rank2" class="tab-ranking">
-            <div class="table-responsive"><table>
+            <table>
                 <thead>
                     <tr><th>Pos</th><th>Líder / Equipo</th><th class="vts-netas-col">Ventas Netas</th><th class="bajas-col" style="color: #e74c3c;">Bajas</th><th class="monto-col th-gerencia" style="display:none;">Importe</th></tr>
                 </thead>
                 <tbody id="cuerpoEquipos"></tbody>
-            </table></div>
+            </table>
         </div>
 
         <div id="rank3" class="tab-ranking">
-            <div class="table-responsive"><table>
+            <table>
                 <thead>
                     <tr><th>Pos</th><th>Líder de Equipos</th><th class="vts-netas-col">Ventas Netas</th><th class="bajas-col" style="color: #e74c3c;">Bajas</th><th class="monto-col th-gerencia" style="display:none;">Importe</th></tr>
                 </thead>
                 <tbody id="cuerpoCoordinadores"></tbody>
-            </table></div>
+            </table>
         </div>
 
         <div id="bloqueResumenConsolidado" class="card-resumen">

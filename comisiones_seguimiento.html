@@ -236,37 +236,7 @@
         .btn-toggle-chart.active {
             background: var(--gpl-petroleo);
             color: white;
-        }
-    
-        .table-responsive {
-            width: 100%;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            border-radius: 6px;
-            margin-top: 10px;
-        }
-        .table-responsive table {
-            min-width: 650px;
-        }
-        @media (max-width: 768px) {
-            body { padding: 10px 8px !important; }
-            .header {
-                flex-direction: column !important;
-                gap: 10px !important;
-                text-align: center;
-                padding: 12px !important;
-            }
-            .filtro-box {
-                flex-direction: column !important;
-                gap: 8px !important;
-            }
-            .charts-container {
-                flex-direction: column !important;
-                gap: 12px !important;
-            }
-        }
-    
-    </style>
+        }</style>
 
     <!-- Configuración para iOS Safari (iPhone/iPad) -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -367,7 +337,7 @@
             </div>
 
             <div style="overflow-x: auto;">
-                <div class="table-responsive"><table id="tablaSeguimiento">
+                <table id="tablaSeguimiento">
                     <thead>
                         <tr>
                             <th style="text-align: left;">Vendedor/a</th>
@@ -391,7 +361,7 @@
                     <tbody id="cuerpoTabla">
                         <tr><td colspan="16" style="text-align: center; color: #888;">Cargando datos...</td></tr>
                     </tbody>
-                </table></div>
+                </table>
             </div>
         </div>
 
