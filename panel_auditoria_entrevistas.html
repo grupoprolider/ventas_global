@@ -163,40 +163,65 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 13px;
-            white-space: nowrap;
+            font-size: 12px;
         }
 
         th {
             background: var(--gpl-petroleo);
             color: var(--gpl-dorado);
-            padding: 12px;
+            padding: 8px 10px;
             text-align: left;
+            font-size: 11.5px;
+            font-weight: 700;
+            white-space: nowrap;
+            border-bottom: 2px solid #06232b;
         }
 
         td {
-            padding: 12px;
-            border-bottom: 1px solid #eee;
+            padding: 8px 10px;
+            border-bottom: 1px solid #edf2f7;
+            vertical-align: middle;
         }
 
-        tr:hover {
-            background: #f9f9f9;
+        tr:hover td {
+            background: #f8fafc;
         }
+
+        /* Columnas ajustadas para eliminar vacíos excesivos y encuadrar todo */
+        .col-fecha { width: 95px; min-width: 95px; }
+        .col-vendedor { width: 140px; min-width: 130px; white-space: nowrap; }
+        .col-lider { width: 80px; min-width: 75px; text-align: center; }
+        .col-telefono { width: 130px; min-width: 125px; white-space: nowrap; }
+        .col-email { width: 150px; max-width: 150px; }
+        .col-calif { width: 85px; min-width: 80px; text-align: center; }
+        .col-motivo { min-width: 140px; }
+        .col-sugerencia { min-width: 140px; }
+        .col-estado { width: 140px; min-width: 135px; }
+        .col-accion { width: 45px; min-width: 45px; text-align: center; }
 
         .estado-select {
-            padding: 5px;
+            padding: 4px 6px;
             border-radius: 4px;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: bold;
+            width: 100%;
+            max-width: 135px;
+            background: white;
+            cursor: pointer;
         }
 
         .btn-delete {
-            background: #c0392b;
-            color: white;
-            border: none;
-            padding: 5px 10px;
+            background: #fee2e2;
+            color: #c0392b;
+            border: 1px solid #fca5a5;
+            padding: 4px 8px;
             border-radius: 4px;
             cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-delete:hover {
+            background: #c0392b;
+            color: white;
         }
         
         .empty-state {
@@ -297,16 +322,16 @@
                 <table id="tabla_auditoria">
                     <thead>
                         <tr>
-                            <th>Fecha</th>
-                            <th>Vendedor Evaluado</th>
-                            <th>Con Líder</th>
-                            <th>Teléfono</th>
-                            <th>Email</th>
-                            <th>Calificación</th>
-                            <th>Motivo</th>
-                            <th>Sugerencia</th>
-                            <th>Estado (Venta Digital)</th>
-                            <th>Acción</th>
+                            <th class="col-fecha">Fecha</th>
+                            <th class="col-vendedor">Vendedor Evaluado</th>
+                            <th class="col-lider" style="text-align:center;">Con Líder</th>
+                            <th class="col-telefono">Teléfono</th>
+                            <th class="col-email">Email</th>
+                            <th class="col-calif" style="text-align:center;">Calificación</th>
+                            <th class="col-motivo">Motivo</th>
+                            <th class="col-sugerencia">Sugerencia</th>
+                            <th class="col-estado">Estado (Venta Digital)</th>
+                            <th class="col-accion" style="text-align:center;">Acción</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -411,7 +436,9 @@
             window.datosExcel = dataFiltrada;
             
             tbody.innerHTML = dataFiltrada.map(v => {
-                let fecha = new Date(v.created_at).toLocaleString('es-AR');
+                let d = new Date(v.created_at);
+                let fechaDia = d.toLocaleDateString('es-AR');
+                let fechaHora = d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
                 let colorEstado = v.estado.toLowerCase().includes('ok') ? '#27ae60' : (v.estado.toLowerCase().includes('sin') ? '#e74c3c' : '#34495e');
                 
                 let selectHtml = `<select class="estado-select" style="border:1px solid ${colorEstado}; color:${colorEstado};" onchange="updateEstado('${v.id}', this)">`;
@@ -447,18 +474,21 @@
 
                 let emailStr = extraData.email || extraData.correo || '';
                 let emailHtml = emailStr 
-                    ? `<a href="mailto:${emailStr}" title="${emailStr}" style="color:#2980b9; text-decoration:none; font-size:12px; display:inline-flex; align-items:center; gap:4px;"><i class="fa-regular fa-envelope"></i> ${emailStr}</a>`
-                    : `<span style="color:#aaa;">-</span>`;
+                    ? `<a href="mailto:${emailStr}" title="${emailStr}" style="color:#2980b9; text-decoration:none; font-size:11px; display:inline-flex; align-items:center; gap:4px; max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><i class="fa-regular fa-envelope"></i> ${emailStr}</a>`
+                    : `<span style="color:#bbb;">-</span>`;
                 
                 return `<tr>
-                    <td style="color:#777; font-size:12px;">${fecha}</td>
-                    <td>
+                    <td class="col-fecha" style="color:#555; font-size:11px; white-space:nowrap;">
+                        <span style="font-weight:600;">${fechaDia}</span><br>
+                        <span style="color:#888; font-size:10px;">${fechaHora} hs</span>
+                    </td>
+                    <td class="col-vendedor">
                         <div id="vend_text_${v.id}">
-                            <b>${v.perfiles ? v.perfiles.nombre : 'S/N'}</b> 
-                            <button onclick="editVendedor('${v.id}')" style="background:none; border:none; cursor:pointer; color:#3498db;" title="Editar Vendedor"><i class="fa-solid fa-pencil"></i></button>
+                            <strong style="color:#111;">${v.perfiles ? v.perfiles.nombre : 'S/N'}</strong> 
+                            <button onclick="editVendedor('${v.id}')" style="background:none; border:none; cursor:pointer; color:#3498db; padding:2px;" title="Editar Vendedor"><i class="fa-solid fa-pencil" style="font-size:10px;"></i></button>
                         </div>
                         <div id="vend_edit_${v.id}" style="display:none;">
-                            <select id="vend_sel_${v.id}" style="border:1px solid #ccc; border-radius:4px; padding:2px; font-size:12px; font-weight:bold; color:var(--gpl-petroleo); max-width: 150px;">
+                            <select id="vend_sel_${v.id}" style="border:1px solid #ccc; border-radius:4px; padding:2px; font-size:11px; font-weight:bold; color:var(--gpl-petroleo); max-width: 130px;">
                                 <option value="">Seleccionar...</option>
                                 ${window.globalPerfiles.map(p => `<option value="${p.id}" ${v.vendedor_id === p.id ? 'selected' : ''}>${p.nombre}</option>`).join('')}
                             </select>
@@ -466,17 +496,19 @@
                             <button onclick="cancelEditVendedor('${v.id}')" style="background:none; border:none; cursor:pointer; color:#e74c3c;" title="Cancelar"><i class="fa-solid fa-times"></i></button>
                         </div>
                     </td>
-                    <td style="text-align:center;">${conLiderBadge}</td>
-                    <td><a href="https://wa.me/${(v.telefono || '').replace(/[^0-9]/g, '')}" target="_blank" style="color:#2980b9; text-decoration:none;"><i class="fa-brands fa-whatsapp"></i> ${v.telefono || '-'}</a></td>
-                    <td>${emailHtml}</td>
-                    <td style="color:${colorCalif}; font-weight:bold; font-size:16px;">⭐ ${califLabel}</td>
-                    <td style="max-width: 200px; white-space: normal; font-size:12px;">${extraData.motivo || '-'}</td>
-                    <td style="max-width: 200px; white-space: normal; font-size:12px;">${extraData.mejora || '-'}</td>
-                    <td>${selectHtml}</td>
-                    <td><button class="btn-delete" onclick="eliminarProspecto('${v.id}')"><i class="fa-solid fa-trash"></i></button></td>
-                </tr>`;
-
-            }).join('');
+                    <td class="col-lider" style="text-align:center;">${conLiderBadge}</td>
+                    <td class="col-telefono">
+                        <a href="https://wa.me/${(v.telefono || '').replace(/[^0-9]/g, '')}" target="_blank" style="color:#2980b9; text-decoration:none; font-size:11.5px; display:inline-flex; align-items:center; gap:4px;">
+                            <i class="fa-brands fa-whatsapp" style="color:#25d366; font-size:13px;"></i> ${v.telefono || '-'}
+                        </a>
+                    </td>
+                    <td class="col-email">${emailHtml}</td>
+                    <td class="col-calif" style="text-align:center; color:${colorCalif}; font-weight:bold; font-size:13px; white-space:nowrap;">⭐ ${califLabel}</td>
+                    <td class="col-motivo" style="white-space:normal; font-size:11px; line-height:1.3; color:#333;">${extraData.motivo || '-'}</td>
+                    <td class="col-sugerencia" style="white-space:normal; font-size:11px; line-height:1.3; color:#333;">${extraData.mejora || '-'}</td>
+                    <td class="col-estado">${selectHtml}</td>
+                    <td class="col-accion" style="text-align:center;"><button class="btn-delete" onclick="eliminarProspecto('${v.id}')" title="Eliminar"><i class="fa-solid fa-trash"></i></button></td>
+                </tr>`;            }).join('');
         }
 
         async function updateEstado(id, selectElement) {
