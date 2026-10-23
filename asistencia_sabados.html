@@ -181,6 +181,44 @@
             font-size: 11px;
             display: inline-block;
         }
+    
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 6px;
+        }
+        .table-responsive table {
+            min-width: 580px;
+        }
+        @media (max-width: 600px) {
+            body { padding: 10px 8px !important; }
+            .header-bar {
+                flex-direction: column !important;
+                gap: 10px !important;
+                align-items: stretch !important;
+                padding: 12px !important;
+            }
+            .agencia-header {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 6px !important;
+                padding: 12px 14px !important;
+            }
+            .equipo-container {
+                padding: 12px 10px !important;
+            }
+            .equipo-header {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 6px !important;
+            }
+            .btn-volver, .btn-excel {
+                width: 100% !important;
+                text-align: center !important;
+            }
+        }
+    
     </style>
 </head>
 <body>
@@ -401,7 +439,7 @@
                                     <span><i class="fa-solid fa-users" style="margin-right:8px; color:var(--gpl-dorado);"></i> Equipo: ${eq.nombre} | Lider: <span style="color:var(--text-color);">${nombreLider}</span></span>
                                     <span>${liderBadge} (Ratio: ${totalesEquipo.cumplidores} / ${totalesEquipo.seniors} obj. logrado)</span>
                                 </div>
-                                <table>
+                                <div class="table-responsive"><table>
                                     <thead>
                                         <tr>
                                             <th style="width: 30%">Vendedor Senior</th>
@@ -414,7 +452,7 @@
                                     <tbody>
                                         ${rowsVend || '<tr><td colspan="5" style="text-align:center; color:#777;">No hay vendedores Seniors activos en este equipo.</td></tr>'}
                                     </tbody>
-                                </table>
+                                </table></div>
                             </div>
                         `;
                     }

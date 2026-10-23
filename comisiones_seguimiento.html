@@ -118,6 +118,7 @@
         .icon-nocobrado { color: #e74c3c; font-size: 18px; }
         .icon-baja { color: #c0392b; font-size: 18px; }
         .icon-inactivo { color: #95a5a6; font-size: 18px; }
+        .icon-reintegro { color: #f1c40f; font-size: 18px; }
         .icon-empty { color: #444; font-size: 18px; }
 
         .loader {
@@ -236,6 +237,35 @@
             background: var(--gpl-petroleo);
             color: white;
         }
+    
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+        .table-responsive table {
+            min-width: 650px;
+        }
+        @media (max-width: 768px) {
+            body { padding: 10px 8px !important; }
+            .header {
+                flex-direction: column !important;
+                gap: 10px !important;
+                text-align: center;
+                padding: 12px !important;
+            }
+            .filtro-box {
+                flex-direction: column !important;
+                gap: 8px !important;
+            }
+            .charts-container {
+                flex-direction: column !important;
+                gap: 12px !important;
+            }
+        }
+    
     </style>
 
     <!-- Configuración para iOS Safari (iPhone/iPad) -->
@@ -254,7 +284,7 @@
     <div class="container">
         
         <div class="info-box">
-            <strong>Instrucciones:</strong> Sube un archivo Excel (.xlsx) que contenga al menos dos columnas: <strong>"ID"</strong> (número de solicitud de la venta) y <strong>"Estado"</strong> (Cobrado, No Cobrado, Baja, o Inactivo). 
+            <strong>Instrucciones:</strong> Sube un archivo Excel (.xlsx) que contenga al menos dos columnas: <strong>"ID"</strong> (número de solicitud de la venta) y <strong>"Estado"</strong> (Cobrado, FF / No Cobrado, Baja, Inactiva, o Reintegro). 
             <br>Cada vez que subas un archivo, el sistema registrará un nuevo mes en el historial de esa venta (hasta un máximo de 12 meses).
         </div>
 
@@ -282,13 +312,32 @@
                     <h4 id="tituloBanco" style="margin:0 0 10px 0; color:#ccc;">Banco</h4>
                     <canvas id="chartBanco"></canvas>
                 </div>
+                <div class="chart-box">
+                    <h4 id="tituloEstados" style="margin:0 0 10px 0; color:#ccc;">Resumen de Estados</h4>
+                    <canvas id="chartEstados"></canvas>
+                </div>
             </div>
         </div>
 
         <!-- IMPORTADOR EXCEL -->
         <div class="card-admin">
             <h3><i class="fa-solid fa-file-excel"></i> Subir Cobros Mensuales (Excel)</h3>
-            <div style="display: flex; gap: 10px; align-items: center; margin-top: 15px;">
+            <div style="display: flex; gap: 10px; align-items: center; margin-top: 15px; flex-wrap: wrap;">
+                <select id="selectMesSubida" style="padding: 10px; background: #111; border-radius: 5px; border: 1px solid #444; color: white;">
+                    <option value="auto">Subir Automático (Próximo Mes)</option>
+                    <option value="0">Corregir/Subir Mes 1 (M1)</option>
+                    <option value="1">Corregir/Subir Mes 2 (M2)</option>
+                    <option value="2">Corregir/Subir Mes 3 (M3)</option>
+                    <option value="3">Corregir/Subir Mes 4 (M4)</option>
+                    <option value="4">Corregir/Subir Mes 5 (M5)</option>
+                    <option value="5">Corregir/Subir Mes 6 (M6)</option>
+                    <option value="6">Corregir/Subir Mes 7 (M7)</option>
+                    <option value="7">Corregir/Subir Mes 8 (M8)</option>
+                    <option value="8">Corregir/Subir Mes 9 (M9)</option>
+                    <option value="9">Corregir/Subir Mes 10 (M10)</option>
+                    <option value="10">Corregir/Subir Mes 11 (M11)</option>
+                    <option value="11">Corregir/Subir Mes 12 (M12)</option>
+                </select>
                 <input type="file" id="archivoExcel" accept=".xlsx, .xls, .csv" style="padding: 10px; background: #111; border-radius: 5px; border: 1px solid #444; color: white;">
                 <button class="btn-save" onclick="procesarExcel()"><i class="fa-solid fa-upload"></i> Cargar Cobros</button>
             </div>
@@ -303,12 +352,22 @@
                 <button class="btn-save" onclick="cargarGrilla()" style="background: #444;"><i class="fa-solid fa-rotate-right"></i> Actualizar</button>
             </div>
             
-            <div style="margin-top: 10px; margin-bottom: 15px;">
-                <input type="text" id="filtroTexto" placeholder="Buscar por vendedor o ID de venta..." style="padding: 10px; border-radius: 5px; border: 1px solid #444; background: #111; color: white; width: 100%; max-width: 400px;" onkeyup="filtrarTabla()">
+            <div style="margin-top: 10px; margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                <input type="text" id="filtroTexto" placeholder="Buscar por vendedor o ID..." style="padding: 10px; border-radius: 5px; border: 1px solid #444; background: #111; color: white; width: 100%; max-width: 250px;" onkeyup="filtrarTabla()">
+                
+                <select id="filtroBeneficio" style="padding: 10px; border-radius: 5px; border: 1px solid #444; background: #111; color: white;" onchange="filtrarTabla()">
+                    <option value="">Todos los Beneficios</option>
+                </select>
+                
+                <select id="filtroBanco" style="padding: 10px; border-radius: 5px; border: 1px solid #444; background: #111; color: white;" onchange="filtrarTabla()">
+                    <option value="">Todos los Bancos</option>
+                </select>
+
+                <button class="btn-save" onclick="exportarExcelSeguimiento()" style="background: #27ae60; margin-left: auto;"><i class="fa-solid fa-file-excel"></i> Descargar Excel</button>
             </div>
 
             <div style="overflow-x: auto;">
-                <table id="tablaSeguimiento">
+                <div class="table-responsive"><table id="tablaSeguimiento">
                     <thead>
                         <tr>
                             <th style="text-align: left;">Vendedor/a</th>
@@ -332,7 +391,7 @@
                     <tbody id="cuerpoTabla">
                         <tr><td colspan="16" style="text-align: center; color: #888;">Cargando datos...</td></tr>
                     </tbody>
-                </table>
+                </table></div>
             </div>
         </div>
 
@@ -352,9 +411,14 @@
             const resPerfiles = await clienteSupabase.from('perfiles').select('id, nombre');
             if (resPerfiles.data) {
                 dataPerfiles = resPerfiles.data;
+                
+                let perfilesFiltrados = dataPerfiles
+                    .filter(p => !p.nombre.toUpperCase().includes('(BAJA)') && !p.nombre.toUpperCase().includes('(OCULTO)'))
+                    .sort((a, b) => a.nombre.localeCompare(b.nombre));
+
                 // Llenar select de vendedores
                 let select = document.getElementById('selectVendedorChart');
-                dataPerfiles.forEach(p => {
+                perfilesFiltrados.forEach(p => {
                     let opt = document.createElement('option');
                     opt.value = p.id;
                     opt.textContent = p.nombre;
@@ -403,6 +467,33 @@
             // Guardar todas las ventas globales para los gráficos (incluso las ocultas)
             window.todasLasVentasParaGraficos = ventas;
 
+            let uniqueBeneficios = [...new Set(dataVentas.map(v => v.beneficio || 'Sin Especificar'))].sort();
+            let uniqueBancos = [...new Set(dataVentas.map(v => v.medio_pago || 'Sin Especificar'))].sort();
+            
+            let selBen = document.getElementById('filtroBeneficio');
+            if(selBen) {
+                let currentBen = selBen.value;
+                selBen.innerHTML = '<option value="">Todos los Beneficios</option>';
+                uniqueBeneficios.forEach(b => {
+                    let opt = document.createElement('option');
+                    opt.value = b; opt.textContent = b;
+                    if(b === currentBen) opt.selected = true;
+                    selBen.appendChild(opt);
+                });
+            }
+            
+            let selBan = document.getElementById('filtroBanco');
+            if(selBan) {
+                let currentBan = selBan.value;
+                selBan.innerHTML = '<option value="">Todos los Bancos</option>';
+                uniqueBancos.forEach(b => {
+                    let opt = document.createElement('option');
+                    opt.value = b; opt.textContent = b;
+                    if(b === currentBan) opt.selected = true;
+                    selBan.appendChild(opt);
+                });
+            }
+
             renderTabla();
             renderCharts(); // Actualizar gráficos si ya hay un vendedor seleccionado
         }
@@ -410,6 +501,8 @@
         function renderTabla() {
             const tbody = document.getElementById('cuerpoTabla');
             const filtro = document.getElementById('filtroTexto').value.toLowerCase();
+            const filtroBen = document.getElementById('filtroBeneficio') ? document.getElementById('filtroBeneficio').value : "";
+            const filtroBan = document.getElementById('filtroBanco') ? document.getElementById('filtroBanco').value : "";
 
             let html = '';
             
@@ -417,8 +510,14 @@
                 let vend = dataPerfiles.find(p => p.id === v.vendedor_id);
                 let nombreVend = vend ? vend.nombre.toLowerCase() : 'desconocido';
                 let idVenta = (v.numero_solicitud || '').toString().toLowerCase();
-                return nombreVend.includes(filtro) || idVenta.includes(filtro);
+                
+                let matchTexto = nombreVend.includes(filtro) || idVenta.includes(filtro);
+                let matchBen = filtroBen === "" || (v.beneficio || 'Sin Especificar') === filtroBen;
+                let matchBan = filtroBan === "" || (v.medio_pago || 'Sin Especificar') === filtroBan;
+                
+                return matchTexto && matchBen && matchBan;
             });
+            window.ventasRenderizadas = ventasFiltradas;
 
             if (ventasFiltradas.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="16" style="text-align: center; color: #888;">No hay cobros activos para mostrar.</td></tr>';
@@ -442,14 +541,18 @@
                     let icono = '<i class="fa-regular fa-circle icon-empty"></i>'; // Vacío por defecto
                     if (i < historial.length) {
                         let est = String(historial[i]).toLowerCase();
-                        if (est.includes('no cobrado') || est === 'no') {
-                            icono = '<i class="fa-solid fa-circle-xmark icon-nocobrado" title="No Cobrado"></i>';
+                        if (est.includes('no cobrado') || est === 'no' || est.includes('ff') || est.includes('falta de fondos')) {
+                            icono = '<i class="fa-solid fa-circle-xmark icon-nocobrado" title="Falta de Fondos / No Cobrado"></i>';
                         } else if (est.includes('cobrado') || est === 'si') {
                             icono = '<i class="fa-solid fa-circle-check icon-cobrado" title="Cobrado"></i>';
                         } else if (est.includes('baja')) {
                             icono = '<i class="fa-solid fa-ban icon-baja" title="Baja"></i>';
-                        } else if (est.includes('inactivo')) {
-                            icono = '<i class="fa-solid fa-circle-pause icon-inactivo" title="Inactivo"></i>';
+                        } else if (est.includes('inactiv')) {
+                            icono = '<i class="fa-solid fa-circle-pause icon-inactivo" title="Inactiva"></i>';
+                        } else if (est.includes('reintegro')) {
+                            icono = '<i class="fa-solid fa-arrow-rotate-left icon-reintegro" title="Reintegro"></i>';
+                        } else if (est === '') {
+                            icono = '<i class="fa-regular fa-circle icon-empty"></i>'; // Mes salteado / en blanco
                         } else {
                             icono = `<span style="color:#aaa; font-size:11px;">${historial[i]}</span>`; // Por si escriben otra cosa
                         }
@@ -465,6 +568,40 @@
 
         function filtrarTabla() {
             renderTabla();
+        }
+
+        function exportarExcelSeguimiento() {
+            if (!window.ventasRenderizadas || window.ventasRenderizadas.length === 0) {
+                alert("No hay datos para exportar.");
+                return;
+            }
+            
+            let dataExport = window.ventasRenderizadas.map(v => {
+                let vend = dataPerfiles.find(p => p.id === v.vendedor_id);
+                let nombreVend = vend ? vend.nombre : 'S/N';
+                let historial = v.historial_cobros || [];
+                
+                let row = {
+                    "Vendedor/a": nombreVend,
+                    "ID Venta": "#" + (v.numero_solicitud || 'S/N'),
+                    "Beneficio": v.beneficio || '-',
+                    "Banco": v.medio_pago || '-'
+                };
+                
+                for(let i=1; i<=12; i++) {
+                    let est = historial[i-1] || "";
+                    if (est === "") est = "-";
+                    row["M" + i] = est.toUpperCase();
+                }
+                
+                return row;
+            });
+            
+            const ws = XLSX.utils.json_to_sheet(dataExport);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Seguimiento");
+            
+            XLSX.writeFile(wb, "Seguimiento_Comisiones.xlsx");
         }
 
         function procesarExcel() {
@@ -493,6 +630,7 @@
             let actualizados = 0;
             let noEncontrados = 0;
             let ignorados = 0;
+            let listaNoEncontrados = [];
 
             const allVentas = window.todasLasVentasParaGraficos || [];
             
@@ -510,26 +648,37 @@
                 let estadoStr = estadoKey ? row[estadoKey] : null;
 
                 if (!nroSol || !estadoStr) continue;
-                nroSol = String(nroSol).replace(/#/g, '').trim();
+                nroSol = String(nroSol).replace(/#/g, '').trim().toLowerCase();
                 estadoStr = String(estadoStr).trim();
 
-                let ventaDB = allVentas.find(v => String(v.numero_solicitud || '').replace(/#/g, '').trim() === nroSol);
+                let ventaDB = allVentas.find(v => String(v.numero_solicitud || '').replace(/#/g, '').trim().toLowerCase() === nroSol);
                 
                 if (ventaDB) {
                     let historial = ventaDB.historial_cobros || [];
+                    if (!Array.isArray(historial)) historial = [];
                     
                     let cobrados = historial.filter(est => {
                         let e = String(est).toLowerCase();
                         return (e.includes('cobrado') || e === 'si') && !e.includes('no');
                     }).length;
 
-                    // El líder de sucursal cobra hasta 10 cuotas, por lo que ocultamos/ignoramos al llegar a 10
-                    if (historial.length >= 12 || cobrados >= 10) {
+                    let mesElegido = document.getElementById('selectMesSubida').value;
+                    let targetIndex = historial.length; // automático
+                    if (mesElegido !== "auto") {
+                        targetIndex = parseInt(mesElegido, 10);
+                    }
+
+                    if (targetIndex >= 12 || cobrados >= 10) {
                         ignorados++;
                         continue;
                     }
 
-                    historial.push(estadoStr);
+                    // Rellenar con espacios vacíos si están subiendo un mes adelantado y faltan los anteriores
+                    while (historial.length <= targetIndex) {
+                        historial.push("");
+                    }
+
+                    historial[targetIndex] = estadoStr;
 
                     // Preparamos la promesa de actualización pero NO esperamos a que termine todavía
                     let p = clienteSupabase.from('registro_ventas').update({ historial_cobros: historial }).eq('id', ventaDB.id);
@@ -539,6 +688,7 @@
                     ventaDB.historial_cobros = historial;
                 } else {
                     noEncontrados++;
+                    listaNoEncontrados.push(nroSol);
                 }
             }
 
@@ -550,11 +700,20 @@
             }
 
             document.getElementById('loaderUpload').style.display = 'none';
+            
+            let btnDescargarErrores = "";
+            if (listaNoEncontrados.length > 0) {
+                let textContent = "IDs de Solicitudes No Encontradas:\r\n" + listaNoEncontrados.join("\r\n");
+                let dataUri = "data:text/plain;charset=utf-8," + encodeURIComponent(textContent);
+                btnDescargarErrores = `<br><br><a href="${dataUri}" download="IDs_no_encontrados.txt" class="btn-save" style="text-decoration:none; display:inline-block; font-size:12px; background:#e74c3c;"><i class="fa-solid fa-download"></i> Descargar lista de no encontrados</a>`;
+            }
+
             document.getElementById('resultadoUpload').innerHTML = `
                 <b>Resumen de carga:</b><br>
                 <span style="color:#2ecc71">✅ Solicitudes actualizadas: ${actualizados}</span><br>
                 <span style="color:#e74c3c">⚠️ Solicitudes no encontradas en DB: ${noEncontrados}</span><br>
                 <span style="color:#f39c12">⛔ Solicitudes ignoradas (ya tenían 12 meses): ${ignorados}</span>
+                ${btnDescargarErrores}
             `;
             
             cargarGrilla();
@@ -587,16 +746,27 @@
 
             let countBeneficios = {};
             let countBancos = {};
+            let countEstados = { 'Cobrados': 0, 'No Cobrados / FF': 0, 'Bajas': 0, 'Inactivas': 0, 'Reintegros': 0 };
             let hayDatos = false;
 
             ventasVend.forEach(v => {
                 let h = v.historial_cobros || [];
                 h.forEach(est => {
+                    if (est === "") return;
                     let e = String(est).toLowerCase();
                     
                     let esCobrado = (e.includes('cobrado') || e === 'si') && !e.includes('no');
-                    let esNoCobrado = e.includes('no cobrado') || e === 'no';
+                    let esNoCobrado = e.includes('no cobrado') || e === 'no' || e.includes('ff') || e.includes('falta de fondos');
+                    let esBaja = e.includes('baja');
+                    let esInactiva = e.includes('inactiv');
+                    let esReintegro = e.includes('reintegro');
                     
+                    if (esCobrado) countEstados['Cobrados']++;
+                    else if (esNoCobrado) countEstados['No Cobrados / FF']++;
+                    else if (esBaja) countEstados['Bajas']++;
+                    else if (esInactiva) countEstados['Inactivas']++;
+                    else if (esReintegro) countEstados['Reintegros']++;
+
                     let cuenta = false;
                     if (filtroEstadoGraficos === 'COBRADO' && esCobrado) cuenta = true;
                     if (filtroEstadoGraficos === 'NO_COBRADO' && esNoCobrado) cuenta = true;
@@ -653,6 +823,18 @@
             let dataBan = Object.values(countBancos);
             let labelsBan = Object.keys(countBancos);
             crearGrafico('chartBanco', 'doughnut', labelsBan.length ? labelsBan : ['Sin Datos'], dataBan, colors2);
+
+            let labelsEst = [];
+            let dataEst = [];
+            let colorsEst = [];
+            
+            if (countEstados['Cobrados'] > 0) { labelsEst.push('Cobrados'); dataEst.push(countEstados['Cobrados']); colorsEst.push('#2ecc71'); }
+            if (countEstados['No Cobrados / FF'] > 0) { labelsEst.push('No Cobrados / FF'); dataEst.push(countEstados['No Cobrados / FF']); colorsEst.push('#e74c3c'); }
+            if (countEstados['Bajas'] > 0) { labelsEst.push('Bajas'); dataEst.push(countEstados['Bajas']); colorsEst.push('#c0392b'); }
+            if (countEstados['Inactivas'] > 0) { labelsEst.push('Inactivas'); dataEst.push(countEstados['Inactivas']); colorsEst.push('#95a5a6'); }
+            if (countEstados['Reintegros'] > 0) { labelsEst.push('Reintegros'); dataEst.push(countEstados['Reintegros']); colorsEst.push('#f1c40f'); }
+
+            crearGrafico('chartEstados', 'doughnut', labelsEst.length ? labelsEst : ['Sin Datos'], dataEst, colorsEst);
         }
 
         function toggleTheme() {

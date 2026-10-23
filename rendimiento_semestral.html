@@ -135,6 +135,29 @@
         .col-fija { position: sticky; left: 0; background: var(--celda-oscura); z-index: 2; border-right: 2px solid var(--border-color); }
         .col-fija-2 { position: sticky; left: 220px; background: var(--celda-oscura); z-index: 2; border-right: 2px solid var(--border-color); }
 
+    
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 6px;
+        }
+        .table-responsive table {
+            min-width: 600px;
+        }
+        @media (max-width: 680px) {
+            body { padding: 10px 8px !important; }
+            .header-bar {
+                flex-direction: column !important;
+                gap: 10px !important;
+                padding: 12px !important;
+            }
+            .filtros-container {
+                flex-direction: column !important;
+                gap: 8px !important;
+            }
+        }
+    
     </style>
 </head>
 <body>
@@ -177,10 +200,10 @@
     </div>
 
     <div id="mainContainer" class="table-container" style="display:none;">
-        <table id="tablaSemaforo">
+        <div class="table-responsive"><table id="tablaSemaforo">
             <thead id="tablaHead"></thead>
             <tbody id="tablaBody"></tbody>
-        </table>
+        </table></div>
     </div>
 
     
