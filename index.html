@@ -207,9 +207,7 @@
 
         <button onclick="window.location.href='competencias.html'" style="width:100%; margin:15px 0 10px 0; padding:15px; background:linear-gradient(45deg, #f1c40f, #e67e22); color:white; border:none; border-radius:10px; font-size:16px; font-weight:bold; cursor:pointer; box-shadow: 0 4px 15px rgba(241,196,15,0.4);"><i class="fa-solid fa-trophy"></i> VER COMPETENCIAS ACTIVAS</button>
 
-        <!-- Botón de Entrevistas desactivado temporalmente mientras se definen cambios
-        <button onclick="window.location.href='ranking_entrevistas.html'" style="width:100%; margin:0 0 15px 0; padding:15px; background:linear-gradient(45deg, #0a3a46, #14596b); color:white; border:none; border-radius:10px; font-size:16px; font-weight:bold; cursor:pointer; box-shadow: 0 4px 15px rgba(10,58,70,0.3);"><i class="fa-solid fa-comments"></i> ENTREVISTAS</button>
-        -->
+        <button onclick="window.location.href='ranking_entrevistas.html'" style="width:100%; margin:0 0 15px 0; padding:15px; background:linear-gradient(45deg, #0a3a46, #14596b); color:white; border:none; border-radius:10px; font-size:16px; font-weight:bold; cursor:pointer; box-shadow: 0 4px 15px rgba(10,58,70,0.3); transition: transform 0.15s, box-shadow 0.15s;"><i class="fa-solid fa-comments"></i> LISTADO DE ENTREVISTAS</button>
 
 
         <div class="seccion-acceso">
@@ -309,6 +307,11 @@
                 if (error) throw error;
 
                 if (data.pin_acceso === pinIngresado) {
+                    sessionStorage.setItem('gpl_usuario_id', idVendedor);
+                    localStorage.setItem('gpl_usuario_id', idVendedor);
+                    sessionStorage.setItem('gpl_usuario_rol', data.rol || '');
+                    localStorage.setItem('gpl_usuario_rol', data.rol || '');
+
                     const rol = (data.rol || '').toLowerCase();
                     if (rol === 'lider' || rol === 'líder' || rol === 'líder de asesores' || rol === 'lider de asesores') {
                         window.location.href = `panel_lider.html?id=${idVendedor}`;
@@ -338,6 +341,10 @@
             const pin = document.getElementById('passGerente').value;
             // Claves exclusivas para Gerencia Comercial
             if (pin === 'gplgerente' || pin === '5678') {
+                sessionStorage.setItem('gpl_usuario_rol', 'Gerencia');
+                localStorage.setItem('gpl_usuario_rol', 'Gerencia');
+                sessionStorage.removeItem('gpl_usuario_id');
+                localStorage.removeItem('gpl_usuario_id');
                 window.location.href = 'panel_gerencia.html';
             } else {
                 alert("PIN Gerencial incorrecto. Acceso denegado.");

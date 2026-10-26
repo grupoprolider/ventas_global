@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ranking de Entrevistas | ProLider GPL</title>
+    <title>Listado de Entrevistas | ProLider GPL</title>
     <link rel="apple-touch-icon" href="LOGO-gpl.png">
     
     <!-- Librerías Externas -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gifshot/0.3.2/gifshot.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
@@ -34,6 +35,7 @@
             --gpl-verde: #10b981;
             --gpl-amarillo: #f59e0b;
             --gpl-rojo: #ef4444;
+            --gpl-violeta: #8b5cf6;
             --shadow-sm: 0 2px 4px rgba(0,0,0,0.04);
             --shadow-md: 0 6px 18px rgba(0,0,0,0.06);
             --shadow-lg: 0 12px 28px rgba(0,0,0,0.1);
@@ -74,7 +76,7 @@
         header {
             background: var(--bg-card);
             border-bottom: 1px solid var(--border-color);
-            padding: 16px 28px;
+            padding: 14px 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -82,21 +84,22 @@
             top: 0;
             z-index: 100;
             box-shadow: var(--shadow-sm);
+            gap: 16px;
         }
 
         .header-brand {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 14px;
         }
 
         .header-brand img {
-            height: 44px;
+            height: 42px;
         }
 
         .header-titles h1 {
             margin: 0;
-            font-size: 20px;
+            font-size: 19px;
             font-weight: 800;
             letter-spacing: -0.5px;
             color: var(--gpl-dorado);
@@ -112,24 +115,94 @@
             font-weight: 500;
         }
 
+        .header-center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+        }
+
+        /* USER IDENTITY CHIP */
+        .user-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(196, 156, 72, 0.1);
+            border: 1px solid rgba(196, 156, 72, 0.3);
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 12px;
+        }
+
+        .user-chip i {
+            color: var(--gpl-dorado);
+            font-size: 15px;
+        }
+
+        .user-chip-info {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.2;
+        }
+
+        .user-chip-name {
+            font-weight: 700;
+            color: var(--text-primary);
+            font-size: 12px;
+        }
+
+        .user-chip-role {
+            font-size: 10px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .btn-user-switch {
+            background: transparent;
+            border: none;
+            color: var(--gpl-dorado);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        }
+
+        .btn-user-switch:hover {
+            transform: scale(1.15);
+        }
+
+        .user-chip-guest {
+            cursor: pointer;
+            background: rgba(100, 116, 139, 0.1);
+            border-color: var(--border-color);
+        }
+
+        .user-chip-guest:hover {
+            border-color: var(--gpl-dorado);
+        }
+
         .header-actions {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             flex-wrap: wrap;
         }
 
         .btn {
             border: none;
-            padding: 9px 16px;
+            padding: 8px 14px;
             border-radius: 8px;
             font-family: 'Poppins', sans-serif;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 7px;
             transition: transform 0.15s, opacity 0.15s, box-shadow 0.15s;
             text-decoration: none;
         }
@@ -149,7 +222,13 @@
             background: var(--bg-input);
             color: var(--text-primary);
             border: 1px solid var(--border-color);
-            padding: 9px 12px;
+            padding: 8px 12px;
+        }
+
+        .btn-gif {
+            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+            color: white;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
         }
 
         .btn-png {
@@ -165,26 +244,45 @@
         /* CONTAINER */
         .container {
             max-width: 1240px;
-            margin: 24px auto;
+            margin: 22px auto;
             padding: 0 20px 60px 20px;
+        }
+
+        /* BANNER SCOPE ROL */
+        .role-scope-banner {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+            background: rgba(196, 156, 72, 0.08);
+            border: 1px solid rgba(196, 156, 72, 0.25);
+            border-radius: 10px;
+            margin-bottom: 18px;
+            font-size: 12px;
+            color: var(--text-primary);
+        }
+
+        .role-scope-banner i {
+            color: var(--gpl-dorado);
+            font-size: 16px;
         }
 
         /* KPIS CARDS */
         .kpis-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
+            gap: 14px;
+            margin-bottom: 22px;
         }
 
         .kpi-card {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: 12px;
-            padding: 18px 20px;
+            padding: 16px 18px;
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 14px;
             box-shadow: var(--shadow-sm);
             position: relative;
             overflow: hidden;
@@ -201,15 +299,15 @@
         }
 
         .kpi-icon {
-            width: 48px;
-            height: 48px;
+            width: 44px;
+            height: 44px;
             border-radius: 10px;
             background: rgba(196, 156, 72, 0.12);
             color: var(--kpi-color, var(--gpl-dorado));
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
+            font-size: 19px;
             flex-shrink: 0;
         }
 
@@ -223,8 +321,8 @@
         }
 
         .kpi-info .kpi-value {
-            margin: 3px 0 0 0;
-            font-size: 24px;
+            margin: 2px 0 0 0;
+            font-size: 22px;
             font-weight: 800;
             color: var(--text-primary);
             line-height: 1.1;
@@ -241,20 +339,21 @@
             background: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: 14px;
-            padding: 22px;
-            margin-bottom: 24px;
+            padding: 20px;
+            margin-bottom: 22px;
             box-shadow: var(--shadow-sm);
         }
 
         .tabs-periodo {
             display: flex;
             gap: 8px;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
             background: var(--bg-body);
-            padding: 5px;
+            padding: 4px;
             border-radius: 10px;
             width: fit-content;
             border: 1px solid var(--border-color);
+            flex-wrap: wrap;
         }
 
         .tab-btn {
@@ -282,7 +381,7 @@
         .filtros-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
+            gap: 14px;
             align-items: flex-end;
         }
 
@@ -293,7 +392,7 @@
         }
 
         .filtro-group label {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
             color: var(--text-secondary);
             text-transform: uppercase;
@@ -306,11 +405,18 @@
             color: var(--text-primary);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            padding: 10px 12px;
+            padding: 9px 12px;
             font-family: 'Poppins', sans-serif;
             font-size: 13px;
             font-weight: 500;
             outline: none;
+        }
+
+        .filtro-group select:disabled,
+        .filtro-group input:disabled {
+            background: var(--border-color);
+            opacity: 0.65;
+            cursor: not-allowed;
         }
 
         .filtro-group select:focus,
@@ -332,8 +438,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding-bottom: 16px;
-            margin-bottom: 18px;
+            padding-bottom: 14px;
+            margin-bottom: 16px;
             border-bottom: 2px solid var(--border-color);
             flex-wrap: wrap;
             gap: 12px;
@@ -341,13 +447,13 @@
 
         .ranking-header-title h2 {
             margin: 0;
-            font-size: 20px;
+            font-size: 19px;
             font-weight: 800;
             color: var(--text-primary);
         }
 
         .ranking-header-title span {
-            font-size: 13px;
+            font-size: 12px;
             color: var(--text-secondary);
             font-weight: 500;
         }
@@ -406,7 +512,7 @@
         }
 
         tbody td {
-            padding: 14px;
+            padding: 12px 14px;
             border-top: 1px solid var(--border-color);
             border-bottom: 1px solid var(--border-color);
             vertical-align: middle;
@@ -417,9 +523,9 @@
             border-top-left-radius: 10px;
             border-bottom-left-radius: 10px;
             font-weight: 800;
-            font-size: 15px;
+            font-size: 14px;
             text-align: center;
-            width: 60px;
+            width: 70px;
         }
 
         tbody td:last-child {
@@ -428,10 +534,35 @@
             border-bottom-right-radius: 10px;
         }
 
-        /* TOP 3 PODIO */
-        .pos-1 { color: #f59e0b; font-size: 20px; }
-        .pos-2 { color: #94a3b8; font-size: 18px; }
-        .pos-3 { color: #d97706; font-size: 17px; }
+        /* BADGES DE POSICIÓN ASCENDENTE */
+        .badge-pos {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            font-weight: 800;
+            font-size: 13px;
+        }
+
+        .badge-pos-cero {
+            background: rgba(239, 68, 68, 0.12);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .badge-pos-pendiente {
+            background: rgba(245, 158, 11, 0.12);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .badge-pos-ok {
+            background: rgba(16, 185, 129, 0.12);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
 
         .asesor-info {
             display: flex;
@@ -462,29 +593,44 @@
             font-weight: 600;
         }
 
-        /* CONTADOR Y BARRA */
+        /* CONTADOR Y BARRA DE PROGRESO */
         .entrevistas-cell {
-            min-width: 170px;
+            min-width: 200px;
         }
 
         .entrevistas-cant {
             display: flex;
             align-items: baseline;
+            justify-content: space-between;
             gap: 6px;
             margin-bottom: 4px;
         }
 
         .entrevistas-num {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 900;
-            color: var(--gpl-dorado);
+            color: var(--text-primary);
             line-height: 1;
         }
 
         .entrevistas-meta-txt {
             font-size: 11px;
             font-weight: 600;
-            color: var(--text-muted);
+        }
+
+        .txt-alerta-cero {
+            color: #ef4444;
+            font-weight: 700;
+        }
+
+        .txt-pendiente {
+            color: #f59e0b;
+            font-weight: 600;
+        }
+
+        .txt-cumplido {
+            color: #10b981;
+            font-weight: 700;
         }
 
         .barra-contenedor {
@@ -499,12 +645,20 @@
         .barra-fill {
             height: 100%;
             border-radius: 10px;
-            background: linear-gradient(90deg, #10b981, #059669);
-            transition: width 0.8s ease-in-out;
+            transition: width 0.6s ease-in-out;
         }
 
-        .barra-fill.incompleto {
-            background: linear-gradient(90deg, #3b82f6, #0284c7);
+        .barra-fill.cumplido {
+            background: linear-gradient(90deg, #10b981, #059669);
+        }
+
+        .barra-fill.pendiente {
+            background: linear-gradient(90deg, #f59e0b, #d97706);
+        }
+
+        .barra-fill.cero {
+            background: #ef4444;
+            width: 0% !important;
         }
 
         /* CALIFICACIÓN */
@@ -512,10 +666,10 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 6px 12px;
+            padding: 5px 10px;
             border-radius: 8px;
             font-weight: 800;
-            font-size: 14px;
+            font-size: 13px;
         }
 
         .calif-alta {
@@ -548,48 +702,51 @@
             margin-top: 2px;
         }
 
-        /* MODAL DE AUTORIZACIÓN DE DESCARGA */
+        /* MODAL DE IDENTIFICACIÓN / PIN */
         #modalAuth {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(10, 20, 30, 0.75);
-            backdrop-filter: blur(4px);
             display: none;
-            justify-content: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
             align-items: center;
-            z-index: 99999;
+            justify-content: center;
+            padding: 20px;
         }
 
         .modal-box {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
-            padding: 30px;
-            border-radius: 14px;
+            border-radius: 16px;
+            padding: 28px;
+            width: 100%;
+            max-width: 440px;
             box-shadow: var(--shadow-lg);
-            max-width: 420px;
-            width: 90%;
             text-align: center;
-            position: relative;
         }
 
-        .modal-box i.icon-lock {
-            font-size: 40px;
+        .modal-box .icon-lock {
+            font-size: 38px;
             color: var(--gpl-dorado);
-            margin-bottom: 12px;
+            margin-bottom: 14px;
         }
 
         .modal-box h3 {
             margin: 0 0 8px 0;
-            color: var(--text-primary);
             font-size: 18px;
-            font-weight: 700;
+            font-weight: 800;
+            color: var(--text-primary);
         }
 
         .modal-box p {
-            color: var(--text-secondary);
             font-size: 13px;
-            margin: 0 0 20px 0;
-            line-height: 1.4;
+            color: var(--text-secondary);
+            margin: 0 0 18px 0;
+            line-height: 1.5;
         }
 
         .modal-box input {
@@ -602,7 +759,7 @@
             font-size: 16px;
             text-align: center;
             outline: none;
-            margin-bottom: 16px;
+            margin-bottom: 14px;
             font-family: inherit;
         }
 
@@ -625,8 +782,9 @@
 
         .modal-actions button {
             flex: 1;
-            padding: 12px;
+            padding: 11px;
             font-size: 13px;
+            justify-content: center;
         }
 
         /* WATERMARK CAPTURA */
@@ -654,11 +812,11 @@
             margin-bottom: 14px;
         }
 
-        @media (max-width: 680px) {
+        @media (max-width: 768px) {
             header {
                 flex-direction: column;
                 align-items: stretch;
-                padding: 10px 14px;
+                padding: 12px 14px;
                 gap: 10px;
             }
             .header-brand {
@@ -673,23 +831,25 @@
             .header-titles p {
                 font-size: 11px;
             }
-            .header-actions {
-                display: grid;
-                grid-template-columns: 42px 1fr 1fr 42px;
-                gap: 6px;
+            .header-center {
+                justify-content: flex-start;
                 width: 100%;
             }
+            .header-actions {
+                display: flex;
+                gap: 6px;
+                width: 100%;
+                justify-content: space-between;
+            }
             .header-actions .btn {
-                padding: 8px 6px;
+                padding: 7px 10px;
                 font-size: 11px;
+                flex: 1;
                 justify-content: center;
-                gap: 5px;
             }
-            .header-actions .btn-theme {
-                padding: 8px;
-            }
+            .header-actions .btn-theme,
             .header-actions .btn-volver {
-                padding: 8px;
+                flex: none;
             }
             .btn-text {
                 display: none;
@@ -722,15 +882,11 @@
             }
             .kpi-info .kpi-value {
                 font-size: 18px;
-                margin: 2px 0 0 0;
-            }
-            .kpi-info .kpi-sub {
-                font-size: 9px;
             }
 
             /* CONTROL / FILTROS */
             .card-control {
-                padding: 12px;
+                padding: 14px;
                 border-radius: 12px;
                 margin-bottom: 16px;
             }
@@ -755,39 +911,8 @@
             .filtro-full-mobile {
                 grid-column: span 2;
             }
-            .filtro-group label {
-                font-size: 10px;
-            }
-            .filtro-group select,
-            .filtro-group input {
-                padding: 8px 10px;
-                font-size: 12px;
-            }
 
-            /* RANKING CAPTURA */
-            #capturaRanking {
-                padding: 12px;
-                border-radius: 12px;
-            }
-            .ranking-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 6px;
-                padding-bottom: 10px;
-                margin-bottom: 12px;
-            }
-            .ranking-header-title h2 {
-                font-size: 16px;
-            }
-            .ranking-header-title span {
-                font-size: 11px;
-            }
-            .ranking-badge-meta {
-                font-size: 10px;
-                padding: 4px 10px;
-            }
-
-            /* FORMATO DE FILAS EN TARJETAS PARA CELULAR */
+            /* TABLA EN FORMATO CARDS */
             .table-responsive {
                 overflow-x: visible;
             }
@@ -816,14 +941,9 @@
                 background: var(--bg-card);
                 border: 1px solid var(--border-color);
                 border-radius: 12px;
-                box-shadow: 0 1px 4px rgba(0,0,0,0.04);
                 align-items: center;
                 width: 100%;
                 box-sizing: border-box;
-            }
-            body.dark-mode #tablaRanking tbody tr.ranking-row {
-                background: var(--bg-card-hover);
-                border-color: var(--border-color);
             }
             #tablaRanking tbody td {
                 padding: 0 !important;
@@ -835,79 +955,23 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 15px;
-                font-weight: 800;
-                background: rgba(196, 156, 72, 0.12);
-                color: var(--gpl-dorado);
-                border-radius: 8px;
-                height: 42px;
-                width: 42px;
             }
-            .col-pos .pos-1 { font-size: 20px; }
-            .col-pos .pos-2 { font-size: 18px; }
-            .col-pos .pos-3 { font-size: 17px; }
-            
             .col-asesor {
                 grid-area: asesor;
                 min-width: 0;
             }
-            .col-asesor .asesor-nombre {
-                font-size: 13px;
-                font-weight: 700;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                display: block;
-                color: var(--text-primary);
-            }
-            .col-asesor .asesor-tags {
-                display: flex;
-                gap: 4px;
-                flex-wrap: wrap;
-                margin-top: 2px;
-            }
-            .col-asesor .tag-pill {
-                font-size: 9px;
-                padding: 1px 5px;
-            }
-            
             .col-calif {
                 grid-area: calif;
                 display: flex;
                 justify-content: flex-end;
                 align-items: center;
             }
-            .col-calif .calif-pill {
-                font-size: 12px;
-                padding: 4px 8px;
-            }
-            .col-calif .calif-count {
-                font-size: 9px;
-                text-align: right;
-            }
-            
             .col-entrevistas {
                 grid-area: bar;
                 width: 100%;
-                padding-top: 6px !important;
+                padding-top: 8px !important;
                 border-top: 1px dashed var(--border-color) !important;
                 min-width: 0 !important;
-            }
-            .col-entrevistas .entrevistas-cant {
-                display: flex;
-                justify-content: space-between;
-                align-items: baseline;
-                margin-bottom: 4px;
-            }
-            .col-entrevistas .entrevistas-num {
-                font-size: 16px;
-                font-weight: 800;
-            }
-            .col-entrevistas .entrevistas-meta-txt {
-                font-size: 11px;
-            }
-            .col-entrevistas .barra-contenedor {
-                height: 6px;
             }
             #tablaRanking tbody tr:not(.ranking-row) {
                 display: block;
@@ -916,24 +980,24 @@
             #tablaRanking tbody tr:not(.ranking-row) td {
                 display: block;
                 width: 100%;
-                padding: 30px 15px !important;
+                padding: 25px 15px !important;
             }
         }
     </style>
 </head>
 <body>
 
-    <!-- MODAL DE PIN PARA DESCARGAS -->
+    <!-- MODAL DE PIN / AUTENTICACIÓN -->
     <div id="modalAuth">
         <div class="modal-box">
             <i class="fa-solid fa-shield-halved icon-lock"></i>
-            <h3>Autorización Requerida</h3>
-            <p>La visualización es pública para todo el equipo. Para <b>descargar PNG o Excel</b>, ingresá tu PIN de Líder de Sucursal o Gerencia:</p>
-            <input type="password" id="inputPinAuth" placeholder="Ingresá tu PIN..." onkeyup="if(event.key === 'Enter') procesarAuthDescarga()">
-            <div id="msgErrorAuth" class="modal-error">PIN no autorizado para descargas.</div>
+            <h3 id="modalAuthTitulo">Identificación Requerida</h3>
+            <p id="modalAuthDesc">Ingresá tu PIN para acceder según tu rol comercial (Vendedor, Líder de Sucursal o Gerencia):</p>
+            <input type="password" id="inputPinAuth" placeholder="Ingresá tu PIN..." onkeyup="if(event.key === 'Enter') procesarAuthModal()">
+            <div id="msgErrorAuth" class="modal-error">PIN no reconocido o sin permisos requeridos.</div>
             <div class="modal-actions">
                 <button class="btn btn-volver" onclick="cerrarModalAuth()">Cancelar</button>
-                <button class="btn btn-png" onclick="procesarAuthDescarga()"><i class="fa-solid fa-unlock"></i> Desbloquear</button>
+                <button class="btn btn-gif" onclick="procesarAuthModal()"><i class="fa-solid fa-unlock"></i> Ingresar</button>
             </div>
         </div>
     </div>
@@ -943,21 +1007,37 @@
         <div class="header-brand">
             <img src="LOGO-gpl.png" alt="ProLider GPL">
             <div class="header-titles">
-                <h1><i class="fa-solid fa-comments"></i> Ranking de Entrevistas</h1>
-                <p>Auditoría y control de meta diaria (5/día) y acumulado de campaña</p>
+                <h1><i class="fa-solid fa-comments"></i> Listado de Entrevistas</h1>
+                <p>Auditoría de actividad diaria (5/día) y acumulado de campaña</p>
             </div>
         </div>
+
+        <!-- CHIP DE IDENTIDAD DEL USUARIO -->
+        <div class="header-center">
+            <div id="badgeUsuarioActivo" class="user-chip user-chip-guest" onclick="abrirModalAuth(false)">
+                <i class="fa-solid fa-user-lock"></i>
+                <div class="user-chip-info">
+                    <span class="user-chip-name" id="txtUserNombre">Vista Pública</span>
+                    <span class="user-chip-role" id="txtUserRol">Identificate con tu PIN</span>
+                </div>
+            </div>
+        </div>
+
         <div class="header-actions">
-            <button class="btn btn-theme" onclick="toggleTheme()" title="Cambiar tema claro/oscuro" id="btnTheme">
+            <button class="btn btn-theme" onclick="toggleTheme()" title="Tema claro/oscuro" id="btnTheme">
                 <i class="fa-solid fa-moon"></i>
             </button>
-            <button class="btn btn-png" onclick="solicitarDescarga('png')">
+            <!-- Solo visible para Líderes de Sucursal y Gerencia -->
+            <button class="btn btn-gif" id="btnDescargarGIF" onclick="iniciarDescargaGIF()">
+                <i class="fa-solid fa-film"></i> <span class="btn-text">Descargar </span>GIF
+            </button>
+            <button class="btn btn-png" id="btnDescargarPNG" onclick="solicitarDescarga('png')">
                 <i class="fa-solid fa-camera"></i> <span class="btn-text">Descargar </span>PNG
             </button>
-            <button class="btn btn-excel" onclick="solicitarDescarga('excel')">
+            <button class="btn btn-excel" id="btnDescargarExcel" onclick="solicitarDescarga('excel')">
                 <i class="fa-solid fa-file-excel"></i> <span class="btn-text">Descargar </span>Excel
             </button>
-            <a href="index.html" class="btn btn-volver" title="Volver al Inicio">
+            <a href="index.html" class="btn btn-volver" id="btnVolver" title="Volver">
                 <i class="fa-solid fa-arrow-left"></i> <span class="btn-text">Inicio</span>
             </a>
         </div>
@@ -965,6 +1045,12 @@
 
     <div class="container">
         
+        <!-- BANNER INFORMATIVO DE ROL / ALCANCE -->
+        <div class="role-scope-banner" id="bannerScopeRol">
+            <i class="fa-solid fa-circle-info"></i>
+            <span id="txtBannerScope">Mostrando todas las entrevistas del día de toda la empresa sin restricción.</span>
+        </div>
+
         <!-- CARDS DE KPIS -->
         <div class="kpis-grid">
             <div class="kpi-card" style="--kpi-color: #10b981;">
@@ -994,8 +1080,8 @@
             <div class="kpi-card" style="--kpi-color: #8b5cf6;">
                 <div class="kpi-icon"><i class="fa-solid fa-trophy"></i></div>
                 <div class="kpi-info">
-                    <h4>Líder del Ranking</h4>
-                    <div class="kpi-value" id="kpiTopAsesor" style="font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px;">-</div>
+                    <h4>Líder de Entrevistas</h4>
+                    <div class="kpi-value" id="kpiTopAsesor" style="font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px;">-</div>
                     <div class="kpi-sub" id="kpiTopAsesorDato">0 entrevistas</div>
                 </div>
             </div>
@@ -1005,10 +1091,10 @@
         <div class="card-control">
             <div class="tabs-periodo">
                 <button class="tab-btn active" id="tabHoy" onclick="cambiarPeriodo('hoy')">
-                    <i class="fa-solid fa-calendar-day"></i> Hoy (Meta 5)
+                    <i class="fa-solid fa-calendar-day"></i> HOY (Meta 5)
                 </button>
                 <button class="tab-btn" id="tabCampana" onclick="cambiarPeriodo('campana')">
-                    <i class="fa-solid fa-calendar-check"></i> Por Campaña
+                    <i class="fa-solid fa-calendar-check"></i> CAMPAÑA ACTUAL
                 </button>
                 <button class="tab-btn" id="tabFecha" onclick="cambiarPeriodo('fecha')">
                     <i class="fa-solid fa-calendar"></i> Fecha Específica
@@ -1016,11 +1102,11 @@
             </div>
 
             <div class="filtros-grid">
-                <!-- Selector de Campaña -->
+                <!-- Selector de Campaña (Oculto o Informativo en Campaña Actual) -->
                 <div class="filtro-group" id="groupCampana" style="display: none;">
-                    <label>Campaña</label>
+                    <label>Campaña Vigente</label>
                     <select id="filtroCampana" onchange="aplicarFiltros()">
-                        <option value="">Cargando campañas...</option>
+                        <option value="">Cargando campaña...</option>
                     </select>
                 </div>
 
@@ -1031,24 +1117,24 @@
                 </div>
 
                 <!-- Selector de Sucursal -->
-                <div class="filtro-group">
-                    <label>Sucursal</label>
+                <div class="filtro-group" id="groupSucursal">
+                    <label>Agencia / Sucursal</label>
                     <select id="filtroSucursal" onchange="onSucursalChange()">
                         <option value="todas">Todas las Sucursales</option>
                     </select>
                 </div>
 
                 <!-- Selector de Equipo -->
-                <div class="filtro-group">
+                <div class="filtro-group" id="groupEquipo">
                     <label>Equipo</label>
                     <select id="filtroEquipo" onchange="aplicarFiltros()">
                         <option value="todos">Todos los Equipos</option>
                     </select>
                 </div>
 
-                <!-- Buscador de Asesor -->
-                <div class="filtro-group filtro-full-mobile">
-                    <label>Buscar Asesor</label>
+                <!-- Buscador de Asesor / Vendedor -->
+                <div class="filtro-group filtro-full-mobile" id="groupVendedor">
+                    <label>Buscar Vendedor</label>
                     <input type="text" id="filtroBusqueda" placeholder="Nombre del vendedor..." onkeyup="aplicarFiltros()">
                 </div>
 
@@ -1062,15 +1148,15 @@
             </div>
         </div>
 
-        <!-- SECCIÓN DE RANKING (ÁREA CAPTURABLE PARA PNG) -->
+        <!-- SECCIÓN DE LISTADO (ÁREA CAPTURABLE PARA GIF/PNG) -->
         <div id="capturaRanking">
             <div class="ranking-header">
                 <div class="ranking-header-title">
-                    <h2 id="tituloVistaRanking">Ranking Diario de Entrevistas</h2>
-                    <span id="subtituloVistaRanking">Período: Hoy | Objetivo mínimo recomendado: 5 entrevistas diarias</span>
+                    <h2 id="tituloVistaRanking">Listado Diario de Entrevistas</h2>
+                    <span id="subtituloVistaRanking">Período: Hoy | Ordenado de menor a mayor actividad (Meta: 5 diarias)</span>
                 </div>
                 <div class="ranking-badge-meta" id="badgeMetaVisual">
-                    <i class="fa-solid fa-flag-checkered"></i> Objetivo Clave: 5 entrevistas / día
+                    <i class="fa-solid fa-bullseye"></i> Objetivo Diario: 5 entrevistas
                 </div>
             </div>
 
@@ -1078,10 +1164,10 @@
                 <table id="tablaRanking">
                     <thead>
                         <tr>
-                            <th style="width: 60px; text-align: center;">POS</th>
-                            <th>NOMBRE DEL VENDEDOR</th>
-                            <th style="min-width: 200px;">CANTIDAD DE ENTREVISTAS</th>
-                            <th style="width: 190px;">PROMEDIO DE CALIFICACIÓN</th>
+                            <th style="width: 70px; text-align: center;">POS</th>
+                            <th>VENDEDOR / EQUIPO</th>
+                            <th style="min-width: 220px;">ACTIVIDAD (META 5 DIARIAS)</th>
+                            <th style="width: 180px;">CALIFICACIÓN</th>
                         </tr>
                     </thead>
                     <tbody id="rankingBody">
@@ -1097,9 +1183,9 @@
                 </table>
             </div>
 
-            <!-- Marca de agua en PNG exportado -->
+            <!-- Marca de agua en exportación -->
             <div class="captura-watermark" id="capturaWatermark">
-                <span id="txtWatermarkFecha">Suite Comercial ProLider GPL</span> | Ranking Oficial de Entrevistas
+                <span id="txtWatermarkFecha">Suite Comercial ProLider GPL</span> | Listado Oficial de Entrevistas
             </div>
         </div>
 
@@ -1118,14 +1204,26 @@
         let globalEntrevistas = [];
         let globalCampanaActual = '';
         let periodoSeleccionado = 'hoy'; // 'hoy', 'campana', 'fecha'
-        let tipoDescargaPendiente = null;
+        let tipoAccionPendiente = null;
         let datosExportarCache = [];
+
+        // Estado del usuario activo
+        // rolTipo: 'GERENTE' | 'LIDER_SUCURSAL' | 'LIDER_EQUIPO' | 'VENDEDOR' | 'INVITADO'
+        let usuarioActual = {
+            id: null,
+            nombre: 'Vista Pública',
+            rol: 'Público',
+            rolTipo: 'INVITADO',
+            equipo_id: null,
+            agencia_id: null
+        };
 
         // Inicialización
         window.onload = async function() {
             initTema();
             initFechaHoyInput();
             await cargarCatalogos();
+            detectarUsuarioInicial();
             await cargarEntrevistas();
         };
 
@@ -1168,30 +1266,31 @@
         async function cargarCatalogos() {
             try {
                 const [resAgencias, resEquipos, resPerfiles] = await Promise.all([
-                    clienteSupabase.from('agencias').select('id, nombre').order('nombre'),
-                    clienteSupabase.from('equipos').select('id, nombre, agencia_id').order('nombre'),
+                    clienteSupabase.from('agencias').select('id, nombre, supervisor_id').order('nombre'),
+                    clienteSupabase.from('equipos').select('id, nombre, agencia_id, lider_id').order('nombre'),
                     clienteSupabase.from('perfiles').select('id, nombre, equipo_id, rol, pin_acceso').order('nombre')
                 ]);
 
                 globalAgencias = resAgencias.data || [];
                 globalEquipos = resEquipos.data || [];
-                // Excluir terminantemente perfiles dados de baja u ocultos
+                // Excluir bajas u ocultos
                 globalPerfiles = (resPerfiles.data || []).filter(p => {
                     const nom = (p.nombre || '').toUpperCase();
                     return !nom.includes('(BAJA)') && !nom.includes('(OCULTO)');
                 });
 
-                // Llenar select Sucursales
-                const selSuc = document.getElementById('filtroSucursal');
-                selSuc.innerHTML = '<option value="todas">Todas las Sucursales</option>' + 
-                    globalAgencias.map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
-
-                // Llenar select Equipos
+                poblarSelectAgencias();
                 poblarSelectEquipos('todas');
 
             } catch (err) {
                 console.error("Error cargando catálogos:", err);
             }
+        }
+
+        function poblarSelectAgencias() {
+            const selSuc = document.getElementById('filtroSucursal');
+            selSuc.innerHTML = '<option value="todas">Todas las Sucursales</option>' + 
+                globalAgencias.map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
         }
 
         function poblarSelectEquipos(agenciaId) {
@@ -1207,10 +1306,301 @@
         function onSucursalChange() {
             const sucId = document.getElementById('filtroSucursal').value;
             poblarSelectEquipos(sucId);
+            actualizarControlesPorPeriodoYRol();
             aplicarFiltros();
         }
 
-        // Cargar Entrevistas (Paginado para no perder registros)
+        // =========================================================================
+        // DETECCIÓN Y GESTIÓN DE ROLES / IDENTIDAD DEL USUARIO
+        // =========================================================================
+        function detectarUsuarioInicial() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlId = urlParams.get('id');
+            const urlMode = urlParams.get('mode') || urlParams.get('rol');
+            const storedId = sessionStorage.getItem('gpl_usuario_id') || localStorage.getItem('gpl_usuario_id');
+            const storedRol = sessionStorage.getItem('gpl_usuario_rol') || localStorage.getItem('gpl_usuario_rol');
+
+            // 1. Gerente por URL o Session
+            if (urlMode === 'gerente' || storedRol === 'Gerencia' || storedRol === 'Gerente') {
+                establecerUsuario({
+                    id: null,
+                    nombre: 'Gerencia Comercial',
+                    rol: 'Gerente',
+                    rolTipo: 'GERENTE',
+                    equipo_id: null,
+                    agencia_id: null
+                });
+                return;
+            }
+
+            // 2. Por ID de Perfil (URL o Stored)
+            const idBuscar = urlId || storedId;
+            if (idBuscar) {
+                const perfil = globalPerfiles.find(p => p.id === idBuscar);
+                if (perfil) {
+                    asignarRolDesdePerfil(perfil);
+                    return;
+                }
+            }
+
+            // 3. Invitado / Vista pública
+            actualizarUIUsuario();
+        }
+
+        function asignarRolDesdePerfil(perfil) {
+            const rolStr = (perfil.rol || '').toLowerCase();
+            let rolTipo = 'VENDEDOR';
+            let agenciaId = null;
+
+            const equipo = globalEquipos.find(e => e.id === perfil.equipo_id);
+            if (equipo) agenciaId = equipo.agencia_id;
+
+            // Determinar si es Líder de Sucursal
+            const esSupervisorAgencia = globalAgencias.some(a => a.supervisor_id === perfil.id);
+            if (rolStr.includes('sucursal') || esSupervisorAgencia) {
+                rolTipo = 'LIDER_SUCURSAL';
+                const ag = globalAgencias.find(a => a.supervisor_id === perfil.id || a.id === agenciaId);
+                if (ag) agenciaId = ag.id;
+            } else if (rolStr.includes('geren')) {
+                rolTipo = 'GERENTE';
+            } else if (rolStr.includes('lider') || rolStr.includes('líder') || rolStr.includes('coordinador') || globalEquipos.some(e => e.lider_id === perfil.id)) {
+                rolTipo = 'LIDER_EQUIPO';
+            } else {
+                rolTipo = 'VENDEDOR';
+            }
+
+            establecerUsuario({
+                id: perfil.id,
+                nombre: perfil.nombre,
+                rol: perfil.rol || 'Vendedor',
+                rolTipo: rolTipo,
+                equipo_id: perfil.equipo_id,
+                agencia_id: agenciaId
+            });
+        }
+
+        function establecerUsuario(u) {
+            usuarioActual = u;
+            if (u.id) {
+                sessionStorage.setItem('gpl_usuario_id', u.id);
+                localStorage.setItem('gpl_usuario_id', u.id);
+            } else {
+                sessionStorage.removeItem('gpl_usuario_id');
+                localStorage.removeItem('gpl_usuario_id');
+            }
+            if (u.rol) {
+                sessionStorage.setItem('gpl_usuario_rol', u.rol);
+                localStorage.setItem('gpl_usuario_rol', u.rol);
+            }
+
+            aplicarDefaultsFiltrosPorUsuario();
+            actualizarUIUsuario();
+            actualizarControlesPorPeriodoYRol();
+        }
+
+        function aplicarDefaultsFiltrosPorUsuario() {
+            const selSuc = document.getElementById('filtroSucursal');
+            const selEq = document.getElementById('filtroEquipo');
+            const inputBusq = document.getElementById('filtroBusqueda');
+            if (!selSuc || !selEq || !inputBusq) return;
+
+            if (usuarioActual.rolTipo === 'LIDER_SUCURSAL') {
+                if (usuarioActual.agencia_id) {
+                    selSuc.value = usuarioActual.agencia_id;
+                    poblarSelectEquipos(usuarioActual.agencia_id);
+                } else {
+                    selSuc.value = 'todas';
+                    poblarSelectEquipos('todas');
+                }
+                selEq.value = 'todos';
+                inputBusq.value = '';
+            } else if (usuarioActual.rolTipo === 'LIDER_EQUIPO') {
+                if (usuarioActual.agencia_id) {
+                    selSuc.value = usuarioActual.agencia_id;
+                    poblarSelectEquipos(usuarioActual.agencia_id);
+                }
+                if (usuarioActual.equipo_id) {
+                    selEq.value = usuarioActual.equipo_id;
+                }
+                inputBusq.value = '';
+            } else if (usuarioActual.rolTipo === 'VENDEDOR') {
+                if (usuarioActual.agencia_id) {
+                    selSuc.value = usuarioActual.agencia_id;
+                    poblarSelectEquipos(usuarioActual.agencia_id);
+                }
+                if (usuarioActual.equipo_id) {
+                    selEq.value = usuarioActual.equipo_id;
+                }
+                if (periodoSeleccionado === 'campana') {
+                    inputBusq.value = usuarioActual.nombre;
+                } else {
+                    inputBusq.value = '';
+                }
+            } else {
+                // GERENTE o INVITADO
+                selSuc.value = 'todas';
+                poblarSelectEquipos('todas');
+                selEq.value = 'todos';
+                inputBusq.value = '';
+            }
+        }
+
+        function actualizarUIUsuario() {
+            const badge = document.getElementById('badgeUsuarioActivo');
+            const txtNombre = document.getElementById('txtUserNombre');
+            const txtRol = document.getElementById('txtUserRol');
+            const btnGif = document.getElementById('btnDescargarGIF');
+            const btnPng = document.getElementById('btnDescargarPNG');
+            const btnExcel = document.getElementById('btnDescargarExcel');
+
+            if (usuarioActual.rolTipo === 'INVITADO') {
+                badge.className = 'user-chip user-chip-guest';
+                badge.onclick = () => abrirModalAuth(false);
+                txtNombre.textContent = 'Vista Pública';
+                txtRol.textContent = 'Clic para identificarte';
+                // En vista pública, botones visibles (piden PIN al hacer clic)
+                btnGif.style.display = 'inline-flex';
+                btnPng.style.display = 'inline-flex';
+                btnExcel.style.display = 'inline-flex';
+            } else {
+                badge.className = 'user-chip';
+                badge.onclick = null;
+                txtNombre.textContent = usuarioActual.nombre;
+                
+                let etiquetaRol = 'Vendedor';
+                if (usuarioActual.rolTipo === 'GERENTE') etiquetaRol = 'Gerencia Comercial';
+                else if (usuarioActual.rolTipo === 'LIDER_SUCURSAL') etiquetaRol = 'Líder de Sucursal';
+                else if (usuarioActual.rolTipo === 'LIDER_EQUIPO') etiquetaRol = 'Líder de Equipo';
+                
+                txtRol.textContent = etiquetaRol;
+
+                // Botón cambiar usuario
+                if (!badge.querySelector('.btn-user-switch')) {
+                    const btnSwitch = document.createElement('button');
+                    btnSwitch.className = 'btn-user-switch';
+                    btnSwitch.title = 'Cambiar perfil o usuario';
+                    btnSwitch.innerHTML = '<i class="fa-solid fa-arrow-right-arrow-left"></i>';
+                    btnSwitch.onclick = (e) => {
+                        e.stopPropagation();
+                        abrirModalAuth(true);
+                    };
+                    badge.appendChild(btnSwitch);
+                }
+
+                // Permisos de descarga:
+                // "solo pueden descargar en gif Lideres de sucursal y gerente"
+                const tienePermisoDescarga = (usuarioActual.rolTipo === 'GERENTE' || usuarioActual.rolTipo === 'LIDER_SUCURSAL');
+                btnGif.style.display = tienePermisoDescarga ? 'inline-flex' : 'none';
+                btnPng.style.display = tienePermisoDescarga ? 'inline-flex' : 'none';
+                btnExcel.style.display = tienePermisoDescarga ? 'inline-flex' : 'none';
+            }
+
+            actualizarControlesPorPeriodoYRol();
+        }
+
+        // =========================================================================
+        // MODAL DE AUTENTICACIÓN / CAMBIO DE USUARIO
+        // =========================================================================
+        function abrirModalAuth(esCambio = false, accion = null) {
+            tipoAccionPendiente = accion;
+            const modal = document.getElementById('modalAuth');
+            const titulo = document.getElementById('modalAuthTitulo');
+            const desc = document.getElementById('modalAuthDesc');
+            const input = document.getElementById('inputPinAuth');
+            const err = document.getElementById('msgErrorAuth');
+
+            input.value = '';
+            err.style.display = 'none';
+
+            if (accion === 'gif') {
+                titulo.textContent = 'Descarga en GIF Autorizada';
+                desc.innerHTML = 'La descarga en GIF está reservada exclusivamente para <b>Líderes de Sucursal</b> y <b>Gerencia</b>. Ingresá tu PIN para autorizar:';
+            } else if (accion === 'campana') {
+                titulo.textContent = 'Acceso a Campaña Actual';
+                desc.innerHTML = 'Para visualizar la <b>Campaña Actual</b> con los permisos correspondientes (Vendedor, Líder o Gerente), por favor ingresá tu PIN:';
+            } else if (esCambio) {
+                titulo.textContent = 'Cambiar de Usuario';
+                desc.innerHTML = 'Ingresá tu PIN personal o gerencial para acceder con otro perfil:';
+            } else {
+                titulo.textContent = 'Identificación de Acceso';
+                desc.innerHTML = 'Ingresá tu PIN de vendedor, líder o gerencia para desbloquear tus funciones:';
+            }
+
+            modal.style.display = 'flex';
+            input.focus();
+        }
+
+        function cerrarModalAuth() {
+            document.getElementById('modalAuth').style.display = 'none';
+            if (tipoAccionPendiente === 'campana' && usuarioActual.rolTipo === 'INVITADO') {
+                // Volver al tab 'hoy' si canceló
+                cambiarPeriodo('hoy');
+            }
+            tipoAccionPendiente = null;
+        }
+
+        async function procesarAuthModal() {
+            const pin = document.getElementById('inputPinAuth').value.trim();
+            const err = document.getElementById('msgErrorAuth');
+            err.style.display = 'none';
+
+            if (!pin) {
+                err.textContent = 'Por favor, ingresá un PIN.';
+                err.style.display = 'block';
+                return;
+            }
+
+            // 1. PINs Gerenciales
+            if (pin === 'gplgerente' || pin === '5678' || pin === 'gpl2026' || pin === '1234') {
+                establecerUsuario({
+                    id: null,
+                    nombre: 'Gerencia Comercial',
+                    rol: 'Gerente',
+                    rolTipo: 'GERENTE',
+                    equipo_id: null,
+                    agencia_id: null
+                });
+                cerrarModalAuth();
+                if (tipoAccionPendiente === 'gif') ejecutarDescargaGIF();
+                else aplicarFiltros();
+                return;
+            }
+
+            // 2. Verificar PIN en tabla de perfiles
+            try {
+                const perfil = globalPerfiles.find(p => String(p.pin_acceso) === pin);
+                if (!perfil) {
+                    err.textContent = 'PIN no reconocido. Verificá e intentalo de nuevo.';
+                    err.style.display = 'block';
+                    return;
+                }
+
+                asignarRolDesdePerfil(perfil);
+
+                // Si la acción requería rol de descarga
+                if (tipoAccionPendiente === 'gif') {
+                    if (usuarioActual.rolTipo !== 'GERENTE' && usuarioActual.rolTipo !== 'LIDER_SUCURSAL') {
+                        err.textContent = 'Tu perfil (' + usuarioActual.rol + ') no tiene permisos de descarga en GIF (exclusivo Líderes de Sucursal y Gerencia).';
+                        err.style.display = 'block';
+                        return;
+                    }
+                    cerrarModalAuth();
+                    ejecutarDescargaGIF();
+                } else {
+                    cerrarModalAuth();
+                    aplicarFiltros();
+                }
+
+            } catch (e) {
+                console.error(e);
+                err.textContent = 'Error al validar PIN.';
+                err.style.display = 'block';
+            }
+        }
+
+        // =========================================================================
+        // CARGA DE ENTREVISTAS
+        // =========================================================================
         async function cargarEntrevistas() {
             try {
                 let todasEntrevistas = [];
@@ -1262,8 +1652,16 @@
             }
         }
 
-        // Manejo de tabs de período
+        // =========================================================================
+        // MANEJO DE PERÍODOS (HOY vs CAMPAÑA ACTUAL)
+        // =========================================================================
         function cambiarPeriodo(tipo) {
+            // Si eligen Campaña Actual y no están identificados, pedir PIN
+            if (tipo === 'campana' && usuarioActual.rolTipo === 'INVITADO') {
+                abrirModalAuth(false, 'campana');
+                return;
+            }
+
             periodoSeleccionado = tipo;
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
 
@@ -1274,45 +1672,160 @@
                 document.getElementById('tabHoy').classList.add('active');
                 gCampana.style.display = 'none';
                 gFecha.style.display = 'none';
-                document.getElementById('tituloVistaRanking').textContent = 'Ranking Diario de Entrevistas';
-                document.getElementById('subtituloVistaRanking').textContent = 'Período: Hoy | Meta clave recomendada: 5 entrevistas por día';
-                document.getElementById('badgeMetaVisual').style.display = 'inline-flex';
-                document.getElementById('kpiTituloMeta').textContent = 'Meta Cumplida (≥ 5)';
-                document.getElementById('kpiSubMeta').textContent = 'Asesores con 5+ hoy';
+                aplicarDefaultsFiltrosPorUsuario();
             } else if (tipo === 'campana') {
                 document.getElementById('tabCampana').classList.add('active');
                 gCampana.style.display = 'flex';
                 gFecha.style.display = 'none';
-                document.getElementById('tituloVistaRanking').textContent = 'Ranking Acumulado de Campaña';
-                document.getElementById('subtituloVistaRanking').textContent = 'Total de entrevistas acumuladas en la campaña seleccionada';
-                document.getElementById('badgeMetaVisual').style.display = 'none';
-                document.getElementById('kpiTituloMeta').textContent = 'Asesores Activos';
-                document.getElementById('kpiSubMeta').textContent = 'Con al menos 1 entrevista';
+                document.getElementById('filtroCampana').value = globalCampanaActual;
+                aplicarDefaultsFiltrosPorUsuario();
             } else if (tipo === 'fecha') {
                 document.getElementById('tabFecha').classList.add('active');
                 gCampana.style.display = 'none';
                 gFecha.style.display = 'flex';
-                document.getElementById('tituloVistaRanking').textContent = 'Ranking de Entrevistas por Fecha';
-                document.getElementById('subtituloVistaRanking').textContent = 'Auditoría diaria para la fecha seleccionada';
-                document.getElementById('badgeMetaVisual').style.display = 'inline-flex';
-                document.getElementById('kpiTituloMeta').textContent = 'Meta Cumplida (≥ 5)';
-                document.getElementById('kpiSubMeta').textContent = 'Asesores con 5+ en este día';
             }
 
+            actualizarControlesPorPeriodoYRol();
             aplicarFiltros();
         }
 
-        // Aplicación de Filtros y Renderizado
+        function actualizarControlesPorPeriodoYRol() {
+            const selSuc = document.getElementById('filtroSucursal');
+            const selEq = document.getElementById('filtroEquipo');
+            const inputBusq = document.getElementById('filtroBusqueda');
+            const banner = document.getElementById('txtBannerScope');
+            const tituloRanking = document.getElementById('tituloVistaRanking');
+            const subRanking = document.getElementById('subtituloVistaRanking');
+            const badgeMeta = document.getElementById('badgeMetaVisual');
+
+            // 1. MODO HOY (O FECHA):
+            // "todos pueden ver las entrevistas del dia, todas sin distincion, vendedor, lider de equipo, lider de sucursal y gerente.."
+            if (periodoSeleccionado === 'hoy' || periodoSeleccionado === 'fecha') {
+                selSuc.disabled = false;
+                selEq.disabled = false;
+                inputBusq.disabled = false;
+
+                tituloRanking.textContent = periodoSeleccionado === 'hoy' ? 'Listado Diario de Entrevistas' : 'Auditoría de Entrevistas por Fecha';
+                subRanking.textContent = 'Ordenado de menor a mayor actividad | Meta individual clave: 5 entrevistas por día';
+                badgeMeta.style.display = 'inline-flex';
+                badgeMeta.innerHTML = '<i class="fa-solid fa-bullseye"></i> Objetivo Diario: 5 entrevistas';
+                document.getElementById('kpiTituloMeta').textContent = 'Meta Cumplida (≥ 5)';
+                document.getElementById('kpiSubMeta').textContent = 'Asesores con 5+ hoy';
+
+                const sucId = selSuc.value;
+
+                if (usuarioActual.rolTipo === 'LIDER_SUCURSAL') {
+                    const agObj = globalAgencias.find(a => a.id === usuarioActual.agencia_id);
+                    const agNom = agObj ? agObj.nombre : 'Tu Sucursal';
+                    if (sucId === usuarioActual.agencia_id) {
+                        banner.innerHTML = `<b>Vista Líder de Sucursal:</b> Mostrando las entrevistas de hoy de tu sucursal (<b>${agNom}</b>). Podés cambiar los filtros si deseás auditar otra sucursal. Tenés habilitada la descarga en GIF.`;
+                    } else if (sucId === 'todas') {
+                        banner.innerHTML = `<b>Vista Líder de Sucursal (${agNom}):</b> Mostrando todas las entrevistas de hoy de toda la empresa. Tenés habilitada la descarga en GIF.`;
+                    } else {
+                        const agSel = globalAgencias.find(a => a.id === sucId);
+                        banner.innerHTML = `<b>Vista Líder de Sucursal (${agNom}):</b> Mostrando entrevistas de hoy de sucursal <b>${agSel ? agSel.nombre : ''}</b>. Tenés habilitada la descarga en GIF.`;
+                    }
+                } else if (usuarioActual.rolTipo === 'LIDER_EQUIPO') {
+                    const eqObj = globalEquipos.find(e => e.id === usuarioActual.equipo_id);
+                    const eqNom = eqObj ? eqObj.nombre : 'Tu Equipo';
+                    if (selEq.value === usuarioActual.equipo_id) {
+                        banner.innerHTML = `<b>Vista Líder de Equipo:</b> Mostrando entrevistas de hoy de tu equipo (<b>${eqNom}</b>). Podés cambiar los filtros para comparar con otros equipos.`;
+                    } else {
+                        banner.innerHTML = `<b>Vista Líder de Equipo (${eqNom}):</b> Mostrando entrevistas de hoy según filtros seleccionados.`;
+                    }
+                } else if (usuarioActual.rolTipo === 'VENDEDOR') {
+                    banner.innerHTML = `<b>Vista Vendedor (${usuarioActual.nombre}):</b> Mostrando entrevistas del día. Podés ver toda la empresa. Tu objetivo diario clave son 5 entrevistas.`;
+                } else if (usuarioActual.rolTipo === 'GERENTE') {
+                    banner.innerHTML = '<b>Vista Gerencia:</b> Control general de actividad diaria de toda la empresa. Tenés habilitada la descarga en GIF y Excel.';
+                } else {
+                    banner.innerHTML = 'Mostrando todas las entrevistas del día de toda la empresa sin restricción. Podés filtrar por sucursal, equipo o vendedor.';
+                }
+                return;
+            }
+
+            // 2. MODO CAMPAÑA ACTUAL:
+            // Aplicar alcances estrictos por rol
+            badgeMeta.style.display = 'none';
+            document.getElementById('kpiTituloMeta').textContent = 'Asesores Activos';
+            document.getElementById('kpiSubMeta').textContent = 'Con al menos 1 entrevista';
+
+            if (usuarioActual.rolTipo === 'VENDEDOR') {
+                // Vendedor: solo ve sus propias entrevistas de campaña
+                selSuc.value = usuarioActual.agencia_id || 'todas';
+                selSuc.disabled = true;
+                selEq.value = usuarioActual.equipo_id || 'todos';
+                selEq.disabled = true;
+                inputBusq.value = usuarioActual.nombre;
+                inputBusq.disabled = true;
+
+                tituloRanking.textContent = 'Mis Entrevistas - Campaña Actual';
+                subRanking.textContent = 'Vista personal exclusiva | ' + globalCampanaActual;
+                banner.innerHTML = '<b>Vista Vendedor:</b> Solo podés ver tus propias entrevistas de la campaña actual (' + globalCampanaActual + ').';
+
+            } else if (usuarioActual.rolTipo === 'LIDER_EQUIPO') {
+                // Líder de Equipo: entrevistas de su equipo en campaña
+                selSuc.value = usuarioActual.agencia_id || 'todas';
+                selSuc.disabled = true;
+                selEq.value = usuarioActual.equipo_id || 'todos';
+                selEq.disabled = true;
+                inputBusq.disabled = false;
+
+                const eqObj = globalEquipos.find(e => e.id === usuarioActual.equipo_id);
+                const eqNom = eqObj ? eqObj.nombre : 'Tu Equipo';
+
+                tituloRanking.textContent = 'Listado de Campaña - Equipo ' + eqNom;
+                subRanking.textContent = 'Auditoría acumulada de tu equipo | ' + globalCampanaActual;
+                banner.innerHTML = '<b>Vista Líder de Equipo:</b> Podés ver las entrevistas de los integrantes de tu equipo (<b>' + eqNom + '</b>) en la campaña actual.';
+
+            } else if (usuarioActual.rolTipo === 'LIDER_SUCURSAL') {
+                // Líder de Sucursal: todas las entrevistas de su sucursal en campaña
+                selSuc.value = usuarioActual.agencia_id || 'todas';
+                selSuc.disabled = true;
+                selEq.disabled = false;
+                poblarSelectEquipos(usuarioActual.agencia_id);
+                inputBusq.disabled = false;
+
+                const agObj = globalAgencias.find(a => a.id === usuarioActual.agencia_id);
+                const agNom = agObj ? agObj.nombre : 'Tu Sucursal';
+
+                tituloRanking.textContent = 'Listado de Campaña - Sucursal ' + agNom;
+                subRanking.textContent = 'Auditoría acumulada de todos los equipos de tu sucursal | ' + globalCampanaActual;
+                banner.innerHTML = '<b>Vista Líder de Sucursal:</b> Podés ver todas las entrevistas de tu sucursal (<b>' + agNom + '</b>) en la campaña actual. Tenés habilitada la descarga en GIF.';
+
+            } else if (usuarioActual.rolTipo === 'GERENTE') {
+                // Gerente: todas las sucursales en campaña
+                selSuc.disabled = false;
+                selEq.disabled = false;
+                inputBusq.disabled = false;
+
+                tituloRanking.textContent = 'Listado General de Campaña (Nacional)';
+                subRanking.textContent = 'Auditoría completa de todas las sucursales de la empresa | ' + globalCampanaActual;
+                banner.innerHTML = '<b>Vista Gerencial:</b> Tenés acceso total a todas las sucursales, equipos y vendedores de la campaña actual. Tenés habilitada la descarga en GIF y Excel.';
+            }
+        }
+
+        function esCuentaExcluidaRanking(nombre) {
+            if (!nombre) return false;
+            const nom = nombre.toUpperCase().trim();
+            return nom === 'AGUERO FRANCO' || 
+                   nom === 'FRANCO AGUERO' || 
+                   nom.includes('ZPRUEBA') || 
+                   nom.includes('(PRUEBA)');
+        }
+
+        // =========================================================================
+        // APLICACIÓN DE FILTROS Y ORDENAMIENTO (ASCENDENTE: MENOS A MÁS)
+        // =========================================================================
         function aplicarFiltros() {
             if (!globalEntrevistas) return;
 
             const sucId = document.getElementById('filtroSucursal').value;
             const eqId = document.getElementById('filtroEquipo').value;
             const busq = document.getElementById('filtroBusqueda').value.toLowerCase().trim();
-            const campSeleccionada = document.getElementById('filtroCampana').value;
+            const campSeleccionada = document.getElementById('filtroCampana').value || globalCampanaActual;
             const fechaDiaSeleccionada = document.getElementById('filtroFechaDia').value;
 
-            // 1. Filtrar entrevistas por fecha / período
+            // 1. Filtrar registros de entrevistas por período
             let entrevistasFiltradas = [];
 
             if (periodoSeleccionado === 'hoy') {
@@ -1338,22 +1851,23 @@
                 document.getElementById('kpiSubPeriodo').textContent = `Día: ${dFormateada}`;
             }
 
-            // 2. Asociar asesores y armar estadísticas (excluyendo bajas)
-            const activeProfileIds = new Set(globalPerfiles.map(p => p.id));
-            const ocultarCero = document.getElementById('filtroOcultarCero') ? document.getElementById('filtroOcultarCero').checked : false;
+            // 2. Mapear entrevistas y calificaciones por vendedor (excluyendo cuentas que no venden o de prueba)
+            const activeProfileIds = new Set(
+                globalPerfiles
+                    .filter(p => !esCuentaExcluidaRanking(p.nombre))
+                    .map(p => p.id)
+            );
             const statsMap = {};
 
             entrevistasFiltradas.forEach(e => {
-                if (!e.vendedor_id) return;
-                // Excluir entrevistas si el asesor está dado de baja o no es activo
-                if (!activeProfileIds.has(e.vendedor_id)) return;
+                if (!e.vendedor_id || !activeProfileIds.has(e.vendedor_id)) return;
 
                 if (!statsMap[e.vendedor_id]) {
                     statsMap[e.vendedor_id] = { total: 0, sumaCalif: 0, cantCalif: 0 };
                 }
                 statsMap[e.vendedor_id].total++;
 
-                // Extraer calificación desde DNI (formato JSON)
+                // Calificación en campo DNI (formato JSON)
                 if (e.dni && e.dni.startsWith('{')) {
                     try {
                         const meta = JSON.parse(e.dni);
@@ -1366,33 +1880,40 @@
                 }
             });
 
-            // 3. Crear lista de asesores filtrados por organización
+            // 3. Filtrar y procesar vendedores
+            const ocultarCero = document.getElementById('filtroOcultarCero') ? document.getElementById('filtroOcultarCero').checked : false;
             let asesoresProcesados = [];
 
             globalPerfiles.forEach(p => {
-                const nomUpper = (p.nombre || '').toUpperCase();
-                if (nomUpper.includes('(BAJA)') || nomUpper.includes('(OCULTO)')) return;
-
-                // Filtro búsqueda por nombre
-                if (busq && !p.nombre.toLowerCase().includes(busq)) return;
-
-                // Buscar equipo y agencia
+                // Excluir cuentas que no venden o de prueba del listado comercial
+                if (esCuentaExcluidaRanking(p.nombre)) return;
                 const eq = globalEquipos.find(e => e.id === p.equipo_id);
                 const ag = eq ? globalAgencias.find(a => a.id === eq.agencia_id) : null;
 
-                // Filtro Sucursal
+                // ALCANCES ESTRICTOS EN MODO CAMPAÑA:
+                if (periodoSeleccionado === 'campana') {
+                    if (usuarioActual.rolTipo === 'VENDEDOR') {
+                        if (p.id !== usuarioActual.id) return;
+                    } else if (usuarioActual.rolTipo === 'LIDER_EQUIPO') {
+                        if (p.equipo_id !== usuarioActual.equipo_id) return;
+                    } else if (usuarioActual.rolTipo === 'LIDER_SUCURSAL') {
+                        if (!ag || ag.id !== usuarioActual.agencia_id) return;
+                    }
+                }
+
+                // Filtros de controles UI:
                 if (sucId !== 'todas') {
                     if (!ag || ag.id !== sucId) return;
                 }
-
-                // Filtro Equipo
                 if (eqId !== 'todos') {
                     if (!eq || eq.id !== eqId) return;
+                }
+                if (busq && !p.nombre.toLowerCase().includes(busq)) {
+                    return;
                 }
 
                 const stats = statsMap[p.id] || { total: 0, sumaCalif: 0, cantCalif: 0 };
 
-                // Si está activado el filtro para ocultar asesores en 0
                 if (ocultarCero && stats.total === 0) return;
 
                 const prom = stats.cantCalif > 0 ? (stats.sumaCalif / stats.cantCalif).toFixed(1) : null;
@@ -1408,23 +1929,25 @@
                 });
             });
 
-            // 4. Ordenamiento: Por Cantidad descendente, luego por promedio de calificación
-            asesoresProcesados.sort((a,b) => {
-                if (b.total !== a.total) return b.total - a.total;
-                const pA = a.promedioCalif ? parseFloat(a.promedioCalif) : 0;
-                const pB = b.promedioCalif ? parseFloat(b.promedioCalif) : 0;
-                return pB - pA;
+            // 4. ORDENAMIENTO ESTRICTO:
+            // "el ordenamiento que le vamos a dar a este listado es desde el que menos entrevistas tiene al que mas entrevistas tiene"
+            asesoresProcesados.sort((a, b) => {
+                if (a.total !== b.total) {
+                    return a.total - b.total; // Menor cantidad primero (0, 1, 2, 3...)
+                }
+                const pA = a.promedioCalif !== null ? parseFloat(a.promedioCalif) : 0;
+                const pB = b.promedioCalif !== null ? parseFloat(b.promedioCalif) : 0;
+                if (pA !== pB) {
+                    return pA - pB; // Menor promedio de calificación primero
+                }
+                return a.nombre.localeCompare(b.nombre);
             });
 
             datosExportarCache = asesoresProcesados;
 
-            // 5. Actualizar KPIs (sólo asesores activos)
+            // 5. KPIs y Métricas
             let totalEntrevistas = 0;
-            entrevistasFiltradas.forEach(e => {
-                if (e.vendedor_id && activeProfileIds.has(e.vendedor_id)) {
-                    totalEntrevistas++;
-                }
-            });
+            asesoresProcesados.forEach(a => { totalEntrevistas += a.total; });
             document.getElementById('kpiTotalEntrevistas').textContent = totalEntrevistas;
 
             let sumaPromedios = 0;
@@ -1452,18 +1975,23 @@
             document.getElementById('kpiPromedioGeneral').textContent = promedioGeneral !== '-' ? `⭐ ${promedioGeneral}` : '-';
             document.getElementById('kpiSubCalificadas').textContent = `${asesoresConPromedio} evaluaciones`;
 
-            if (asesoresProcesados.length > 0 && asesoresProcesados[0].total > 0) {
-                document.getElementById('kpiTopAsesor').textContent = asesoresProcesados[0].nombre;
-                document.getElementById('kpiTopAsesorDato').textContent = `${asesoresProcesados[0].total} entrevistas`;
+            // Líder de Entrevistas (el que más entrevistas tiene)
+            const topAsesor = [...asesoresProcesados].sort((a, b) => b.total - a.total)[0];
+            if (topAsesor && topAsesor.total > 0) {
+                document.getElementById('kpiTopAsesor').textContent = topAsesor.nombre;
+                document.getElementById('kpiTopAsesorDato').textContent = `${topAsesor.total} entrevistas`;
             } else {
                 document.getElementById('kpiTopAsesor').textContent = 'Sin registros';
                 document.getElementById('kpiTopAsesorDato').textContent = '0 entrevistas';
             }
 
-            // 6. Renderizar tabla
+            // 6. Renderizar Tabla
             renderTabla(asesoresProcesados);
         }
 
+        // =========================================================================
+        // RENDERIZADO DE TABLA (META 5 DIARIAS Y ALERTA DE CERO)
+        // =========================================================================
         function renderTabla(asesores) {
             const tbody = document.getElementById('rankingBody');
 
@@ -1471,42 +1999,53 @@
                 tbody.innerHTML = `
                     <tr><td colspan="4" style="text-align:center; padding:35px; color:var(--text-muted);">
                         <i class="fa-solid fa-folder-open" style="font-size:28px; margin-bottom:8px; opacity:0.5;"></i><br>
-                        No se encontraron asesores con los filtros seleccionados.
+                        No se encontraron asesores con los filtros o alcances seleccionados.
                     </td></tr>
                 `;
                 return;
             }
 
-            const maxTotal = asesores.length > 0 && asesores[0].total > 0 ? asesores[0].total : 5;
+            const maxTotal = Math.max(...asesores.map(a => a.total), 5);
 
             tbody.innerHTML = asesores.map((a, idx) => {
                 const pos = idx + 1;
-                let posHtml = `#${pos}`;
-                if (pos === 1) posHtml = `<i class="fa-solid fa-trophy pos-1" title="1° Lugar"></i>`;
-                else if (pos === 2) posHtml = `<i class="fa-solid fa-medal pos-2" title="2° Lugar"></i>`;
-                else if (pos === 3) posHtml = `<i class="fa-solid fa-medal pos-3" title="3° Lugar"></i>`;
-
-                // Meta y barra
+                let badgePosClase = 'badge-pos-pendiente';
+                let barraClase = 'pendiente';
                 let barraPct = 0;
                 let metaTxt = '';
-                let barraClase = '';
 
                 if (periodoSeleccionado === 'campana') {
-                    barraPct = Math.min(100, Math.round((a.total / maxTotal) * 100));
-                    metaTxt = `${barraPct}% del líder`;
-                } else {
-                    // Modo diario: objetivo de 5
-                    barraPct = Math.min(100, Math.round((a.total / 5) * 100));
-                    if (a.total >= 5) {
-                        metaTxt = `<span style="color:#10b981; font-weight:700;"><i class="fa-solid fa-circle-check"></i> 5/5 ¡Cumplido!</span>`;
+                    barraPct = maxTotal > 0 ? Math.min(100, Math.round((a.total / maxTotal) * 100)) : 0;
+                    if (a.total === 0) {
+                        badgePosClase = 'badge-pos-cero';
+                        barraClase = 'cero';
+                        metaTxt = '<span class="txt-alerta-cero">0 entrevistas acumuladas</span>';
                     } else {
-                        barraClase = 'incompleto';
-                        metaTxt = `Faltan ${5 - a.total} para la meta`;
+                        badgePosClase = 'badge-pos-ok';
+                        barraClase = 'cumplido';
+                        metaTxt = `${a.total} entrevistas acumuladas`;
+                    }
+                } else {
+                    // Objetivo clave: 5 entrevistas diarias
+                    barraPct = Math.min(100, Math.round((a.total / 5) * 100));
+
+                    if (a.total === 0) {
+                        badgePosClase = 'badge-pos-cero';
+                        barraClase = 'cero';
+                        metaTxt = '<span class="txt-alerta-cero"><i class="fa-solid fa-circle-exclamation"></i> 0/5 - Sin entrevistas hoy</span>';
+                    } else if (a.total >= 5) {
+                        badgePosClase = 'badge-pos-ok';
+                        barraClase = 'cumplido';
+                        metaTxt = `<span class="txt-cumplido"><i class="fa-solid fa-circle-check"></i> ${a.total}/5 ¡Objetivo Cumplido!</span>`;
+                    } else {
+                        badgePosClase = 'badge-pos-pendiente';
+                        barraClase = 'pendiente';
+                        metaTxt = `<span class="txt-pendiente"><i class="fa-solid fa-clock"></i> Faltan ${5 - a.total} para la meta (5)</span>`;
                     }
                 }
 
-                // Calificación Pill
-                let califHtml = `<span class="calif-pill calif-vacia">S/C</span>`;
+                // Calificación
+                let califHtml = '<span class="calif-pill calif-vacia">S/C</span>';
                 if (a.promedioCalif !== null) {
                     const numCalif = parseFloat(a.promedioCalif);
                     let colorClase = 'calif-alta';
@@ -1523,7 +2062,9 @@
 
                 return `
                     <tr class="ranking-row">
-                        <td class="col-pos">${posHtml}</td>
+                        <td class="col-pos">
+                            <div class="badge-pos ${badgePosClase}">#${pos}</div>
+                        </td>
                         <td class="col-asesor">
                             <div class="asesor-info">
                                 <span class="asesor-nombre">${a.nombre}</span>
@@ -1551,115 +2092,143 @@
         }
 
         // =========================================================================
-        // CONTROL DE ACCESO / DESCARGAS (Líderes de Sucursal y Gerencia)
+        // EXPORTACIÓN A GIF (Exclusivo Líderes de Sucursal y Gerencia)
         // =========================================================================
-        function solicitarDescarga(tipo) {
-            tipoDescargaPendiente = tipo;
-            const autorizada = sessionStorage.getItem('descarga_autorizada_entrevistas') === 'true';
-
-            if (autorizada) {
-                ejecutarDescarga(tipo);
-            } else {
-                document.getElementById('inputPinAuth').value = '';
-                document.getElementById('msgErrorAuth').style.display = 'none';
-                document.getElementById('modalAuth').style.display = 'flex';
-                document.getElementById('inputPinAuth').focus();
-            }
+        function tienePermisoDescarga() {
+            return (usuarioActual.rolTipo === 'GERENTE' || usuarioActual.rolTipo === 'LIDER_SUCURSAL');
         }
 
-        function cerrarModalAuth() {
-            document.getElementById('modalAuth').style.display = 'none';
-            tipoDescargaPendiente = null;
+        function iniciarDescargaGIF() {
+            if (!tienePermisoDescarga()) {
+                abrirModalAuth(false, 'gif');
+                return;
+            }
+            ejecutarDescargaGIF();
         }
 
-        async function procesarAuthDescarga() {
-            const pin = document.getElementById('inputPinAuth').value.trim();
-            const msgError = document.getElementById('msgErrorAuth');
-            msgError.style.display = 'none';
+        async function ejecutarDescargaGIF() {
+            const btn = document.getElementById('btnDescargarGIF');
+            const txtOriginal = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span class="btn-text">Generando GIF...</span>';
+            btn.disabled = true;
 
-            if (!pin) {
-                msgError.textContent = "Por favor, ingresá un PIN.";
-                msgError.style.display = 'block';
-                return;
-            }
+            const captura = document.getElementById('capturaRanking');
+            const watermark = document.getElementById('capturaWatermark');
+            watermark.style.display = 'block';
+            document.getElementById('txtWatermarkFecha').textContent = `Generado el ${new Date().toLocaleString('es-AR')} por ${usuarioActual.nombre}`;
 
-            // 1. PINs Maestros y Gerenciales de Sistema
-            if (pin === 'gpl2026' || pin === '1234' || pin === 'gplgerente' || pin === '5678') {
-                sessionStorage.setItem('descarga_autorizada_entrevistas', 'true');
-                cerrarModalAuth();
-                ejecutarDescarga(tipoDescargaPendiente);
-                return;
-            }
+            const isDark = document.body.classList.contains('dark-mode');
+            const bgColor = isDark ? "#0b131e" : "#f4f6f9";
 
-            // 2. Verificar contra perfiles de Supabase con rol de Líder de Sucursal, Gerencia o Coordinación
             try {
-                const { data, error } = await clienteSupabase
-                    .from('perfiles')
-                    .select('nombre, rol, pin_acceso')
-                    .eq('pin_acceso', pin);
-
-                if (error) throw error;
-
-                const perfilAut = (data || []).find(p => {
-                    const rol = (p.rol || '').toLowerCase();
-                    return rol.includes('lider') || rol.includes('líder') || 
-                           rol.includes('sucursal') || rol.includes('geren') || 
-                           rol.includes('coordinador') || rol.includes('admin');
+                // 1. Capturar primer frame
+                const canvas1 = await html2canvas(captura, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: bgColor
                 });
 
-                if (perfilAut) {
-                    sessionStorage.setItem('descarga_autorizada_entrevistas', 'true');
-                    cerrarModalAuth();
-                    ejecutarDescarga(tipoDescargaPendiente);
+                // 2. Crear segundo frame con animación/efecto para el GIF
+                const canvas2 = document.createElement('canvas');
+                canvas2.width = canvas1.width;
+                canvas2.height = canvas1.height;
+                const ctx2 = canvas2.getContext('2d');
+                ctx2.drawImage(canvas1, 0, 0);
+
+                // Marco dorado dinámico en segundo frame
+                ctx2.strokeStyle = 'rgba(196, 156, 72, 0.7)';
+                ctx2.lineWidth = 8;
+                ctx2.strokeRect(4, 4, canvas2.width - 8, canvas2.height - 8);
+
+                // 3. Generar GIF usando gifshot
+                if (typeof gifshot !== 'undefined' && gifshot.createGIF) {
+                    const targetWidth = Math.min(800, canvas1.width);
+                    const targetHeight = Math.round(targetWidth * (canvas1.height / canvas1.width));
+
+                    gifshot.createGIF({
+                        images: [canvas1.toDataURL('image/png'), canvas2.toDataURL('image/png')],
+                        interval: 0.8,
+                        gifWidth: targetWidth,
+                        gifHeight: Math.min(targetHeight, 1800),
+                        numWorkers: 2
+                    }, function (obj) {
+                        watermark.style.display = 'none';
+                        btn.innerHTML = txtOriginal;
+                        btn.disabled = false;
+
+                        if (!obj.error) {
+                            const animatedImage = obj.image;
+                            const filename = `Listado_Entrevistas_${new Date().toISOString().split('T')[0]}.gif`;
+                            const a = document.createElement('a');
+                            a.href = animatedImage;
+                            a.download = filename;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                        } else {
+                            console.warn("gifshot falló, exportando como PNG:", obj.error);
+                            exportarPNG();
+                        }
+                    });
                 } else {
-                    msgError.textContent = "El PIN ingresado no tiene permisos de Líder de Sucursal o Gerencia.";
-                    msgError.style.display = 'block';
+                    // Fallback directo a PNG si la librería no estuviera disponible
+                    watermark.style.display = 'none';
+                    btn.innerHTML = txtOriginal;
+                    btn.disabled = false;
+                    exportarPNG();
                 }
+
             } catch (err) {
-                console.error("Error al validar PIN:", err);
-                msgError.textContent = "Error al verificar PIN. Intentá nuevamente.";
-                msgError.style.display = 'block';
+                console.error("Error al generar GIF:", err);
+                alert("Error al exportar GIF: " + err.message);
+                watermark.style.display = 'none';
+                btn.innerHTML = txtOriginal;
+                btn.disabled = false;
             }
         }
 
-        function ejecutarDescarga(tipo) {
+        // =========================================================================
+        // EXPORTACIÓN A PNG Y EXCEL
+        // =========================================================================
+        function solicitarDescarga(tipo) {
+            if (!tienePermisoDescarga()) {
+                abrirModalAuth(false, tipo);
+                return;
+            }
             if (tipo === 'png') exportarPNG();
             else if (tipo === 'excel') exportarExcel();
         }
 
-        // =========================================================================
-        // EXPORTACIÓN A PNG (html2canvas)
-        // =========================================================================
         async function exportarPNG() {
             const captura = document.getElementById('capturaRanking');
             const watermark = document.getElementById('capturaWatermark');
-            const btn = document.querySelector('button[onclick="solicitarDescarga(\'png\')"]');
+            const btn = document.getElementById('btnDescargarPNG');
             const txtOriginal = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span class="btn-text">Generando imagen...</span>';
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span class="btn-text">Generando...</span>';
 
             watermark.style.display = 'block';
-            document.getElementById('txtWatermarkFecha').textContent = `Generado el ${new Date().toLocaleString('es-AR')}`;
+            document.getElementById('txtWatermarkFecha').textContent = `Generado el ${new Date().toLocaleString('es-AR')} por ${usuarioActual.nombre}`;
 
             const isDark = document.body.classList.contains('dark-mode');
             const bgColor = isDark ? "#0b131e" : "#f4f6f9";
 
             try {
                 const canvas = await html2canvas(captura, {
-                    scale: 3, // Máxima nitidez para enviar por WhatsApp
+                    scale: 3,
                     useCORS: true,
                     backgroundColor: bgColor
                 });
 
                 canvas.toBlob(async function(blob) {
-                    const filename = `Ranking_Entrevistas_${new Date().toISOString().split('T')[0]}.png`;
+                    const filename = `Listado_Entrevistas_${new Date().toISOString().split('T')[0]}.png`;
                     const file = new File([blob], filename, { type: 'image/png' });
 
                     if (navigator.canShare && navigator.canShare({ files: [file] })) {
                         try {
                             await navigator.share({
                                 files: [file],
-                                title: 'Ranking de Entrevistas ProLider GPL',
-                                text: 'Comparto el ranking oficial de entrevistas ProLider GPL.'
+                                title: 'Listado de Entrevistas ProLider GPL',
+                                text: 'Comparto el listado oficial de entrevistas ProLider GPL.'
                             });
                         } catch (err) {
                             descargarBlob(blob, filename);
@@ -1678,20 +2247,6 @@
             }
         }
 
-        function descargarBlob(blob, filename) {
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-
-        // =========================================================================
-        // EXPORTACIÓN A EXCEL (SheetJS)
-        // =========================================================================
         function exportarExcel() {
             if (!datosExportarCache || datosExportarCache.length === 0) {
                 alert("No hay datos para exportar.");
@@ -1704,21 +2259,33 @@
 
             const filas = datosExportarCache.map((a, idx) => ({
                 "Posición": idx + 1,
-                "Asesor / Vendedor": a.nombre,
+                "Vendedor": a.nombre,
                 "Sucursal": a.agenciaNombre,
                 "Equipo": a.equipoNombre,
                 "Entrevistas Realizadas": a.total,
                 "Meta Diaria (5)": periodoSeleccionado !== 'campana' ? (a.total >= 5 ? 'Cumplida' : 'Pendiente') : 'N/A',
                 "Promedio Calificación": a.promedioCalif || 'Sin Calificación',
                 "Cant. Evaluaciones": a.cantCalif,
-                "Período Auditado": periodoTxt,
-                "Fecha Reporte": new Date().toLocaleDateString('es-AR')
+                "Período": periodoTxt,
+                "Fecha Reporte": new Date().toLocaleDateString('es-AR'),
+                "Exportado Por": usuarioActual.nombre
             }));
 
             const wb = XLSX.utils.book_new();
             const ws = XLSX.utils.json_to_sheet(filas);
-            XLSX.utils.book_append_sheet(wb, ws, "Ranking Entrevistas");
-            XLSX.writeFile(wb, `Ranking_Entrevistas_${new Date().toISOString().split('T')[0]}.xlsx`);
+            XLSX.utils.book_append_sheet(wb, ws, "Listado Entrevistas");
+            XLSX.writeFile(wb, `Listado_Entrevistas_${new Date().toISOString().split('T')[0]}.xlsx`);
+        }
+
+        function descargarBlob(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         }
     </script>
 </body>
