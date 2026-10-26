@@ -181,6 +181,36 @@
             border-color: var(--border-color);
         }
 
+        .btn-user-logout {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            color: #ef4444;
+            cursor: pointer;
+            padding: 4px 10px;
+            border-radius: 16px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            font-family: inherit;
+            transition: all 0.2s;
+            margin-left: 6px;
+        }
+
+        .btn-user-logout:hover {
+            background: #ef4444;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+        }
+
+        .user-chip-publico {
+            background: rgba(100, 116, 139, 0.08) !important;
+            border: 1px solid var(--border-color) !important;
+            cursor: default !important;
+        }
+
         .user-chip-guest:hover {
             border-color: var(--gpl-dorado);
         }
@@ -1014,11 +1044,11 @@
 
         <!-- CHIP DE IDENTIDAD DEL USUARIO -->
         <div class="header-center">
-            <div id="badgeUsuarioActivo" class="user-chip user-chip-guest" onclick="abrirModalAuth(false)">
-                <i class="fa-solid fa-user-lock"></i>
+            <div id="badgeUsuarioActivo" class="user-chip user-chip-publico" style="display: none;">
+                <i class="fa-solid fa-users"></i>
                 <div class="user-chip-info">
-                    <span class="user-chip-name" id="txtUserNombre">Vista Pública</span>
-                    <span class="user-chip-role" id="txtUserRol">Identificate con tu PIN</span>
+                    <span class="user-chip-name" id="txtUserNombre">Modo Público</span>
+                    <span class="user-chip-role" id="txtUserRol">Entrevistas de Hoy</span>
                 </div>
             </div>
         </div>
@@ -1317,11 +1347,30 @@
             const urlParams = new URLSearchParams(window.location.search);
             const urlId = urlParams.get('id');
             const urlMode = urlParams.get('mode') || urlParams.get('rol');
-            const storedId = sessionStorage.getItem('gpl_usuario_id') || localStorage.getItem('gpl_usuario_id');
-            const storedRol = sessionStorage.getItem('gpl_usuario_rol') || localStorage.getItem('gpl_usuario_rol');
 
-            // 1. Gerente por URL o Session
-            if (urlMode === 'gerente' || storedRol === 'Gerencia' || storedRol === 'Gerente') {
+            // MODO PÚBLICO: Cuando se ingresa desde el inicio o sin parámetros
+            // Purgar cualquier sesión previa para no quedarse pegado a ningún perfil comercial
+            if (!urlId && !urlMode) {
+                sessionStorage.removeItem('gpl_usuario_id');
+                sessionStorage.removeItem('gpl_usuario_rol');
+                localStorage.removeItem('gpl_usuario_id');
+                localStorage.removeItem('gpl_usuario_rol');
+
+                usuarioActual = {
+                    id: null,
+                    nombre: 'Vista Pública',
+                    rol: 'Público',
+                    rolTipo: 'INVITADO',
+                    equipo_id: null,
+                    agencia_id: null
+                };
+                periodoSeleccionado = 'hoy';
+                actualizarUIUsuario();
+                return;
+            }
+
+            // 1. Gerente por URL
+            if (urlMode === 'gerente' || urlMode === 'Gerencia' || urlMode === 'Gerente') {
                 establecerUsuario({
                     id: null,
                     nombre: 'Gerencia Comercial',
@@ -1333,17 +1382,25 @@
                 return;
             }
 
-            // 2. Por ID de Perfil (URL o Stored)
-            const idBuscar = urlId || storedId;
-            if (idBuscar) {
-                const perfil = globalPerfiles.find(p => p.id === idBuscar);
+            // 2. Por ID de Perfil desde panel comercial autenticado
+            if (urlId) {
+                const perfil = globalPerfiles.find(p => p.id === urlId);
                 if (perfil) {
                     asignarRolDesdePerfil(perfil);
                     return;
                 }
             }
 
-            // 3. Invitado / Vista pública
+            // Fallback vista pública
+            usuarioActual = {
+                id: null,
+                nombre: 'Vista Pública',
+                rol: 'Público',
+                rolTipo: 'INVITADO',
+                equipo_id: null,
+                agencia_id: null
+            };
+            periodoSeleccionado = 'hoy';
             actualizarUIUsuario();
         }
 
@@ -1355,7 +1412,7 @@
             const equipo = globalEquipos.find(e => e.id === perfil.equipo_id);
             if (equipo) agenciaId = equipo.agencia_id;
 
-            // Determinar si es Líder de Sucursal
+            // Determinar si es Líder de Sucursal (Supervisor de Agencia o rol sucursal)
             const esSupervisorAgencia = globalAgencias.some(a => a.supervisor_id === perfil.id);
             if (rolStr.includes('sucursal') || esSupervisorAgencia) {
                 rolTipo = 'LIDER_SUCURSAL';
@@ -1383,14 +1440,13 @@
             usuarioActual = u;
             if (u.id) {
                 sessionStorage.setItem('gpl_usuario_id', u.id);
-                localStorage.setItem('gpl_usuario_id', u.id);
             } else {
                 sessionStorage.removeItem('gpl_usuario_id');
-                localStorage.removeItem('gpl_usuario_id');
             }
             if (u.rol) {
                 sessionStorage.setItem('gpl_usuario_rol', u.rol);
-                localStorage.setItem('gpl_usuario_rol', u.rol);
+            } else {
+                sessionStorage.removeItem('gpl_usuario_rol');
             }
 
             aplicarDefaultsFiltrosPorUsuario();
@@ -1447,60 +1503,118 @@
 
         function actualizarUIUsuario() {
             const badge = document.getElementById('badgeUsuarioActivo');
-            const txtNombre = document.getElementById('txtUserNombre');
-            const txtRol = document.getElementById('txtUserRol');
             const btnGif = document.getElementById('btnDescargarGIF');
             const btnPng = document.getElementById('btnDescargarPNG');
             const btnExcel = document.getElementById('btnDescargarExcel');
+            const tabHoy = document.getElementById('tabHoy');
+            const tabCampana = document.getElementById('tabCampana');
+            const tabFecha = document.getElementById('tabFecha');
+            const btnVolver = document.getElementById('btnVolver');
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const fromPanel = urlParams.get('from');
 
             if (usuarioActual.rolTipo === 'INVITADO') {
-                badge.className = 'user-chip user-chip-guest';
-                badge.onclick = () => abrirModalAuth(false);
-                txtNombre.textContent = 'Vista Pública';
-                txtRol.textContent = 'Clic para identificarte';
-                // En vista pública, botones visibles (piden PIN al hacer clic)
-                btnGif.style.display = 'inline-flex';
-                btnPng.style.display = 'inline-flex';
-                btnExcel.style.display = 'inline-flex';
+                // MODO PÚBLICO (Nadie en particular)
+                // Sin descargas, sin pestaña de campaña, sin registro ni PIN modal
+                badge.style.display = 'inline-flex';
+                badge.className = 'user-chip user-chip-publico';
+                badge.onclick = null;
+                badge.style.cursor = 'default';
+                badge.innerHTML = `
+                    <i class="fa-solid fa-users" style="color:var(--text-secondary);"></i>
+                    <div class="user-chip-info">
+                        <span class="user-chip-name">Modo Público</span>
+                        <span class="user-chip-role">Entrevistas del Día</span>
+                    </div>
+                `;
+
+                // Ocultar descargas
+                btnGif.style.display = 'none';
+                btnPng.style.display = 'none';
+                btnExcel.style.display = 'none';
+
+                // Solo disponible pestaña de HOY
+                if (tabCampana) tabCampana.style.display = 'none';
+                if (tabFecha) tabFecha.style.display = 'none';
+                if (tabHoy) {
+                    tabHoy.style.display = 'inline-flex';
+                    tabHoy.classList.add('active');
+                }
+                periodoSeleccionado = 'hoy';
+
+                // Volver va al inicio
+                btnVolver.href = 'index.html';
+                btnVolver.innerHTML = '<i class="fa-solid fa-arrow-left"></i> <span class="btn-text">Inicio</span>';
+
             } else {
+                // MODO AUTENTICADO (Acceso desde un panel comercial)
+                badge.style.display = 'inline-flex';
                 badge.className = 'user-chip';
                 badge.onclick = null;
-                txtNombre.textContent = usuarioActual.nombre;
-                
+                badge.style.cursor = 'default';
+
                 let etiquetaRol = 'Vendedor';
                 if (usuarioActual.rolTipo === 'GERENTE') etiquetaRol = 'Gerencia Comercial';
                 else if (usuarioActual.rolTipo === 'LIDER_SUCURSAL') etiquetaRol = 'Líder de Sucursal';
                 else if (usuarioActual.rolTipo === 'LIDER_EQUIPO') etiquetaRol = 'Líder de Equipo';
-                
-                txtRol.textContent = etiquetaRol;
 
-                // Botón cambiar usuario
-                if (!badge.querySelector('.btn-user-switch')) {
-                    const btnSwitch = document.createElement('button');
-                    btnSwitch.className = 'btn-user-switch';
-                    btnSwitch.title = 'Cambiar perfil o usuario';
-                    btnSwitch.innerHTML = '<i class="fa-solid fa-arrow-right-arrow-left"></i>';
-                    btnSwitch.onclick = (e) => {
-                        e.stopPropagation();
-                        abrirModalAuth(true);
-                    };
-                    badge.appendChild(btnSwitch);
+                // Chip con identificación y botón para salir a modo público ("volver a nadie en particular")
+                badge.innerHTML = `
+                    <i class="fa-solid fa-user-check"></i>
+                    <div class="user-chip-info">
+                        <span class="user-chip-name">${usuarioActual.nombre}</span>
+                        <span class="user-chip-role">${etiquetaRol}</span>
+                    </div>
+                    <button class="btn-user-logout" onclick="salirAModoPublico()" title="Volver a Modo Público (nadie en particular)">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i> Salir a Público
+                    </button>
+                `;
+
+                // Pestañas visibles: HOY y CAMPAÑA ACTUAL
+                if (tabHoy) tabHoy.style.display = 'inline-flex';
+                if (tabCampana) tabCampana.style.display = 'inline-flex';
+                if (tabFecha) tabFecha.style.display = 'none';
+
+                // Permisos de descarga: solo Líderes de Sucursal y Gerente
+                const tienePermiso = (usuarioActual.rolTipo === 'GERENTE' || usuarioActual.rolTipo === 'LIDER_SUCURSAL');
+                btnGif.style.display = tienePermiso ? 'inline-flex' : 'none';
+                btnPng.style.display = tienePermiso ? 'inline-flex' : 'none';
+                btnExcel.style.display = tienePermiso ? 'inline-flex' : 'none';
+
+                // Botón Volver regresa al panel de origen
+                if (fromPanel === 'gerencia' || usuarioActual.rolTipo === 'GERENTE') {
+                    btnVolver.href = 'panel_gerencia.html';
+                    btnVolver.innerHTML = '<i class="fa-solid fa-arrow-left"></i> <span class="btn-text">Panel Gerencia</span>';
+                } else if (fromPanel === 'supervisor' || usuarioActual.rolTipo === 'LIDER_SUCURSAL') {
+                    btnVolver.href = `panel_supervisor.html?id=${encodeURIComponent(usuarioActual.id)}`;
+                    btnVolver.innerHTML = '<i class="fa-solid fa-arrow-left"></i> <span class="btn-text">Mi Panel</span>';
+                } else if (fromPanel === 'lider' || usuarioActual.rolTipo === 'LIDER_EQUIPO') {
+                    btnVolver.href = `panel_lider.html?id=${encodeURIComponent(usuarioActual.id)}`;
+                    btnVolver.innerHTML = '<i class="fa-solid fa-arrow-left"></i> <span class="btn-text">Mi Panel</span>';
+                } else if (fromPanel === 'coordinador') {
+                    btnVolver.href = `panel_coordinador.html?id=${encodeURIComponent(usuarioActual.id)}`;
+                    btnVolver.innerHTML = '<i class="fa-solid fa-arrow-left"></i> <span class="btn-text">Mi Panel</span>';
+                } else if (fromPanel === 'vendedor' || usuarioActual.rolTipo === 'VENDEDOR') {
+                    btnVolver.href = `panel_vendedor.html?id=${encodeURIComponent(usuarioActual.id)}`;
+                    btnVolver.innerHTML = '<i class="fa-solid fa-arrow-left"></i> <span class="btn-text">Mi Panel</span>';
+                } else {
+                    btnVolver.href = 'index.html';
+                    btnVolver.innerHTML = '<i class="fa-solid fa-arrow-left"></i> <span class="btn-text">Inicio</span>';
                 }
-
-                // Permisos de descarga:
-                // "solo pueden descargar en gif Lideres de sucursal y gerente"
-                const tienePermisoDescarga = (usuarioActual.rolTipo === 'GERENTE' || usuarioActual.rolTipo === 'LIDER_SUCURSAL');
-                btnGif.style.display = tienePermisoDescarga ? 'inline-flex' : 'none';
-                btnPng.style.display = tienePermisoDescarga ? 'inline-flex' : 'none';
-                btnExcel.style.display = tienePermisoDescarga ? 'inline-flex' : 'none';
             }
 
             actualizarControlesPorPeriodoYRol();
         }
 
-        // =========================================================================
-        // MODAL DE AUTENTICACIÓN / CAMBIO DE USUARIO
-        // =========================================================================
+        function salirAModoPublico() {
+            sessionStorage.removeItem('gpl_usuario_id');
+            sessionStorage.removeItem('gpl_usuario_rol');
+            localStorage.removeItem('gpl_usuario_id');
+            localStorage.removeItem('gpl_usuario_rol');
+            window.location.href = 'ranking_entrevistas.html';
+        }
+
         function abrirModalAuth(esCambio = false, accion = null) {
             tipoAccionPendiente = accion;
             const modal = document.getElementById('modalAuth');
@@ -1656,9 +1770,7 @@
         // MANEJO DE PERÍODOS (HOY vs CAMPAÑA ACTUAL)
         // =========================================================================
         function cambiarPeriodo(tipo) {
-            // Si eligen Campaña Actual y no están identificados, pedir PIN
             if (tipo === 'campana' && usuarioActual.rolTipo === 'INVITADO') {
-                abrirModalAuth(false, 'campana');
                 return;
             }
 
@@ -1671,18 +1783,18 @@
             if (tipo === 'hoy') {
                 document.getElementById('tabHoy').classList.add('active');
                 gCampana.style.display = 'none';
-                gFecha.style.display = 'none';
+                if (gFecha) gFecha.style.display = 'none';
                 aplicarDefaultsFiltrosPorUsuario();
             } else if (tipo === 'campana') {
                 document.getElementById('tabCampana').classList.add('active');
                 gCampana.style.display = 'flex';
-                gFecha.style.display = 'none';
+                if (gFecha) gFecha.style.display = 'none';
                 document.getElementById('filtroCampana').value = globalCampanaActual;
                 aplicarDefaultsFiltrosPorUsuario();
             } else if (tipo === 'fecha') {
                 document.getElementById('tabFecha').classList.add('active');
                 gCampana.style.display = 'none';
-                gFecha.style.display = 'flex';
+                if (gFecha) gFecha.style.display = 'flex';
             }
 
             actualizarControlesPorPeriodoYRol();
@@ -2100,7 +2212,7 @@
 
         function iniciarDescargaGIF() {
             if (!tienePermisoDescarga()) {
-                abrirModalAuth(false, 'gif');
+                alert('La descarga en GIF está reservada exclusivamente para Líderes de Sucursal y Gerencia.');
                 return;
             }
             ejecutarDescargaGIF();
@@ -2192,7 +2304,7 @@
         // =========================================================================
         function solicitarDescarga(tipo) {
             if (!tienePermisoDescarga()) {
-                abrirModalAuth(false, tipo);
+                alert('Las descargas están reservadas exclusivamente para Líderes de Sucursal y Gerencia.');
                 return;
             }
             if (tipo === 'png') exportarPNG();

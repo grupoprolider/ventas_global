@@ -498,6 +498,9 @@
         <!-- FIN MÓDULO -->
 
         <div class="botones-accion">
+            <button class="btn-accion btn-ver-tablero" onclick="abrirListadoEntrevistas()" style="background: linear-gradient(45deg, #0a3a46, #14596b); color: white; box-shadow: 0 4px 15px rgba(10,58,70,0.4);">
+                <i class="fa-solid fa-comments"></i> Listado de Entrevistas
+            </button>
             <button class="btn-accion btn-ver-ranking" onclick="abrirRanking()">
                 <i class="fa-solid fa-trophy"></i> Ver Ranking Nacional
             </button>
@@ -586,6 +589,10 @@
             }
             if (transcurridos === 0) transcurridos = 1;
             return { totales, transcurridos, restantes: Math.max(0, totales - transcurridos) };
+        }
+
+        function abrirListadoEntrevistas() {
+            window.location.href = 'ranking_entrevistas.html?id=' + encodeURIComponent(idSeguroURL) + '&from=supervisor';
         }
 
         function abrirRanking() {
