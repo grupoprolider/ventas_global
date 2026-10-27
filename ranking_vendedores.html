@@ -610,10 +610,10 @@
             let hojaDetalle = L_Vtas.map(v => {
                 let vend = L_Perfiles.find(p => p.id === v.vendedor_id);
                 let eq = vend ? L_Equipos.find(e => e.id === vend.equipo_id) : null;
-                let idVenta = v.numero_solicitud ? String(v.numero_solicitud).replace(/_BAJA$/i, '').trim() : "-";
+                let idVenta = v.numero_solicitud ? String(v.numero_solicitud).trim() : (v.id ? String(v.id) : "-");
                 return { 
                     "Fecha de Registro": new Date(v.created_at).toLocaleDateString('es-AR'), 
-                    "ID de Venta": idVenta, 
+                    "ID Venta / Baja": idVenta, 
                     "Vendedor/a": vend ? vend.nombre : "S/N", 
                     "Equipo": eq ? eq.nombre : "Sin Equipo", 
                     "Vts Brutas": v.ventas_cerradas || 0, 

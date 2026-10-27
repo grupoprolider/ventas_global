@@ -1369,7 +1369,7 @@
                 
                 return { 
                     "Fecha de Registro": new Date(v.created_at).toLocaleDateString('es-AR'), 
-                    "Semana Informada": "Semana " + (v.semana || "-"), 
+                    "ID Venta / Baja": v.numero_solicitud ? String(v.numero_solicitud).trim() : (v.id ? String(v.id) : "-"), 
                     "Vendedor/a": vend ? vend.nombre : "S/N", 
                     "Equipo": eq ? eq.nombre : "Sin Equipo", 
                     "Agencia": ag ? ag.nombre : "Sin Agencia",

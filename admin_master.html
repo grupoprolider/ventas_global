@@ -416,6 +416,7 @@
                             <button type="button" onclick="document.getElementById('filtro_id_audit').value=''; cargarAuditoria();" title="Limpiar ID" style="background:none; border:none; color:#999; cursor:pointer; padding:0 2px; font-size:12px;"><i class="fa-solid fa-xmark"></i></button>
                         </div>
                         <button onclick="cargarAuditoria()" style="padding: 5px 15px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;"><i class="fa-solid fa-search"></i> Filtrar</button>
+                        <button onclick="exportarAuditoriaExcel()" style="padding: 5px 15px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-left: 8px;"><i class="fa-solid fa-file-excel"></i> Exportar a Excel</button>
                     </div>
                 </div>
                 <div style="overflow-x: auto;"><table id="tabla_auditoria">
@@ -948,7 +949,8 @@
                 } else if (v.es_anulada) {
                     btnAccion = `<span style="color:#e74c3c; font-weight:bold; font-size:12px;"><i class="fa-solid fa-ban"></i> ANULADA</span>`;
                 } else {
-                    btnAccion = `<button class="btn-baja" onclick="darDeBajaVenta('${v.id}')"><i class="fa-solid fa-arrow-trend-down"></i> DAR DE BAJA</button>`;
+                    btnAccion = `<button class="btn-baja" onclick="darDeBajaVenta('${v.id}')" title="Dar de baja (compensa con asiento de baja)"><i class="fa-solid fa-arrow-trend-down"></i> DAR DE BAJA</button>`;
+                    btnAccion += `<button class="btn-anular" onclick="anularVentaAuditada('${v.id}', '${v.numero_solicitud || ''}')" style="background:#e67e22; color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer; margin-left:6px; font-size:11px; font-weight:bold;" title="Anular venta (quitar de auditadas sin contar como baja)"><i class="fa-solid fa-ban"></i> ANULAR</button>`;
                 }
                 
                 btnAccion += `<button style="background:#f39c12; color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer; margin-left: 10px;" onclick="abrirModalEditarVenta('${v.id}')" title="Editar"><i class="fa-solid fa-pen"></i></button>`;
@@ -966,6 +968,54 @@
                     </tr>
                 `;
             }).join('');
+        }
+
+        async function anularVentaAuditada(idVentaOriginal, nroSol) {
+            let idTexto = nroSol ? `(ID Solicitud: ${nroSol})` : '';
+            if (!confirm(`¿Confirmás la ANULACIÓN de esta venta ${idTexto}?\n\nA diferencia de una Baja, la venta anulada se quita definitivamente del listado de ventas auditadas y de la base de datos (no sumará venta ni se contará como baja).`)) return;
+
+            try {
+                if (nroSol) {
+                    const { error } = await clienteSupabase.from('registro_ventas').delete().or(`numero_solicitud.eq.${nroSol},numero_solicitud.eq.${nroSol}_BAJA`);
+                    if (error) throw error;
+                } else {
+                    const { error } = await clienteSupabase.from('registro_ventas').delete().eq('id', idVentaOriginal);
+                    if (error) throw error;
+                }
+                alert("Venta anulada y quitada de la base de datos con éxito.");
+                cargarAuditoria();
+            } catch (err) {
+                console.error("Error al anular venta:", err);
+                alert("Error al anular venta: " + err.message);
+            }
+        }
+
+        function exportarAuditoriaExcel() {
+            if (!window.datosAuditoria || window.datosAuditoria.length === 0) {
+                return alert("No hay datos en la tabla de auditoría para exportar.");
+            }
+            const filas = window.datosAuditoria.map(v => {
+                let nombreVendedor = globalGenteAudit.find(p => p.id === v.vendedor_id)?.nombre || 'Desconocido';
+                let esReversion = v.monto < 0 || v.beneficio?.includes("BAJA");
+                let idVenta = v.numero_solicitud ? String(v.numero_solicitud).trim() : (v.id ? String(v.id) : "-");
+                let tipoEstado = esReversion ? "Baja / Reversión" : (v.es_anulada ? "Anulada" : "Auditada (Alta)");
+                return {
+                    "Fecha": v.created_at ? new Date(v.created_at).toLocaleDateString('es-AR') : "-",
+                    "ID Venta / Baja": idVenta,
+                    "Vendedor": nombreVendedor,
+                    "Tipo / Estado": tipoEstado,
+                    "Vts Brutas": esReversion ? 0 : (v.ventas_cerradas || 0),
+                    "Bajas Registradas": esReversion ? (v.bajas || 1) : 0,
+                    "Ventas Netas": (v.ventas_cerradas || 0) - (v.bajas || 0),
+                    "Importe ($)": v.monto || 0,
+                    "Beneficio / Detalle": v.beneficio || "-",
+                    "Medio de Pago": v.medio_pago || "-"
+                };
+            });
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(filas), "Auditoria Ventas y Bajas");
+            XLSX.writeFile(wb, `Auditoria_Ventas_Bajas_${new Date().toISOString().split('T')[0]}.xlsx`);
         }
 
         async function darDeBajaVenta(idVentaOriginal) {
@@ -1171,9 +1221,11 @@
                     let procesadas = 0;
                     let ignoradasVentas = 0;
                     let bajasNuevas = 0;
+                    let anuladasEliminadas = 0;
                     let errores = 0;
                     let msjs = [];
                     let bajasDetalles = [];
+                    let anuladasDetalles = [];
 
                     const { data: perfilesDB } = await clienteSupabase.from('perfiles').select('id, nombre, equipo_id');
                     
@@ -1250,7 +1302,8 @@
                         const nMeses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
                         let campanaCalculada = `Campaña ${nMeses[tMes]} ${tAnio}`;
                         
-                        let esBaja = estadoStr.includes('baja') || estadoStr.includes('rechazad') || estadoStr.includes('anulad') || estadoStr.includes('caida');
+                        let esAnulada = estadoStr.includes('anulad');
+                        let esBaja = !esAnulada && (estadoStr.includes('baja') || estadoStr.includes('rechazad') || estadoStr.includes('caida'));
                         
                         // Buscar en DB todos los registros asociados a este ID de solicitud (tanto el alta como cualquier baja previa)
                         const { data: dbVenta } = await clienteSupabase.from('registro_ventas')
@@ -1264,7 +1317,36 @@
                         let altaPendiente = window.operacionesExcelPendientes.find(op => op.data && op.data.numero_solicitud === nroSol && op.tipo === 'insert' && op.data.ventas_cerradas > 0);
                         let bajaPendiente = window.operacionesExcelPendientes.find(op => op.data && op.tipo === 'insert' && (op.data.numero_solicitud === nroSol + '_BAJA' || op.data.numero_solicitud === nroSol) && op.data.bajas > 0);
 
-                        if (!esBaja) {
+                        if (esAnulada) {
+                            // ES VENTA ANULADA:
+                            // "esta anulada no es una BAJA, pero hay que quitarla del listado de las ventas auditadas"
+                            // 1. Si vino en este mismo archivo como alta previamente:
+                            let idxPend = window.operacionesExcelPendientes.findIndex(op => op.data && op.data.numero_solicitud === nroSol && op.tipo === 'insert');
+                            if (idxPend !== -1) {
+                                window.operacionesExcelPendientes.splice(idxPend, 1);
+                                procesadas--;
+                                anuladasEliminadas++;
+                                anuladasDetalles.push(`Fila ${i+2}: ID ${nroSol} -> ANULADA en el mismo archivo (quitada de la carga).`);
+                            }
+
+                            // 2. Si ya existía en la base de datos (subida previamente como Auditada):
+                            if (records.length > 0) {
+                                records.forEach(rec => {
+                                    window.operacionesExcelPendientes.push({
+                                        tipo: 'delete',
+                                        id: rec.id,
+                                        nroSol: rec.numero_solicitud || nroSol,
+                                        desc: 'Venta Anulada (eliminada de DB)'
+                                    });
+                                });
+                                anuladasEliminadas++;
+                                anuladasDetalles.push(`Fila ${i+2}: ID ${nroSol} (${nomVendedor || 'Venta original'}) -> ANULADA (se quitará de la base de datos).`);
+                            } else if (idxPend === -1) {
+                                msjs.push("Fila " + (i+2) + ": ID " + nroSol + " figura ANULADA (no existe en DB, ignorada).");
+                                ignoradasVentas++;
+                            }
+                            continue;
+                        } else if (!esBaja) {
                             let yaExisteAlta = altaVenta || altaPendiente;
                             if (yaExisteAlta) {
                                 ignoradasVentas++;
@@ -1356,12 +1438,19 @@
                         detalleBajasHtml = "<div style='margin-top:10px; max-height:120px; overflow-y:auto; color:#2ecc71; font-size:12px; background:#1b2a22; padding:8px; border-radius:4px;'><b><i class='fa-solid fa-circle-check'></i> Bajas listas para aplicar (" + bajasDetalles.length + "):</b><br>" + bajasDetalles.join('<br>') + "</div>";
                     }
 
+                    let detalleAnuladasHtml = '';
+                    if (anuladasDetalles.length > 0) {
+                        detalleAnuladasHtml = "<div style='margin-top:10px; max-height:120px; overflow-y:auto; color:#f39c12; font-size:12px; background:#2a231b; padding:8px; border-radius:4px;'><b><i class='fa-solid fa-ban'></i> Ventas Anuladas que se quitarán de la base (" + anuladasDetalles.length + "):</b><br>" + anuladasDetalles.join('<br>') + "</div>";
+                    }
+
                     resultDiv.innerHTML = "<h4 style='margin:0 0 10px 0; color:#f39c12;'>Previsualización de Subida</h4>" +
-                        "<p style='margin:0;'>Ventas nuevas listas para registrar: <b>" + procesadas + "</b></p>" +
-                        "<p style='margin:0;'>Bajas/Anulaciones listas para aplicar: <b>" + bajasNuevas + "</b></p>" +
-                        "<p style='margin:0; color:#aaa;'>Ventas/Bajas ignoradas (ya existían): <b>" + ignoradasVentas + "</b></p>" +
+                        "<p style='margin:0;'>Ventas nuevas listas para registrar (Altas): <b>" + procesadas + "</b></p>" +
+                        "<p style='margin:0;'>Bajas listas para aplicar: <b>" + bajasNuevas + "</b></p>" +
+                        "<p style='margin:0;'>Ventas ANULADAS a quitar de la base: <b>" + anuladasEliminadas + "</b></p>" +
+                        "<p style='margin:0; color:#aaa;'>Ventas/Bajas ignoradas (ya existían / sin cambios): <b>" + ignoradasVentas + "</b></p>" +
                         "<p style='margin:0; color:#e74c3c;'>Errores (filas saltadas): <b>" + errores + "</b></p>" +
                         detalleBajasHtml +
+                        detalleAnuladasHtml +
                         (msjs.length > 0 ? "<div style='margin-top:10px; max-height:150px; overflow-y:auto; font-size:11px; color:#e74c3c; line-height: 1.5;'>" + msjs.join('<br>') + "</div>" : "");
                     
                     if (window.operacionesExcelPendientes.length > 0) {
@@ -1390,6 +1479,8 @@
                         await clienteSupabase.from('registro_ventas').insert([op.data]);
                     } else if (op.tipo === 'update') {
                         await clienteSupabase.from('registro_ventas').update(op.data).eq('id', op.id);
+                    } else if (op.tipo === 'delete') {
+                        await clienteSupabase.from('registro_ventas').delete().eq('id', op.id);
                     }
                 }
                 
