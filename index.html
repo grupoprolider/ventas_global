@@ -207,7 +207,22 @@
 
         <button onclick="window.location.href='competencias.html'" style="width:100%; margin:15px 0 10px 0; padding:15px; background:linear-gradient(45deg, #f1c40f, #e67e22); color:white; border:none; border-radius:10px; font-size:16px; font-weight:bold; cursor:pointer; box-shadow: 0 4px 15px rgba(241,196,15,0.4);"><i class="fa-solid fa-trophy"></i> VER COMPETENCIAS ACTIVAS</button>
 
-        <button onclick="window.location.href='ranking_entrevistas.html'" style="width:100%; margin:0 0 15px 0; padding:15px; background:linear-gradient(45deg, #0a3a46, #14596b); color:white; border:none; border-radius:10px; font-size:16px; font-weight:bold; cursor:pointer; box-shadow: 0 4px 15px rgba(10,58,70,0.3); transition: transform 0.15s, box-shadow 0.15s;"><i class="fa-solid fa-comments"></i> LISTADO DE ENTREVISTAS</button>
+        <!-- TOP 10 ENTREVISTAS DEL DÍA -->
+        <div class="ranking-diario-wrapper" style="margin: 5px 0 15px 0;">
+            <div class="ranking-diario-caja entrevistas" style="border-top: 4px solid #14596b; background: rgba(255, 255, 255, 0.95); border-radius: 12px; padding: 12px 14px; box-shadow: 0 4px 15px rgba(10,58,70,0.12);">
+                <div class="ranking-diario-titulo" style="font-size: 12px; font-weight: 800; color: #0a3a46; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #edf2f7; padding-bottom: 6px;">
+                    <span style="display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-trophy" style="color: #f1c40f;"></i> TOP 10 ENTREVISTAS DE HOY
+                    </span>
+                    <span id="txtFechaTop10" style="font-size: 10px; font-weight: 600; color: #7f8c8d; text-transform: none;"></span>
+                </div>
+                <div class="ranking-diario-lista" id="listaTop10Entrevistas" style="max-height: 320px; overflow-y: auto; padding-right: 4px;">
+                    <div class="ranking-diario-vacio" style="padding: 15px 10px; color: #888; font-size: 11px; text-align: center;">
+                        <i class="fa-solid fa-spinner fa-spin" style="margin-right: 6px;"></i> Cargando mejores del día...
+                    </div>
+                </div>
+            </div>
+        </div>
 
 
         <div class="seccion-acceso">
@@ -362,8 +377,128 @@
             }
         }
 
+        function esCuentaExcluidaTop10(nombre) {
+            if (!nombre) return true;
+            const nom = nombre.toUpperCase().trim();
+            return nom === 'AGUERO FRANCO' || 
+                   nom === 'FRANCO AGUERO' || 
+                   nom.includes('ZPRUEBA') || 
+                   nom.includes('(PRUEBA)') || 
+                   nom.includes('(BAJA)') || 
+                   nom.includes('(OCULTO)');
+        }
+
+        async function cargarTop10Entrevistas() {
+            const contenedor = document.getElementById('listaTop10Entrevistas');
+            const txtFecha = document.getElementById('txtFechaTop10');
+            if (txtFecha) {
+                txtFecha.textContent = new Date().toLocaleDateString('es-AR');
+            }
+            if (!contenedor) return;
+
+            try {
+                // Consultar registros desde el inicio del día anterior para asegurar sincronización horaria
+                const d = new Date();
+                d.setDate(d.getDate() - 1);
+                d.setHours(0, 0, 0, 0);
+
+                const [resEntrevistas, resPerfiles] = await Promise.all([
+                    clienteSupabase
+                        .from('registro_entrevistas')
+                        .select('id, vendedor_id, created_at')
+                        .gte('created_at', d.toISOString()),
+                    clienteSupabase
+                        .from('perfiles')
+                        .select('id, nombre')
+                ]);
+
+                if (resEntrevistas.error) throw resEntrevistas.error;
+                if (resPerfiles.error) throw resPerfiles.error;
+
+                const mapaNombres = {};
+                (resPerfiles.data || []).forEach(p => { mapaNombres[p.id] = p.nombre; });
+
+                const hoyStr = new Date().toLocaleDateString('es-AR');
+                const entrevistasHoy = (resEntrevistas.data || []).filter(e => {
+                    return e.created_at && new Date(e.created_at).toLocaleDateString('es-AR') === hoyStr;
+                });
+
+                const conteos = {};
+                entrevistasHoy.forEach(e => {
+                    if (!e.vendedor_id) return;
+                    conteos[e.vendedor_id] = (conteos[e.vendedor_id] || 0) + 1;
+                });
+
+                const ranking = [];
+                Object.keys(conteos).forEach(vId => {
+                    const nom = mapaNombres[vId] || 'Asesor';
+                    if (esCuentaExcluidaTop10(nom)) return;
+                    const total = conteos[vId];
+                    if (total > 0) {
+                        ranking.push({ id: vId, nombre: nom, total: total });
+                    }
+                });
+
+                // Ordenar descendentemente: los mejores primero
+                ranking.sort((a, b) => {
+                    if (b.total !== a.total) return b.total - a.total;
+                    return a.nombre.localeCompare(b.nombre);
+                });
+
+                const top10 = ranking.slice(0, 10);
+
+                if (top10.length === 0) {
+                    contenedor.innerHTML = `
+                        <div class="ranking-diario-vacio" style="padding: 16px 10px; color: #7f8c8d; font-size: 11px; text-align: center;">
+                            <i class="fa-solid fa-calendar-day" style="font-size: 20px; margin-bottom: 6px; opacity: 0.5; display: block; color: #14596b;"></i>
+                            Aún no hay entrevistas registradas hoy.
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                top10.forEach((item, idx) => {
+                    let posIcon = `#${idx + 1}`;
+                    let medallaColor = '#555';
+                    if (idx === 0) { posIcon = '🥇'; medallaColor = '#d4af37'; }
+                    else if (idx === 1) { posIcon = '🥈'; medallaColor = '#95a5a6'; }
+                    else if (idx === 2) { posIcon = '🥉'; medallaColor = '#cd7f32'; }
+
+                    html += `
+                        <div class="ranking-diario-item" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 4px; border-bottom: 1px solid #f0f0f0; font-size: 11px;">
+                            <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1;">
+                                <span style="font-weight: 900; min-width: 24px; text-align: center; color: ${medallaColor}; font-size: 12px;">
+                                    ${posIcon}
+                                </span>
+                                <span class="ranking-diario-nombre" style="font-weight: 700; color: #2c3e50; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${item.nombre}">
+                                    ${item.nombre}
+                                </span>
+                            </div>
+                            <span class="ranking-diario-valor" style="font-weight: 800; color: #0a3a46; background: #e8f4f8; padding: 2px 8px; border-radius: 12px; font-size: 11px; white-space: nowrap; margin-left: 8px;">
+                                ${item.total} ${item.total === 1 ? 'entrevista' : 'entrevistas'}
+                            </span>
+                        </div>
+                    `;
+                });
+
+                contenedor.innerHTML = html;
+
+            } catch (err) {
+                console.error("Error cargando Top 10 de entrevistas:", err);
+                contenedor.innerHTML = `
+                    <div class="ranking-diario-vacio" style="padding: 12px; color: #c0392b; font-size: 11px;">
+                        No se pudo cargar el ranking del día.
+                    </div>
+                `;
+            }
+        }
+
         async function initApp() {
-            await cargarListaVendedores();
+            await Promise.all([
+                cargarListaVendedores(),
+                cargarTop10Entrevistas()
+            ]);
         }
         
         initApp();

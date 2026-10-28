@@ -1571,10 +1571,16 @@
                     </button>
                 `;
 
-                // Pestañas visibles: HOY y CAMPAÑA ACTUAL
+                // Pestañas visibles: HOY siempre, CAMPAÑA ACTUAL exclusivamente para Gerencia Comercial
                 if (tabHoy) tabHoy.style.display = 'inline-flex';
-                if (tabCampana) tabCampana.style.display = 'inline-flex';
+                if (tabCampana) tabCampana.style.display = (usuarioActual.rolTipo === 'GERENTE') ? 'inline-flex' : 'none';
                 if (tabFecha) tabFecha.style.display = 'none';
+
+                if (usuarioActual.rolTipo !== 'GERENTE') {
+                    periodoSeleccionado = 'hoy';
+                    if (tabHoy) tabHoy.classList.add('active');
+                    if (tabCampana) tabCampana.classList.remove('active');
+                }
 
                 // Permisos de descarga: solo Líderes de Sucursal y Gerente
                 const tienePermiso = (usuarioActual.rolTipo === 'GERENTE' || usuarioActual.rolTipo === 'LIDER_SUCURSAL');
@@ -1770,7 +1776,8 @@
         // MANEJO DE PERÍODOS (HOY vs CAMPAÑA ACTUAL)
         // =========================================================================
         function cambiarPeriodo(tipo) {
-            if (tipo === 'campana' && usuarioActual.rolTipo === 'INVITADO') {
+            if (tipo === 'campana' && usuarioActual.rolTipo !== 'GERENTE') {
+                alert("El acceso a la Campaña Actual es exclusivo de Gerencia Comercial.");
                 return;
             }
 
@@ -1801,7 +1808,7 @@
             aplicarFiltros();
         }
 
-        function actualizarControlesPorPeriodoYRol() {
+                function actualizarControlesPorPeriodoYRol() {
             const selSuc = document.getElementById('filtroSucursal');
             const selEq = document.getElementById('filtroEquipo');
             const inputBusq = document.getElementById('filtroBusqueda');
@@ -1810,109 +1817,106 @@
             const subRanking = document.getElementById('subtituloVistaRanking');
             const badgeMeta = document.getElementById('badgeMetaVisual');
 
-            // 1. MODO HOY (O FECHA):
-            // "todos pueden ver las entrevistas del dia, todas sin distincion, vendedor, lider de equipo, lider de sucursal y gerente.."
-            if (periodoSeleccionado === 'hoy' || periodoSeleccionado === 'fecha') {
-                selSuc.disabled = false;
-                selEq.disabled = false;
-                inputBusq.disabled = false;
+            // Si no es Gerente, forzar periodoSeleccionado = 'hoy'
+            if (usuarioActual.rolTipo !== 'GERENTE' && periodoSeleccionado !== 'hoy') {
+                periodoSeleccionado = 'hoy';
+                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                const btnHoy = document.getElementById('tabHoy');
+                if (btnHoy) btnHoy.classList.add('active');
+            }
 
-                tituloRanking.textContent = periodoSeleccionado === 'hoy' ? 'Listado Diario de Entrevistas' : 'Auditoría de Entrevistas por Fecha';
-                subRanking.textContent = 'Ordenado de menor a mayor actividad | Meta individual clave: 5 entrevistas por día';
+            // 1. MODO HOY (O FECHA):
+            if (periodoSeleccionado === 'hoy' || periodoSeleccionado === 'fecha') {
                 badgeMeta.style.display = 'inline-flex';
                 badgeMeta.innerHTML = '<i class="fa-solid fa-bullseye"></i> Objetivo Diario: 5 entrevistas';
                 document.getElementById('kpiTituloMeta').textContent = 'Meta Cumplida (≥ 5)';
                 document.getElementById('kpiSubMeta').textContent = 'Asesores con 5+ hoy';
 
-                const sucId = selSuc.value;
+                if (usuarioActual.rolTipo === 'INVITADO') {
+                    // Modo Público: Top 10 del día
+                    selSuc.value = 'todas';
+                    selSuc.disabled = true;
+                    selEq.value = 'todos';
+                    selEq.disabled = true;
+                    inputBusq.value = '';
+                    inputBusq.disabled = true;
 
-                if (usuarioActual.rolTipo === 'LIDER_SUCURSAL') {
-                    const agObj = globalAgencias.find(a => a.id === usuarioActual.agencia_id);
-                    const agNom = agObj ? agObj.nombre : 'Tu Sucursal';
-                    if (sucId === usuarioActual.agencia_id) {
-                        banner.innerHTML = `<b>Vista Líder de Sucursal:</b> Mostrando las entrevistas de hoy de tu sucursal (<b>${agNom}</b>). Podés cambiar los filtros si deseás auditar otra sucursal. Tenés habilitada la descarga en GIF.`;
-                    } else if (sucId === 'todas') {
-                        banner.innerHTML = `<b>Vista Líder de Sucursal (${agNom}):</b> Mostrando todas las entrevistas de hoy de toda la empresa. Tenés habilitada la descarga en GIF.`;
-                    } else {
-                        const agSel = globalAgencias.find(a => a.id === sucId);
-                        banner.innerHTML = `<b>Vista Líder de Sucursal (${agNom}):</b> Mostrando entrevistas de hoy de sucursal <b>${agSel ? agSel.nombre : ''}</b>. Tenés habilitada la descarga en GIF.`;
-                    }
+                    badgeMeta.innerHTML = '<i class="fa-solid fa-trophy"></i> Top 10 del Día';
+                    tituloRanking.textContent = 'Top 10 Entrevistas del Día';
+                    subRanking.textContent = 'Los 10 mejores desempeños de hoy en toda la empresa | Meta: 5 entrevistas';
+                    banner.innerHTML = '<b>Modo Público:</b> Visualizando el Top 10 de mejores desempeños del día en toda la empresa.';
+
+                } else if (usuarioActual.rolTipo === 'VENDEDOR') {
+                    // Vendedor: solo sus entrevistas de hoy
+                    if (usuarioActual.agencia_id) selSuc.value = usuarioActual.agencia_id;
+                    selSuc.disabled = true;
+                    if (usuarioActual.equipo_id) selEq.value = usuarioActual.equipo_id;
+                    selEq.disabled = true;
+                    inputBusq.value = usuarioActual.nombre;
+                    inputBusq.disabled = true;
+
+                    tituloRanking.textContent = 'Mis Entrevistas de Hoy';
+                    subRanking.textContent = 'Tu actividad personal de hoy | Meta individual clave: 5 entrevistas';
+                    banner.innerHTML = '<b>Vista Vendedor (' + usuarioActual.nombre + '):</b> Mostrando tus entrevistas del día. Tu objetivo diario clave: 5 entrevistas.';
+
                 } else if (usuarioActual.rolTipo === 'LIDER_EQUIPO') {
+                    // Líder de Equipo: solo las de él y su equipo de hoy
+                    if (usuarioActual.agencia_id) selSuc.value = usuarioActual.agencia_id;
+                    selSuc.disabled = true;
+                    if (usuarioActual.equipo_id) selEq.value = usuarioActual.equipo_id;
+                    selEq.disabled = true;
+                    inputBusq.disabled = false;
+
                     const eqObj = globalEquipos.find(e => e.id === usuarioActual.equipo_id);
                     const eqNom = eqObj ? eqObj.nombre : 'Tu Equipo';
-                    if (selEq.value === usuarioActual.equipo_id) {
-                        banner.innerHTML = `<b>Vista Líder de Equipo:</b> Mostrando entrevistas de hoy de tu equipo (<b>${eqNom}</b>). Podés cambiar los filtros para comparar con otros equipos.`;
-                    } else {
-                        banner.innerHTML = `<b>Vista Líder de Equipo (${eqNom}):</b> Mostrando entrevistas de hoy según filtros seleccionados.`;
+
+                    tituloRanking.textContent = 'Listado Diario - Equipo ' + eqNom;
+                    subRanking.textContent = 'Actividad de hoy de tu equipo | Meta individual clave: 5 entrevistas por asesor';
+                    banner.innerHTML = '<b>Vista Líder de Equipo:</b> Mostrando las entrevistas de hoy de tu equipo (<b>' + eqNom + '</b>). Podés buscar vendedores dentro de tu equipo.';
+
+                } else if (usuarioActual.rolTipo === 'LIDER_SUCURSAL') {
+                    // Líder de Sucursal: entrevistas de hoy de su sucursal, con filtro por equipo habilitado
+                    if (usuarioActual.agencia_id) {
+                        selSuc.value = usuarioActual.agencia_id;
+                        poblarSelectEquipos(usuarioActual.agencia_id);
                     }
-                } else if (usuarioActual.rolTipo === 'VENDEDOR') {
-                    banner.innerHTML = `<b>Vista Vendedor (${usuarioActual.nombre}):</b> Mostrando entrevistas del día. Podés ver toda la empresa. Tu objetivo diario clave son 5 entrevistas.`;
+                    selSuc.disabled = true;
+                    selEq.disabled = false; // "podriamos dejarle un filtro por equipo"
+                    inputBusq.disabled = false;
+
+                    const agObj = globalAgencias.find(a => a.id === usuarioActual.agencia_id);
+                    const agNom = agObj ? agObj.nombre : 'Tu Sucursal';
+
+                    tituloRanking.textContent = 'Listado Diario - Sucursal ' + agNom;
+                    subRanking.textContent = 'Actividad de hoy de tu sucursal | Podés filtrar por equipo | Meta: 5 entrevistas';
+                    banner.innerHTML = '<b>Vista Líder de Sucursal:</b> Mostrando las entrevistas del día de tu sucursal (<b>' + agNom + '</b>). Podés filtrar por equipo dentro de tu sucursal. Tenés habilitada la descarga en GIF.';
+
                 } else if (usuarioActual.rolTipo === 'GERENTE') {
-                    banner.innerHTML = '<b>Vista Gerencia:</b> Control general de actividad diaria de toda la empresa. Tenés habilitada la descarga en GIF y Excel.';
-                } else {
-                    banner.innerHTML = 'Mostrando todas las entrevistas del día de toda la empresa sin restricción. Podés filtrar por sucursal, equipo o vendedor.';
+                    // Gerente: control general diario
+                    selSuc.disabled = false;
+                    selEq.disabled = false;
+                    inputBusq.disabled = false;
+
+                    tituloRanking.textContent = 'Listado Diario General de Entrevistas';
+                    subRanking.textContent = 'Actividad del día de toda la empresa | Meta individual clave: 5 entrevistas';
+                    banner.innerHTML = '<b>Vista Gerencial:</b> Control diario general de toda la empresa. Podés filtrar por sucursal, equipo o vendedor. Tenés habilitada la descarga en GIF y Excel.';
                 }
                 return;
             }
 
-            // 2. MODO CAMPAÑA ACTUAL:
-            // Aplicar alcances estrictos por rol
-            badgeMeta.style.display = 'none';
-            document.getElementById('kpiTituloMeta').textContent = 'Asesores Activos';
-            document.getElementById('kpiSubMeta').textContent = 'Con al menos 1 entrevista';
+            // 2. MODO CAMPAÑA ACTUAL (EXCLUSIVO GERENCIA COMERCIAL):
+            if (usuarioActual.rolTipo === 'GERENTE') {
+                badgeMeta.style.display = 'none';
+                document.getElementById('kpiTituloMeta').textContent = 'Asesores Activos';
+                document.getElementById('kpiSubMeta').textContent = 'Con al menos 1 entrevista';
 
-            if (usuarioActual.rolTipo === 'VENDEDOR') {
-                // Vendedor: solo ve sus propias entrevistas de campaña
-                selSuc.value = usuarioActual.agencia_id || 'todas';
-                selSuc.disabled = true;
-                selEq.value = usuarioActual.equipo_id || 'todos';
-                selEq.disabled = true;
-                inputBusq.value = usuarioActual.nombre;
-                inputBusq.disabled = true;
-
-                tituloRanking.textContent = 'Mis Entrevistas - Campaña Actual';
-                subRanking.textContent = 'Vista personal exclusiva | ' + globalCampanaActual;
-                banner.innerHTML = '<b>Vista Vendedor:</b> Solo podés ver tus propias entrevistas de la campaña actual (' + globalCampanaActual + ').';
-
-            } else if (usuarioActual.rolTipo === 'LIDER_EQUIPO') {
-                // Líder de Equipo: entrevistas de su equipo en campaña
-                selSuc.value = usuarioActual.agencia_id || 'todas';
-                selSuc.disabled = true;
-                selEq.value = usuarioActual.equipo_id || 'todos';
-                selEq.disabled = true;
-                inputBusq.disabled = false;
-
-                const eqObj = globalEquipos.find(e => e.id === usuarioActual.equipo_id);
-                const eqNom = eqObj ? eqObj.nombre : 'Tu Equipo';
-
-                tituloRanking.textContent = 'Listado de Campaña - Equipo ' + eqNom;
-                subRanking.textContent = 'Auditoría acumulada de tu equipo | ' + globalCampanaActual;
-                banner.innerHTML = '<b>Vista Líder de Equipo:</b> Podés ver las entrevistas de los integrantes de tu equipo (<b>' + eqNom + '</b>) en la campaña actual.';
-
-            } else if (usuarioActual.rolTipo === 'LIDER_SUCURSAL') {
-                // Líder de Sucursal: todas las entrevistas de su sucursal en campaña
-                selSuc.value = usuarioActual.agencia_id || 'todas';
-                selSuc.disabled = true;
-                selEq.disabled = false;
-                poblarSelectEquipos(usuarioActual.agencia_id);
-                inputBusq.disabled = false;
-
-                const agObj = globalAgencias.find(a => a.id === usuarioActual.agencia_id);
-                const agNom = agObj ? agObj.nombre : 'Tu Sucursal';
-
-                tituloRanking.textContent = 'Listado de Campaña - Sucursal ' + agNom;
-                subRanking.textContent = 'Auditoría acumulada de todos los equipos de tu sucursal | ' + globalCampanaActual;
-                banner.innerHTML = '<b>Vista Líder de Sucursal:</b> Podés ver todas las entrevistas de tu sucursal (<b>' + agNom + '</b>) en la campaña actual. Tenés habilitada la descarga en GIF.';
-
-            } else if (usuarioActual.rolTipo === 'GERENTE') {
-                // Gerente: todas las sucursales en campaña
                 selSuc.disabled = false;
                 selEq.disabled = false;
                 inputBusq.disabled = false;
 
                 tituloRanking.textContent = 'Listado General de Campaña (Nacional)';
                 subRanking.textContent = 'Auditoría completa de todas las sucursales de la empresa | ' + globalCampanaActual;
-                banner.innerHTML = '<b>Vista Gerencial:</b> Tenés acceso total a todas las sucursales, equipos y vendedores de la campaña actual. Tenés habilitada la descarga en GIF y Excel.';
+                banner.innerHTML = '<b>Vista Gerencial:</b> Tenés acceso total a todas las sucursales, equipos y vendedores de la campaña actual (' + globalCampanaActual + '). Tenés habilitada la descarga en GIF y Excel.';
             }
         }
 
@@ -1928,7 +1932,7 @@
         // =========================================================================
         // APLICACIÓN DE FILTROS Y ORDENAMIENTO (ASCENDENTE: MENOS A MÁS)
         // =========================================================================
-        function aplicarFiltros() {
+                function aplicarFiltros() {
             if (!globalEntrevistas) return;
 
             const sucId = document.getElementById('filtroSucursal').value;
@@ -1946,8 +1950,8 @@
                     if (!e.created_at) return false;
                     return new Date(e.created_at).toLocaleDateString('es-AR') === hoyStr;
                 });
-                document.getElementById('kpiSubPeriodo').textContent = `Hoy (${hoyStr})`;
-            } else if (periodoSeleccionado === 'campana') {
+                document.getElementById('kpiSubPeriodo').textContent = 'Hoy (' + hoyStr + ')';
+            } else if (periodoSeleccionado === 'campana' && usuarioActual.rolTipo === 'GERENTE') {
                 entrevistasFiltradas = globalEntrevistas.filter(e => e.campana === campSeleccionada);
                 document.getElementById('kpiSubPeriodo').textContent = campSeleccionada || 'Campaña';
             } else if (periodoSeleccionado === 'fecha') {
@@ -1957,10 +1961,10 @@
                     const y = d.getFullYear();
                     const m = String(d.getMonth() + 1).padStart(2, '0');
                     const dia = String(d.getDate()).padStart(2, '0');
-                    return `${y}-${m}-${dia}` === fechaDiaSeleccionada;
+                    return (y + '-' + m + '-' + dia) === fechaDiaSeleccionada;
                 });
                 const dFormateada = fechaDiaSeleccionada.split('-').reverse().join('/');
-                document.getElementById('kpiSubPeriodo').textContent = `Día: ${dFormateada}`;
+                document.getElementById('kpiSubPeriodo').textContent = 'Día: ' + dFormateada;
             }
 
             // 2. Mapear entrevistas y calificaciones por vendedor (excluyendo cuentas que no venden o de prueba)
@@ -1992,7 +1996,7 @@
                 }
             });
 
-            // 3. Filtrar y procesar vendedores
+            // 3. Filtrar y procesar vendedores según rol y controles UI
             const ocultarCero = document.getElementById('filtroOcultarCero') ? document.getElementById('filtroOcultarCero').checked : false;
             let asesoresProcesados = [];
 
@@ -2002,15 +2006,16 @@
                 const eq = globalEquipos.find(e => e.id === p.equipo_id);
                 const ag = eq ? globalAgencias.find(a => a.id === eq.agencia_id) : null;
 
-                // ALCANCES ESTRICTOS EN MODO CAMPAÑA:
-                if (periodoSeleccionado === 'campana') {
-                    if (usuarioActual.rolTipo === 'VENDEDOR') {
-                        if (p.id !== usuarioActual.id) return;
-                    } else if (usuarioActual.rolTipo === 'LIDER_EQUIPO') {
-                        if (p.equipo_id !== usuarioActual.equipo_id) return;
-                    } else if (usuarioActual.rolTipo === 'LIDER_SUCURSAL') {
-                        if (!ag || ag.id !== usuarioActual.agencia_id) return;
-                    }
+                // ALCANCES ESTRICTOS POR ROL:
+                if (usuarioActual.rolTipo === 'VENDEDOR') {
+                    // Vendedor solo se ve a sí mismo
+                    if (p.id !== usuarioActual.id) return;
+                } else if (usuarioActual.rolTipo === 'LIDER_EQUIPO') {
+                    // Líder de Equipo solo ve a su equipo y a sí mismo
+                    if (p.equipo_id !== usuarioActual.equipo_id && p.id !== usuarioActual.id) return;
+                } else if (usuarioActual.rolTipo === 'LIDER_SUCURSAL') {
+                    // Líder de Sucursal solo ve su sucursal
+                    if (!ag || ag.id !== usuarioActual.agencia_id) return;
                 }
 
                 // Filtros de controles UI:
@@ -2026,7 +2031,12 @@
 
                 const stats = statsMap[p.id] || { total: 0, sumaCalif: 0, cantCalif: 0 };
 
-                if (ocultarCero && stats.total === 0) return;
+                // Para INVITADO, obligatoriamente ocultar los de 0 porque es el Top 10
+                if (usuarioActual.rolTipo === 'INVITADO') {
+                    if (stats.total === 0) return;
+                } else if (ocultarCero && stats.total === 0) {
+                    return;
+                }
 
                 const prom = stats.cantCalif > 0 ? (stats.sumaCalif / stats.cantCalif).toFixed(1) : null;
 
@@ -2042,18 +2052,36 @@
             });
 
             // 4. ORDENAMIENTO ESTRICTO:
-            // "el ordenamiento que le vamos a dar a este listado es desde el que menos entrevistas tiene al que mas entrevistas tiene"
-            asesoresProcesados.sort((a, b) => {
-                if (a.total !== b.total) {
-                    return a.total - b.total; // Menor cantidad primero (0, 1, 2, 3...)
-                }
-                const pA = a.promedioCalif !== null ? parseFloat(a.promedioCalif) : 0;
-                const pB = b.promedioCalif !== null ? parseFloat(b.promedioCalif) : 0;
-                if (pA !== pB) {
-                    return pA - pB; // Menor promedio de calificación primero
-                }
-                return a.nombre.localeCompare(b.nombre);
-            });
+            if (usuarioActual.rolTipo === 'INVITADO') {
+                // Top 10 del día: mayor cantidad primero (descendente)
+                asesoresProcesados.sort((a, b) => {
+                    if (b.total !== a.total) return b.total - a.total;
+                    const pA = a.promedioCalif !== null ? parseFloat(a.promedioCalif) : 0;
+                    const pB = b.promedioCalif !== null ? parseFloat(b.promedioCalif) : 0;
+                    if (pB !== pA) return pB - pA;
+                    return a.nombre.localeCompare(b.nombre);
+                });
+                asesoresProcesados = asesoresProcesados.slice(0, 10);
+            } else if (periodoSeleccionado === 'campana') {
+                // Modo Campaña (Gerente): mayor cantidad primero (descendente)
+                asesoresProcesados.sort((a, b) => {
+                    if (b.total !== a.total) return b.total - a.total;
+                    const pA = a.promedioCalif !== null ? parseFloat(a.promedioCalif) : 0;
+                    const pB = b.promedioCalif !== null ? parseFloat(b.promedioCalif) : 0;
+                    if (pB !== pA) return pB - pA;
+                    return a.nombre.localeCompare(b.nombre);
+                });
+            } else {
+                // Modo Diario Comercial (Vendedor, Líder de Equipo, Líder de Sucursal, Gerente):
+                // Ordenado de menor a mayor actividad (0, 1, 2, 3...) para auditar meta 5
+                asesoresProcesados.sort((a, b) => {
+                    if (a.total !== b.total) return a.total - b.total;
+                    const pA = a.promedioCalif !== null ? parseFloat(a.promedioCalif) : 0;
+                    const pB = b.promedioCalif !== null ? parseFloat(b.promedioCalif) : 0;
+                    if (pA !== pB) return pA - pB;
+                    return a.nombre.localeCompare(b.nombre);
+                });
+            }
 
             datosExportarCache = asesoresProcesados;
 
@@ -2084,14 +2112,14 @@
             const promedioGeneral = asesoresConPromedio > 0 
                 ? (sumaPromedios / asesoresConPromedio).toFixed(1) 
                 : '-';
-            document.getElementById('kpiPromedioGeneral').textContent = promedioGeneral !== '-' ? `⭐ ${promedioGeneral}` : '-';
-            document.getElementById('kpiSubCalificadas').textContent = `${asesoresConPromedio} evaluaciones`;
+            document.getElementById('kpiPromedioGeneral').textContent = promedioGeneral !== '-' ? ('⭐ ' + promedioGeneral) : '-';
+            document.getElementById('kpiSubCalificadas').textContent = asesoresConPromedio + ' evaluaciones';
 
-            // Líder de Entrevistas (el que más entrevistas tiene)
+            // Líder de Entrevistas
             const topAsesor = [...asesoresProcesados].sort((a, b) => b.total - a.total)[0];
             if (topAsesor && topAsesor.total > 0) {
                 document.getElementById('kpiTopAsesor').textContent = topAsesor.nombre;
-                document.getElementById('kpiTopAsesorDato').textContent = `${topAsesor.total} entrevistas`;
+                document.getElementById('kpiTopAsesorDato').textContent = topAsesor.total + ' entrevistas';
             } else {
                 document.getElementById('kpiTopAsesor').textContent = 'Sin registros';
                 document.getElementById('kpiTopAsesorDato').textContent = '0 entrevistas';
@@ -2101,17 +2129,17 @@
             renderTabla(asesoresProcesados);
         }
 
-        // =========================================================================
-        // RENDERIZADO DE TABLA (META 5 DIARIAS Y ALERTA DE CERO)
-        // =========================================================================
-        function renderTabla(asesores) {
+                function renderTabla(asesores) {
             const tbody = document.getElementById('rankingBody');
 
             if (!asesores || asesores.length === 0) {
+                const mensaje = (usuarioActual.rolTipo === 'INVITADO')
+                    ? 'Aún no hay entrevistas registradas hoy.'
+                    : 'No se encontraron asesores con los filtros o alcances seleccionados.';
                 tbody.innerHTML = `
                     <tr><td colspan="4" style="text-align:center; padding:35px; color:var(--text-muted);">
                         <i class="fa-solid fa-folder-open" style="font-size:28px; margin-bottom:8px; opacity:0.5;"></i><br>
-                        No se encontraron asesores con los filtros o alcances seleccionados.
+                        ${mensaje}
                     </td></tr>
                 `;
                 return;
@@ -2125,6 +2153,11 @@
                 let barraClase = 'pendiente';
                 let barraPct = 0;
                 let metaTxt = '';
+
+                let posLabel = '#' + pos;
+                if ((usuarioActual.rolTipo === 'INVITADO' || periodoSeleccionado === 'campana') && pos === 1) posLabel = '🥇';
+                else if ((usuarioActual.rolTipo === 'INVITADO' || periodoSeleccionado === 'campana') && pos === 2) posLabel = '🥈';
+                else if ((usuarioActual.rolTipo === 'INVITADO' || periodoSeleccionado === 'campana') && pos === 3) posLabel = '🥉';
 
                 if (periodoSeleccionado === 'campana') {
                     barraPct = maxTotal > 0 ? Math.min(100, Math.round((a.total / maxTotal) * 100)) : 0;

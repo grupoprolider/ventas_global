@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gpl-cache-v1793105500000';
+const CACHE_NAME = 'gpl-cache-v1793106800000';
 
 self.addEventListener('install', (event) => {
     // Instalación rápida sin esperar
