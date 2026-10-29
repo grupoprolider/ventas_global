@@ -196,7 +196,7 @@
                 while(hasMore) {
                     const { data: vPage } = await clienteSupabase
                         .from('registro_ventas')
-                        .select('vendedor_id, monto, created_at, es_anulada, ventas_cerradas, bajas')
+                        .select('id, vendedor_id, monto, created_at, fecha, es_anulada, ventas_cerradas, bajas, beneficio, numero_solicitud')
                         .gte('created_at', fromStr)
                         .lte('created_at', toStr)
                         .range(page * pageSize, (page + 1) * pageSize - 1);
@@ -242,7 +242,26 @@
                 let fFinStr = comp.fecha_fin + 'T23:59:59Z';
 
                 let ventasPeriodo = ventas.filter(v => {
-                    return v.created_at >= fInicioStr && v.created_at <= fFinStr;
+                    if (v.es_anulada) return false;
+                    const cAt = v.created_at;
+                    if (cAt < fInicioStr || cAt > fFinStr) return false;
+
+                    // Si es una baja, verificar que no sea una reversión de una venta previa a esta competencia
+                    if (Number(v.bajas || 0) > 0) {
+                        if (v.beneficio) {
+                            const match = v.beneficio.match(/orig. del (\d{1,2})\/(\d{1,2})\/(\d{4})/i);
+                            if (match) {
+                                const d = match[1].padStart(2, '0');
+                                const m = match[2].padStart(2, '0');
+                                const y = match[3];
+                                const fechaOrig = y + '-' + m + '-' + d;
+                                if (fechaOrig < comp.fecha_inicio) {
+                                    return false; // La venta original fue antes del inicio de esta competencia
+                                }
+                            }
+                        }
+                    }
+                    return true;
                 });
 
                 let participantesData = [];
@@ -251,8 +270,8 @@
                     participantesData = comp.participantes.map(id => {
                         let vend = vendedores.find(v => v.id == id);
                         let vtsVend = ventasPeriodo.filter(v => v.vendedor_id == id);
-                        let monto = vtsVend.reduce((sum, v) => sum + Number(v.monto || 0), 0);
-                        let ventasNetas = vtsVend.reduce((sum, v) => sum + Number(v.ventas_cerradas || 0) - Number(v.bajas || 0), 0);
+                        let monto = Math.max(0, vtsVend.reduce((sum, v) => sum + Number(v.monto || 0), 0));
+                        let ventasNetas = Math.max(0, vtsVend.reduce((sum, v) => sum + Number(v.ventas_cerradas || 0) - Number(v.bajas || 0), 0));
                         return { nombre: vend ? vend.nombre : 'Desconocido', total: ventasNetas, monto: monto };
                     });
                 } else if (comp.tipo === 'equipos') {
@@ -260,8 +279,8 @@
                         let eq = equipos.find(e => e.id == id);
                         let vendsEquipo = vendedores.filter(v => v.equipo_id == id).map(v => v.id);
                         let vtsEq = ventasPeriodo.filter(v => vendsEquipo.includes(v.vendedor_id));
-                        let monto = vtsEq.reduce((sum, v) => sum + Number(v.monto || 0), 0);
-                        let ventasNetas = vtsEq.reduce((sum, v) => sum + Number(v.ventas_cerradas || 0) - Number(v.bajas || 0), 0);
+                        let monto = Math.max(0, vtsEq.reduce((sum, v) => sum + Number(v.monto || 0), 0));
+                        let ventasNetas = Math.max(0, vtsEq.reduce((sum, v) => sum + Number(v.ventas_cerradas || 0) - Number(v.bajas || 0), 0));
                         return { nombre: eq ? eq.nombre : 'Desconocido', total: ventasNetas, monto: monto };
                     });
                 } else if (comp.tipo === 'vendedores_1v1') {
@@ -273,10 +292,10 @@
                         let vend2 = vendedores.find(v => v.id == id2);
                         
                         let vtsVend1 = ventasPeriodo.filter(v => v.vendedor_id == id1);
-                        let total1 = vtsVend1.reduce((sum, v) => sum + Number(v.ventas_cerradas || 0) - Number(v.bajas || 0), 0);
+                        let total1 = Math.max(0, vtsVend1.reduce((sum, v) => sum + Number(v.ventas_cerradas || 0) - Number(v.bajas || 0), 0));
                         
                         let vtsVend2 = ventasPeriodo.filter(v => v.vendedor_id == id2);
-                        let total2 = vtsVend2.reduce((sum, v) => sum + Number(v.ventas_cerradas || 0) - Number(v.bajas || 0), 0);
+                        let total2 = Math.max(0, vtsVend2.reduce((sum, v) => sum + Number(v.ventas_cerradas || 0) - Number(v.bajas || 0), 0));
                         
                         let ag1 = vend1 ? agencias.find(a => a.id === equipos.find(e => e.id === vend1.equipo_id)?.agencia_id)?.nombre : '';
                         let ag2 = vend2 ? agencias.find(a => a.id === equipos.find(e => e.id === vend2.equipo_id)?.agencia_id)?.nombre : '';
@@ -305,7 +324,7 @@
                         let vendsAgencia = vendedores.filter(v => eqsAgencia.includes(v.equipo_id)).map(v => v.id);
                         let vtsAg = ventasPeriodo.filter(v => vendsAgencia.includes(v.vendedor_id));
                         let monto = vtsAg.reduce((sum, v) => sum + Number(v.monto || 0), 0);
-                        let ventasNetas = vtsAg.reduce((sum, v) => sum + Number(v.ventas_cerradas || 0) - Number(v.bajas || 0), 0);
+                        let ventasNetas = Math.max(0, vtsAg.reduce((sum, v) => sum + Number(v.ventas_cerradas || 0) - Number(v.bajas || 0), 0));
                         return { nombre: ag ? ag.nombre : 'Desconocido', total: ventasNetas, monto: monto };
                     });
                 }

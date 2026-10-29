@@ -1108,7 +1108,9 @@
                 semana: venta.semana,
                 campana: venta.campana,
                 beneficio: `BAJA (por Líd. Sucursal: ${nombreSupervisor}) - Op orig. del ${new Date(venta.created_at).toLocaleDateString()}`,
-                medio_pago: 'Reversión'
+                medio_pago: 'Reversión',
+                created_at: venta.created_at,
+                fecha: venta.fecha || (venta.created_at ? venta.created_at.split('T')[0] : new Date().toISOString().split('T')[0])
             };
             const { error: errInsert } = await clienteSupabase.from('registro_ventas').insert([payloadInsert]);
 
