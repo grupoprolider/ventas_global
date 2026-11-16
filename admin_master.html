@@ -391,47 +391,108 @@
 
         <div id="tab4" class="tab-content">
             <div class="card-admin">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-                    <h3 style="margin: 0;">Auditoría de Ventas</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid #334455; padding-bottom: 15px;">
+                    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                        <h3 style="margin: 0; border: none; padding: 0; display: inline-flex; align-items: center; gap: 8px; color: var(--gpl-dorado); font-size: 18px; font-weight: 800; letter-spacing: 0.5px;">
+                            <i class="fa-solid fa-list-check"></i> AUDITORÍA DE VENTAS
+                        </h3>
+                        <span id="lbl_total_audit" style="font-size: 12px; font-weight: 700; background: rgba(164, 42, 104, 0.25); color: #f5a6cb; padding: 4px 12px; border-radius: 12px; border: 1px solid rgba(164, 42, 104, 0.5);">500 operaciones</span>
+                    </div>
                     <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                        <div style="display:flex; align-items:center; gap:5px; background:white; padding: 2px 5px; border-radius: 4px;">
-                            <span style="color: #444; font-size:12px; font-weight:bold;">Desde:</span>
-                            <input type="date" id="filtro_fecha_desde_audit" style="color: #333; border:none; outline:none; padding:3px; font-size:14px; background:transparent;">
-                        </div>
-                        <div style="display:flex; align-items:center; gap:5px; background:white; padding: 2px 5px; border-radius: 4px;">
-                            <span style="color: #444; font-size:12px; font-weight:bold;">Hasta:</span>
-                            <input type="date" id="filtro_fecha_hasta_audit" style="color: #333; border:none; outline:none; padding:3px; font-size:14px; background:transparent;">
-                        </div>
-                        <select id="filtro_vendedor_audit" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc; max-width: 200px;">
-                            <option value="">Todos los vendedores</option>
-                        </select>
-                        <select id="filtro_tipo_audit" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc; max-width: 200px;">
-                            <option value="">Todo (Ventas y Bajas)</option>
-                            <option value="ventas">Solo Ventas</option>
-                            <option value="bajas">Solo Bajas</option>
-                        </select>
-                        <div style="display:flex; align-items:center; gap:6px; background:white; padding: 2px 8px; border-radius: 4px; border: 1px solid #ccc;">
-                            <i class="fa-solid fa-hashtag" style="color: #888; font-size:12px;"></i>
-                            <input type="text" id="filtro_id_audit" placeholder="Buscar ID Solicitud..." style="color: #333; border:none; outline:none; padding:4px 0; font-size:13px; background:transparent; width: 160px;" onkeydown="if(event.key==='Enter') cargarAuditoria()">
-                            <button type="button" onclick="document.getElementById('filtro_id_audit').value=''; cargarAuditoria();" title="Limpiar ID" style="background:none; border:none; color:#999; cursor:pointer; padding:0 2px; font-size:12px;"><i class="fa-solid fa-xmark"></i></button>
-                        </div>
-                        <button onclick="cargarAuditoria()" style="padding: 5px 15px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;"><i class="fa-solid fa-search"></i> Filtrar</button>
-                        <button onclick="exportarAuditoriaExcel()" style="padding: 5px 15px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-left: 8px;"><i class="fa-solid fa-file-excel"></i> Exportar a Excel</button>
+                        <button onclick="exportarAuditoriaExcel()" style="padding: 9px 18px; background: #27ae60; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px; display: inline-flex; align-items: center; gap: 7px; text-transform: uppercase; box-shadow: 0 2px 6px rgba(39, 174, 96, 0.3);"><i class="fa-solid fa-file-excel"></i> Exportar a Excel</button>
                     </div>
                 </div>
-                <div style="overflow-x: auto;"><table id="tabla_auditoria">
+
+                <!-- Barra de Filtros Integrada con Estilo Corporativo Oscuro -->
+                <div style="display: flex; gap: 12px; flex-wrap: wrap; background: rgba(0, 0, 0, 0.35); padding: 16px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #334455; align-items: flex-end;">
+                    <!-- Campaña -->
+                    <div style="display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 170px;">
+                        <label style="font-size: 11px; font-weight: bold; color: #a0aec0; text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">Campaña:</label>
+                        <select id="filtro_campana_audit" onchange="cargarAuditoria()" style="width: 100%; padding: 8px 10px; border-radius: 5px; border: 1px solid #3d4f61; font-weight: 600; font-size: 13px; background: #111a24; color: #ffffff; outline: none;">
+                            <option value="TODAS" style="background:#111a24; color:#fff;">Todas las Campañas</option>
+                        </select>
+                    </div>
+
+                    <!-- Sucursal -->
+                    <div style="display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 150px;">
+                        <label style="font-size: 11px; font-weight: bold; color: #a0aec0; text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">Sucursal:</label>
+                        <select id="filtro_sucursal_audit" onchange="onFiltroSucursalAuditChange()" style="width: 100%; padding: 8px 10px; border-radius: 5px; border: 1px solid #3d4f61; font-weight: 600; font-size: 13px; background: #111a24; color: #ffffff; outline: none;">
+                            <option value="TODAS" style="background:#111a24; color:#fff;">Todas las Sucursales</option>
+                        </select>
+                    </div>
+
+                    <!-- Equipo -->
+                    <div style="display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 150px;">
+                        <label style="font-size: 11px; font-weight: bold; color: #a0aec0; text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">Equipo:</label>
+                        <select id="filtro_equipo_audit" onchange="onFiltroEquipoAuditChange()" style="width: 100%; padding: 8px 10px; border-radius: 5px; border: 1px solid #3d4f61; font-weight: 600; font-size: 13px; background: #111a24; color: #ffffff; outline: none;">
+                            <option value="TODOS" style="background:#111a24; color:#fff;">Todos los Equipos</option>
+                        </select>
+                    </div>
+
+                    <!-- Vendedor -->
+                    <div style="display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 160px;">
+                        <label style="font-size: 11px; font-weight: bold; color: #a0aec0; text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">Vendedor:</label>
+                        <select id="filtro_vendedor_audit" onchange="cargarAuditoria()" style="width: 100%; padding: 8px 10px; border-radius: 5px; border: 1px solid #3d4f61; font-weight: 600; font-size: 13px; background: #111a24; color: #ffffff; outline: none;">
+                            <option value="" style="background:#111a24; color:#fff;">Todos los vendedores</option>
+                        </select>
+                    </div>
+
+                    <!-- Tipo -->
+                    <div style="display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 140px;">
+                        <label style="font-size: 11px; font-weight: bold; color: #a0aec0; text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">Tipo:</label>
+                        <select id="filtro_tipo_audit" onchange="cargarAuditoria()" style="width: 100%; padding: 8px 10px; border-radius: 5px; border: 1px solid #3d4f61; font-weight: 600; font-size: 13px; background: #111a24; color: #ffffff; outline: none;">
+                            <option value="" style="background:#111a24; color:#fff;">Todo (Ventas y Bajas)</option>
+                            <option value="ventas" style="background:#111a24; color:#fff;">Solo Ventas</option>
+                            <option value="bajas" style="background:#111a24; color:#fff;">Solo Bajas</option>
+                        </select>
+                    </div>
+
+                    <!-- Desde -->
+                    <div style="display: flex; flex-direction: column; gap: 5px; min-width: 135px;">
+                        <label style="font-size: 11px; font-weight: bold; color: #a0aec0; text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">Desde Fecha:</label>
+                        <input type="date" id="filtro_fecha_desde_audit" style="padding: 7px 10px; border-radius: 5px; border: 1px solid #3d4f61; font-size: 13px; background: #111a24; color: #ffffff; color-scheme: dark; outline: none;">
+                    </div>
+
+                    <!-- Hasta -->
+                    <div style="display: flex; flex-direction: column; gap: 5px; min-width: 135px;">
+                        <label style="font-size: 11px; font-weight: bold; color: #a0aec0; text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">Hasta Fecha:</label>
+                        <input type="date" id="filtro_fecha_hasta_audit" style="padding: 7px 10px; border-radius: 5px; border: 1px solid #3d4f61; font-size: 13px; background: #111a24; color: #ffffff; color-scheme: dark; outline: none;">
+                    </div>
+
+                    <!-- ID Solicitud -->
+                    <div style="display: flex; flex-direction: column; gap: 5px; min-width: 140px;">
+                        <label style="font-size: 11px; font-weight: bold; color: #a0aec0; text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">ID Solicitud:</label>
+                        <div style="display:flex; align-items:center; gap:6px; background:#111a24; padding: 4px 10px; border-radius: 5px; border: 1px solid #3d4f61;">
+                            <i class="fa-solid fa-hashtag" style="color: #7f8c8d; font-size:12px;"></i>
+                            <input type="text" id="filtro_id_audit" placeholder="Buscar ID..." style="color: #ffffff; border:none; outline:none; padding:4px 0; font-size:13px; background:transparent; width: 110px;" onkeydown="if(event.key==='Enter') cargarAuditoria()">
+                            <button type="button" onclick="document.getElementById('filtro_id_audit').value=''; cargarAuditoria();" title="Limpiar ID" style="background:none; border:none; color:#888; cursor:pointer; padding:0 2px; font-size:12px;"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- Botones Filtrar y Limpiar -->
+                    <div style="display: flex; gap: 8px; align-items: flex-end;">
+                        <button onclick="cargarAuditoria()" style="padding: 8px 16px; background: #006779; color: white; border: 1px solid #008899; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; text-transform: uppercase;"><i class="fa-solid fa-search"></i> Filtrar</button>
+                        <button onclick="limpiarFiltrosAuditoria()" style="padding: 8px 14px; background: #34495e; color: #ecf0f1; border: 1px solid #4a627a; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; text-transform: uppercase;" title="Restablecer todos los filtros"><i class="fa-solid fa-rotate-left"></i> Limpiar</button>
+                    </div>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table id="tabla_auditoria">
                         <thead>
                             <tr>
                                 <th>Fecha</th>
                                 <th>ID Solicitud</th>
+                                <th>Campaña</th>
                                 <th>Vendedor</th>
+                                <th>Sucursal / Equipo</th>
                                 <th>Vts / Bajas</th>
                                 <th>Importe</th>
                                 <th>Estado / Acción</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
-                    </table></div>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -658,13 +719,8 @@
 
                 globalGenteAudit = listaGente;
                 
-                // Poblar filtro de vendedores en auditoría
-                let selectVendedor = document.getElementById('filtro_vendedor_audit');
-                let vendedorSel = selectVendedor.value;
-                selectVendedor.innerHTML = '<option value="">Todos los vendedores</option>' + listaGente.sort((a, b) => a.nombre.localeCompare(b.nombre)).map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
-                selectVendedor.value = vendedorSel;
-
-                cargarAuditoria();
+                await poblarFiltrosAuditoria();
+                await cargarAuditoria();
                 cargarOpciones();
             } catch (error) {
                 console.error("Error general al refrescar:", error);
@@ -864,24 +920,272 @@
         }
 
         let globalGenteAudit = [];
+        let campanaDefaultGlobal = 'TODAS';
 
-        // --- SISTEMA DE AUDITORÍA Y ASIENTOS DE REVERSIÓN ---
+        // --- SISTEMA DE AUDITORÍA, FILTROS Y ASIENTOS DE REVERSIÓN ---
+        async function poblarFiltrosAuditoria() {
+            try {
+                const selectCampana = document.getElementById('filtro_campana_audit');
+                const selectSucursal = document.getElementById('filtro_sucursal_audit');
+                if (!selectCampana || !selectSucursal) return;
+
+                const campanaPrevia = selectCampana.value;
+                const sucursalPrevia = selectSucursal.value;
+
+                // 1. Obtener Campañas: lista base + consulta de semanas_config y registro_ventas
+                let campanas = [
+                    'Campaña Diciembre 2026',
+                    'Campaña Noviembre 2026',
+                    'Campaña Octubre 2026',
+                    'Campaña Septiembre 2026',
+                    'Campaña Agosto 2026',
+                    'Campaña Julio 2026',
+                    'Campaña Junio 2026',
+                    'Campaña Mayo 2026'
+                ];
+
+                try {
+                    const { data: semData } = await clienteSupabase
+                        .from('semanas_config')
+                        .select('campana')
+                        .order('fecha_inicio', { ascending: false });
+
+                    if (semData && semData.length > 0) {
+                        semData.forEach(s => {
+                            if (s.campana && !campanas.includes(s.campana)) {
+                                campanas.unshift(s.campana);
+                            }
+                        });
+                    }
+
+                    const { data: vtasCamp } = await clienteSupabase
+                        .from('registro_ventas')
+                        .select('campana')
+                        .order('created_at', { ascending: false })
+                        .limit(500);
+
+                    if (vtasCamp && vtasCamp.length > 0) {
+                        vtasCamp.forEach(v => {
+                            if (v.campana && !campanas.includes(v.campana)) {
+                                campanas.unshift(v.campana);
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.error("Error obteniendo campañas para auditoría:", e);
+                }
+
+                // Determinar campaña actual calculada
+                const hoy = new Date();
+                const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+                let mIndex = hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth();
+                let y = hoy.getFullYear();
+                if (mIndex > 11) { mIndex = 0; y++; }
+                const campanaActual = `Campaña ${meses[mIndex]} ${y}`;
+
+                // Seleccionar campaña por defecto (Noviembre 2026 si Diciembre aún no tiene ventas)
+                let campanaDefault = 'Campaña Noviembre 2026';
+                try {
+                    const { count } = await clienteSupabase
+                        .from('registro_ventas')
+                        .select('id', { count: 'exact', head: true })
+                        .eq('campana', campanaActual);
+
+                    if (count && count > 0) {
+                        campanaDefault = campanaActual;
+                    }
+                } catch (e) {
+                    console.warn("No se pudo verificar ventas de campaña actual:", e);
+                }
+
+                campanaDefaultGlobal = campanaDefault;
+
+                let campHtml = '<option value="TODAS" style="background:#111a24; color:#fff;">Todas las Campañas</option>';
+                campanas.forEach(c => {
+                    campHtml += `<option value="${c}" style="background:#111a24; color:#fff;">${c}</option>`;
+                });
+                selectCampana.innerHTML = campHtml;
+
+                if (campanaPrevia && (campanaPrevia === 'TODAS' || campanas.includes(campanaPrevia))) {
+                    selectCampana.value = campanaPrevia;
+                } else {
+                    selectCampana.value = campanaDefault;
+                }
+
+                // 2. Poblar Sucursales (Agencias)
+                const agencias = (window.datosGlobalesMaster?.agencias || []).slice().sort((a, b) => a.nombre.localeCompare(b.nombre));
+                selectSucursal.innerHTML = '<option value="TODAS" style="background:#111a24; color:#fff;">Todas las Sucursales</option>' + agencias.map(a => `<option value="${a.id}" style="background:#111a24; color:#fff;">${a.nombre}</option>`).join('');
+                if (sucursalPrevia && (sucursalPrevia === 'TODAS' || agencias.some(a => a.id === sucursalPrevia))) {
+                    selectSucursal.value = sucursalPrevia;
+                } else {
+                    selectSucursal.value = 'TODAS';
+                }
+
+                // 3. Poblar Equipos y Vendedores iniciales
+                actualizarEquiposYVendedoresAudit();
+            } catch (err) {
+                console.error("Error en poblarFiltrosAuditoria:", err);
+            }
+        }
+
+        function actualizarEquiposYVendedoresAudit() {
+            const sucursalSel = document.getElementById('filtro_sucursal_audit')?.value || 'TODAS';
+            const selectEquipo = document.getElementById('filtro_equipo_audit');
+            const selectVendedor = document.getElementById('filtro_vendedor_audit');
+            if (!selectEquipo || !selectVendedor) return;
+
+            const equipoPrevio = selectEquipo.value;
+            const vendedorPrevio = selectVendedor.value;
+
+            const equipos = window.datosGlobalesMaster?.equipos || [];
+            const personal = (window.datosGlobalesMaster?.perfiles || globalGenteAudit || []).slice().sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+            // Filtrar equipos según sucursal seleccionada
+            let equiposFiltrados = equipos;
+            if (sucursalSel !== 'TODAS') {
+                equiposFiltrados = equipos.filter(e => e.agencia_id === sucursalSel);
+            }
+            equiposFiltrados.sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+            let eqHtml = '<option value="TODOS" style="background:#111a24; color:#fff;">Todos los Equipos</option>';
+            equiposFiltrados.forEach(e => {
+                eqHtml += `<option value="${e.id}" style="background:#111a24; color:#fff;">${e.nombre}</option>`;
+            });
+            selectEquipo.innerHTML = eqHtml;
+
+            if (equipoPrevio && equiposFiltrados.some(e => e.id === equipoPrevio)) {
+                selectEquipo.value = equipoPrevio;
+            } else {
+                selectEquipo.value = 'TODOS';
+            }
+
+            // Filtrar vendedores según sucursal y equipo
+            const eqActual = selectEquipo.value;
+            let vendedoresFiltrados = personal;
+
+            if (eqActual !== 'TODOS') {
+                vendedoresFiltrados = personal.filter(p => p.equipo_id === eqActual);
+            } else if (sucursalSel !== 'TODAS') {
+                const eqIdsSucursal = equiposFiltrados.map(e => e.id);
+                vendedoresFiltrados = personal.filter(p => eqIdsSucursal.includes(p.equipo_id));
+            }
+
+            let vHtml = '<option value="" style="background:#111a24; color:#fff;">Todos los vendedores</option>';
+            vendedoresFiltrados.forEach(p => {
+                vHtml += `<option value="${p.id}" style="background:#111a24; color:#fff;">${p.nombre}</option>`;
+            });
+            selectVendedor.innerHTML = vHtml;
+
+            if (vendedorPrevio && vendedoresFiltrados.some(p => p.id === vendedorPrevio)) {
+                selectVendedor.value = vendedorPrevio;
+            } else {
+                selectVendedor.value = '';
+            }
+        }
+
+        function onFiltroSucursalAuditChange() {
+            actualizarEquiposYVendedoresAudit();
+            cargarAuditoria();
+        }
+
+        function onFiltroEquipoAuditChange() {
+            const sucursalSel = document.getElementById('filtro_sucursal_audit')?.value || 'TODAS';
+            const selectEquipo = document.getElementById('filtro_equipo_audit');
+            const selectVendedor = document.getElementById('filtro_vendedor_audit');
+            if (!selectEquipo || !selectVendedor) return;
+
+            const eqActual = selectEquipo.value;
+            const equipos = window.datosGlobalesMaster?.equipos || [];
+            const personal = (window.datosGlobalesMaster?.perfiles || globalGenteAudit || []).slice().sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+            let vendedoresFiltrados = personal;
+            if (eqActual !== 'TODOS') {
+                vendedoresFiltrados = personal.filter(p => p.equipo_id === eqActual);
+            } else if (sucursalSel !== 'TODAS') {
+                const eqIdsSucursal = equipos.filter(e => e.agencia_id === sucursalSel).map(e => e.id);
+                vendedoresFiltrados = personal.filter(p => eqIdsSucursal.includes(p.equipo_id));
+            }
+
+            let vHtml = '<option value="" style="background:#111a24; color:#fff;">Todos los vendedores</option>';
+            vendedoresFiltrados.forEach(p => {
+                vHtml += `<option value="${p.id}" style="background:#111a24; color:#fff;">${p.nombre}</option>`;
+            });
+            selectVendedor.innerHTML = vHtml;
+            cargarAuditoria();
+        }
+
+        function limpiarFiltrosAuditoria() {
+            const selCampana = document.getElementById('filtro_campana_audit');
+            if (selCampana) selCampana.value = campanaDefaultGlobal || 'TODAS';
+
+            const selSuc = document.getElementById('filtro_sucursal_audit');
+            if (selSuc) selSuc.value = 'TODAS';
+
+            const dDesde = document.getElementById('filtro_fecha_desde_audit');
+            if (dDesde) dDesde.value = '';
+
+            const dHasta = document.getElementById('filtro_fecha_hasta_audit');
+            if (dHasta) dHasta.value = '';
+
+            const inpId = document.getElementById('filtro_id_audit');
+            if (inpId) inpId.value = '';
+
+            const selTipo = document.getElementById('filtro_tipo_audit');
+            if (selTipo) selTipo.value = '';
+
+            actualizarEquiposYVendedoresAudit();
+            cargarAuditoria();
+        }
+
         async function cargarAuditoria() {
             let dDesde = document.getElementById('filtro_fecha_desde_audit');
             let dHasta = document.getElementById('filtro_fecha_hasta_audit');
             let fechaDesde = dDesde ? dDesde.value : '';
             let fechaHasta = dHasta ? dHasta.value : '';
-            let vendedorId = document.getElementById('filtro_vendedor_audit').value;
+
+            let campanaSel = document.getElementById('filtro_campana_audit') ? document.getElementById('filtro_campana_audit').value : '';
+            let sucursalSel = document.getElementById('filtro_sucursal_audit') ? document.getElementById('filtro_sucursal_audit').value : 'TODAS';
+            let equipoSel = document.getElementById('filtro_equipo_audit') ? document.getElementById('filtro_equipo_audit').value : 'TODOS';
+            let vendedorId = document.getElementById('filtro_vendedor_audit') ? document.getElementById('filtro_vendedor_audit').value : '';
             let tipoOp = document.getElementById('filtro_tipo_audit') ? document.getElementById('filtro_tipo_audit').value : '';
             let idFiltro = document.getElementById('filtro_id_audit') ? document.getElementById('filtro_id_audit').value.trim() : '';
 
-            const hoy = new Date();
-            const campanaActual = `Campaña ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][hoy.getDate() >= 16 ? hoy.getMonth() + 1 : hoy.getMonth()]} ${hoy.getFullYear()}`;
+            let tb = document.querySelector('#tabla_auditoria tbody');
+            if (tb) tb.innerHTML = '<tr><td colspan="8" class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i> Cargando registros de auditoría...</td></tr>';
+            let lblTotal = document.getElementById('lbl_total_audit');
+            if (lblTotal) lblTotal.textContent = 'Cargando...';
+
+            const personal = (window.datosGlobalesMaster?.perfiles || globalGenteAudit || []);
+            const equipos = (window.datosGlobalesMaster?.equipos || []);
+            const agencias = (window.datosGlobalesMaster?.agencias || []);
+
+            // Determinar vendedores filtrados por Sucursal / Equipo si no se eligió un vendedor puntual
+            let vIdsFiltro = null;
+            if (vendedorId) {
+                vIdsFiltro = [vendedorId];
+            } else if (equipoSel && equipoSel !== 'TODOS') {
+                vIdsFiltro = personal.filter(p => p.equipo_id === equipoSel).map(p => p.id);
+                if (vIdsFiltro.length === 0) {
+                    if (tb) tb.innerHTML = '<tr><td colspan="8" class="empty-state">No hay vendedores asignados al equipo seleccionado.</td></tr>';
+                    if (lblTotal) lblTotal.textContent = '0 operaciones';
+                    window.datosAuditoria = [];
+                    return;
+                }
+            } else if (sucursalSel && sucursalSel !== 'TODAS') {
+                const eqIds = equipos.filter(e => e.agencia_id === sucursalSel).map(e => e.id);
+                vIdsFiltro = personal.filter(p => eqIds.includes(p.equipo_id)).map(p => p.id);
+                if (vIdsFiltro.length === 0) {
+                    if (tb) tb.innerHTML = '<tr><td colspan="8" class="empty-state">No hay vendedores asignados a la sucursal seleccionada.</td></tr>';
+                    if (lblTotal) lblTotal.textContent = '0 operaciones';
+                    window.datosAuditoria = [];
+                    return;
+                }
+            }
 
             let query = clienteSupabase.from('registro_ventas').select('*').order('created_at', { ascending: false });
 
+            // 1. Filtro por ID Solicitud
             if (idFiltro) {
-                // Al filtrar por ID Solicitud, permitimos encontrar la operación en cualquier campaña
                 const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
                 let orFilter = `numero_solicitud.ilike.%${idFiltro}%,beneficio.ilike.%${idFiltro}%`;
                 if (uuidRegex.test(idFiltro)) {
@@ -889,81 +1193,116 @@
                 }
                 query = query.or(orFilter);
             } else {
-                query = query.eq('campana', campanaActual);
+                // Filtro por Campaña (solo si no es "TODAS")
+                if (campanaSel && campanaSel !== 'TODAS') {
+                    query = query.eq('campana', campanaSel);
+                }
             }
 
-            if (vendedorId) query = query.eq('vendedor_id', vendedorId);
+            // 2. Filtro por Vendedores
+            if (vendedorId) {
+                query = query.eq('vendedor_id', vendedorId);
+            } else if (vIdsFiltro && vIdsFiltro.length > 0) {
+                query = query.in('vendedor_id', vIdsFiltro);
+            }
+
+            // 3. Filtro por Fechas
             if (fechaDesde) query = query.gte('created_at', fechaDesde + "T00:00:00");
             if (fechaHasta) query = query.lte('created_at', fechaHasta + "T23:59:59");
-            
-            if (idFiltro || fechaDesde || fechaHasta || tipoOp === 'bajas') {
-                
-                let vtas = [];
+
+            // 4. Ejecución de la consulta con paginación si hay filtros
+            let hayFiltro = idFiltro || fechaDesde || fechaHasta || tipoOp || (campanaSel && campanaSel !== 'TODAS') || (sucursalSel && sucursalSel !== 'TODAS') || (equipoSel && equipoSel !== 'TODOS') || vendedorId;
+
+            let data = [];
+            let error = null;
+
+            if (hayFiltro) {
                 let step = 1000, fromRow = 0;
-                let hasError = null;
                 while (true) {
-                    const { data, error } = await query.range(fromRow, fromRow + step - 1);
-                    if (error) { hasError = error; break; }
-                    if (!data || data.length === 0) break;
-                    vtas = vtas.concat(data);
-                    if (data.length < step) break;
+                    const res = await query.range(fromRow, fromRow + step - 1);
+                    if (res.error) { error = res.error; break; }
+                    if (!res.data || res.data.length === 0) break;
+                    data = data.concat(res.data);
+                    if (res.data.length < step || data.length >= 10000) break;
                     fromRow += step;
                 }
-                var error = hasError;
-                var data = vtas;
             } else {
-                query = query.limit(100);
-                var { data, error } = await query;
+                const res = await query.limit(500);
+                data = res.data || [];
+                error = res.error;
             }
 
             if (error) {
                 console.error("Error cargando auditoría:", error);
+                if (tb) tb.innerHTML = `<tr><td colspan="8" class="empty-state" style="color:#e74c3c;">Error al consultar: ${error.message}</td></tr>`;
+                if (lblTotal) lblTotal.textContent = 'Error';
                 return;
             }
-            
+
+            // 5. Filtro en memoria por Tipo de Operación
             if (tipoOp === 'ventas') {
                 data = data.filter(v => (v.ventas_cerradas && v.ventas_cerradas > 0));
             } else if (tipoOp === 'bajas') {
-                data = data.filter(v => (v.bajas && v.bajas > 0));
+                data = data.filter(v => (v.bajas && v.bajas > 0) || (v.monto < 0) || v.beneficio?.includes('BAJA'));
             }
 
             // Filtrar registros que sean pura entrevista (sin ventas ni bajas ni reversiones)
             let datosReales = data.filter(v => (v.ventas_cerradas > 0) || (v.bajas > 0) || (v.monto < 0) || v.beneficio?.includes('BAJA'));
             window.datosAuditoria = datosReales;
 
-            let tb = document.querySelector('#tabla_auditoria tbody');
+            if (lblTotal) {
+                lblTotal.textContent = `${datosReales.length} operación${datosReales.length === 1 ? '' : 'es'}`;
+            }
+
             if (!datosReales || datosReales.length === 0) {
-                tb.innerHTML = '<tr><td colspan="6" class="empty-state">No hay registros con esos filtros.</td></tr>';
+                tb.innerHTML = '<tr><td colspan="8" class="empty-state">No hay registros con esos filtros.</td></tr>';
                 return;
             }
 
             tb.innerHTML = datosReales.map(v => {
-                let nombreVendedor = globalGenteAudit.find(p => p.id === v.vendedor_id)?.nombre || 'Desconocido';
-                
+                let vendedorObj = personal.find(p => p.id === v.vendedor_id);
+                let nombreVendedor = vendedorObj ? vendedorObj.nombre : 'Desconocido';
+                let equipoObj = vendedorObj?.equipo_id ? equipos.find(e => e.id === vendedorObj.equipo_id) : null;
+                let agenciaObj = equipoObj?.agencia_id ? agencias.find(a => a.id === equipoObj.agencia_id) : null;
+
+                let sucursalEquipoStr = '';
+                if (agenciaObj && equipoObj) {
+                    sucursalEquipoStr = `<span style="font-weight:700; color:#63b3ed;">${agenciaObj.nombre}</span><br><span style="font-size:11px; color:#a0aec0;">${equipoObj.nombre}</span>`;
+                } else if (agenciaObj) {
+                    sucursalEquipoStr = `<span style="font-weight:700; color:#63b3ed;">${agenciaObj.nombre}</span>`;
+                } else if (equipoObj) {
+                    sucursalEquipoStr = `<span style="font-size:11px; color:#a0aec0;">${equipoObj.nombre}</span>`;
+                } else {
+                    sucursalEquipoStr = '<span style="color:#718096;">-</span>';
+                }
+
                 let esReversion = v.monto < 0 || v.beneficio?.includes("BAJA");
-                let estiloFila = esReversion ? "background: #fff0f0; color: #222;" : "";
-                
+                let estiloFila = esReversion ? "background: rgba(231, 76, 60, 0.18); border-left: 3px solid #e74c3c;" : "";
+
                 let btnAccion = '';
                 if (esReversion) {
-                    btnAccion = `<span style="color:#e74c3c; font-weight:bold; font-size:12px;"><i class="fa-solid fa-arrow-trend-down"></i> REVERSIÓN</span><br><span style="font-size:10px; color:#555;">${v.beneficio}</span>`;
+                    btnAccion = `<span style="color:#fc8181; font-weight:bold; font-size:12px;"><i class="fa-solid fa-arrow-trend-down"></i> REVERSIÓN</span><br><span style="font-size:10px; color:#cbd5e0;">${v.beneficio || ''}</span>`;
                 } else if (v.es_anulada) {
-                    btnAccion = `<span style="color:#e74c3c; font-weight:bold; font-size:12px;"><i class="fa-solid fa-ban"></i> ANULADA</span>`;
+                    btnAccion = `<span style="color:#feb2b2; font-weight:bold; font-size:12px;"><i class="fa-solid fa-ban"></i> ANULADA</span>`;
                 } else {
                     btnAccion = `<button class="btn-baja" onclick="darDeBajaVenta('${v.id}')" title="Dar de baja (compensa con asiento de baja)"><i class="fa-solid fa-arrow-trend-down"></i> DAR DE BAJA</button>`;
                     btnAccion += `<button class="btn-anular" onclick="anularVentaAuditada('${v.id}', '${v.numero_solicitud || ''}')" style="background:#e67e22; color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer; margin-left:6px; font-size:11px; font-weight:bold;" title="Anular venta (quitar de auditadas sin contar como baja)"><i class="fa-solid fa-ban"></i> ANULAR</button>`;
                 }
-                
-                btnAccion += `<button style="background:#f39c12; color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer; margin-left: 10px;" onclick="abrirModalEditarVenta('${v.id}')" title="Editar"><i class="fa-solid fa-pen"></i></button>`;
-                btnAccion += `<button style="background:#c0392b; color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer; margin-left: 10px;" onclick="eliminarVentaDB('${v.id}')" title="Eliminar definitivamente de la DB"><i class="fa-solid fa-trash"></i></button>`;
 
+                btnAccion += `<button style="background:#f39c12; color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer; margin-left: 8px;" onclick="abrirModalEditarVenta('${v.id}')" title="Editar"><i class="fa-solid fa-pen"></i></button>`;
+                btnAccion += `<button style="background:#c0392b; color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer; margin-left: 6px;" onclick="eliminarVentaDB('${v.id}')" title="Eliminar definitivamente de la DB"><i class="fa-solid fa-trash"></i></button>`;
+
+                let campBadge = v.campana ? `<span style="font-size:11px; background: rgba(0, 103, 121, 0.4); color: #4dd0e1; border: 1px solid rgba(0, 103, 121, 0.7); padding: 3px 8px; border-radius: 4px; font-weight: 600; white-space: nowrap;">${v.campana}</span>` : '-';
 
                 return `
                     <tr style="${estiloFila}">
-                        <td>${v.created_at ? new Date(v.created_at).toLocaleDateString() : '-'}</td>
-                        <td style="font-weight:bold; color:#3498db;">${v.numero_solicitud || '-'}</td>
-                        <td>${nombreVendedor}</td>
-                        <td>${esReversion ? '-' + v.bajas : (v.ventas_cerradas || 0)}</td>
-                        <td>$${(v.monto || 0).toLocaleString()}</td>
+                        <td>${v.created_at ? new Date(v.created_at).toLocaleDateString('es-AR') : '-'}</td>
+                        <td style="font-weight:bold; color:#63b3ed;">${v.numero_solicitud || '-'}</td>
+                        <td>${campBadge}</td>
+                        <td><b style="color:#ffffff;">${nombreVendedor}</b></td>
+                        <td>${sucursalEquipoStr}</td>
+                        <td style="font-weight:bold; color: ${esReversion ? '#fc8181' : '#ffffff'};">${esReversion ? '-' + (v.bajas || 1) : (v.ventas_cerradas || 0)}</td>
+                        <td style="font-weight:bold; color: ${esReversion ? '#fc8181' : '#68d391'};">${(v.monto || 0).toLocaleString('es-AR')}</td>
                         <td>${btnAccion}</td>
                     </tr>
                 `;
@@ -994,14 +1333,27 @@
             if (!window.datosAuditoria || window.datosAuditoria.length === 0) {
                 return alert("No hay datos en la tabla de auditoría para exportar.");
             }
+            const personal = window.datosGlobalesMaster?.perfiles || globalGenteAudit || [];
+            const equipos = window.datosGlobalesMaster?.equipos || [];
+            const agencias = window.datosGlobalesMaster?.agencias || [];
+
             const filas = window.datosAuditoria.map(v => {
-                let nombreVendedor = globalGenteAudit.find(p => p.id === v.vendedor_id)?.nombre || 'Desconocido';
+                let vendedorObj = personal.find(p => p.id === v.vendedor_id);
+                let nombreVendedor = vendedorObj?.nombre || 'Desconocido';
+                let equipoObj = vendedorObj?.equipo_id ? equipos.find(e => e.id === vendedorObj.equipo_id) : null;
+                let agenciaObj = equipoObj?.agencia_id ? agencias.find(a => a.id === equipoObj.agencia_id) : null;
+                let nombreSucursal = agenciaObj ? agenciaObj.nombre : '-';
+                let nombreEquipo = equipoObj ? equipoObj.nombre : '-';
+
                 let esReversion = v.monto < 0 || v.beneficio?.includes("BAJA");
                 let idVenta = v.numero_solicitud ? String(v.numero_solicitud).trim() : (v.id ? String(v.id) : "-");
                 let tipoEstado = esReversion ? "Baja / Reversión" : (v.es_anulada ? "Anulada" : "Auditada (Alta)");
                 return {
                     "Fecha": v.created_at ? new Date(v.created_at).toLocaleDateString('es-AR') : "-",
                     "ID Venta / Baja": idVenta,
+                    "Campaña": v.campana || "-",
+                    "Sucursal": nombreSucursal,
+                    "Equipo": nombreEquipo,
                     "Vendedor": nombreVendedor,
                     "Tipo / Estado": tipoEstado,
                     "Vts Brutas": esReversion ? 0 : (v.ventas_cerradas || 0),
