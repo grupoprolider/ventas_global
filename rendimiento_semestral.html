@@ -133,7 +133,118 @@
         .estado-rojo { color: var(--semaforo-rojo); font-weight: bold; }
         
         .col-fija { position: sticky; left: 0; background: var(--celda-oscura); z-index: 2; border-right: 2px solid var(--border-color); }
-        .col-fija-2 { position: sticky; left: 220px; background: var(--celda-oscura); z-index: 2; border-right: 2px solid var(--border-color); }</style>
+        .col-fija-2 { position: sticky; left: 220px; background: var(--celda-oscura); z-index: 2; border-right: 2px solid var(--border-color); }
+
+        .filtros-meses-card {
+            background: var(--celda-oscura);
+            padding: 14px 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+
+        .filtros-meses-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .filtros-meses-titulo {
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--gpl-dorado);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-meses-contador {
+            font-size: 11px;
+            background: rgba(164, 42, 104, 0.2);
+            color: #f5a6cb;
+            padding: 3px 10px;
+            border-radius: 12px;
+            border: 1px solid rgba(164, 42, 104, 0.4);
+            font-weight: 700;
+        }
+
+        .filtros-meses-acciones {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-mes-filtro {
+            padding: 5px 12px;
+            font-size: 11px;
+            background: var(--fondo-oscuro);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+        }
+
+        .btn-mes-filtro:hover {
+            border-color: var(--gpl-dorado);
+            color: var(--gpl-dorado);
+        }
+
+        .chips-meses-grid {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .chip-mes-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s ease;
+            border: 1px solid var(--border-color);
+            background: var(--fondo-oscuro);
+            color: var(--text-muted);
+        }
+
+        .chip-mes-item:hover {
+            border-color: #777;
+        }
+
+        .chip-mes-item.active {
+            background: rgba(0, 103, 121, 0.35);
+            border-color: var(--gpl-petroleo);
+            color: #ffffff;
+            box-shadow: 0 0 8px rgba(0, 103, 121, 0.3);
+        }
+
+        .chip-mes-item input[type="checkbox"] {
+            cursor: pointer;
+            accent-color: var(--gpl-dorado);
+            width: 15px;
+            height: 15px;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
 </head>
 <body>
     <div class="header-container">
@@ -167,6 +278,26 @@
             <button class="btn-excel" onclick="exportarExcel()"><i class="fa-solid fa-file-excel"></i> Excel</button>
             <button class="btn-png" onclick="exportarPNG()"><i class="fa-solid fa-camera"></i> Captura PNG</button>
             <button onclick="toggleTheme()" style="background:#f39c12; color:white; border:none;"><i class="fa-solid fa-moon" id="themeIcon"></i> Tono</button>
+        </div>
+    </div>
+
+    <!-- Selector Interactivo de Meses a Evaluar en el Semestre -->
+    <div class="filtros-meses-card">
+        <div class="filtros-meses-header">
+            <div class="filtros-meses-titulo">
+                <i class="fa-solid fa-calendar-check"></i>
+                <span>Meses Evaluados en la Planilla:</span>
+                <span id="badgeMesesActivos" class="badge-meses-contador">Cargando meses...</span>
+            </div>
+            <div class="filtros-meses-acciones">
+                <button type="button" class="btn-mes-filtro" onclick="seleccionarOficiales()" title="Mostrar desde Agosto 2026 (Datos oficiales verificados)"><i class="fa-solid fa-shield-halved"></i> Oficiales (Ago-Dic)</button>
+                <button type="button" class="btn-mes-filtro" onclick="seleccionarUltimosN(6)" title="Seleccionar los últimos 6 meses cronológicos"><i class="fa-solid fa-clock-rotate-left"></i> Últimos 6</button>
+                <button type="button" class="btn-mes-filtro" onclick="seleccionarTodos(true)"><i class="fa-solid fa-check-double"></i> Todos</button>
+                <button type="button" class="btn-mes-filtro" onclick="seleccionarTodos(false)"><i class="fa-solid fa-ban"></i> Limpiar</button>
+            </div>
+        </div>
+        <div id="contenedorChipsMeses" class="chips-meses-grid">
+            <!-- Chips interactivos de meses con checkboxes -->
         </div>
     </div>
 
@@ -350,12 +481,13 @@
 
         async function init() {
             try {
-                const [resPerf, resEq, resAg, resSem, resHist] = await Promise.all([
+                const [resPerf, resEq, resAg, resSem, resHist, resSnap] = await Promise.all([
                     clienteSupabase.from('perfiles').select('*'),
                     clienteSupabase.from('equipos').select('*'),
                     clienteSupabase.from('agencias').select('*'),
                     clienteSupabase.from('semanas_config').select('*').order('fecha_inicio', { ascending: true }),
-                    clienteSupabase.from('historial_objetivos').select('*')
+                    clienteSupabase.from('historial_objetivos').select('*'),
+                    clienteSupabase.from('snapshot_campanas').select('*')
                 ]);
 
                 dbData.perfiles = resPerf.data || [];
@@ -363,6 +495,9 @@
                 dbData.agencias = resAg.data || [];
                 dbData.semanas = resSem.data || [];
                 dbData.historialObj = resHist.data || [];
+                dbData.snapshots = (resSnap && resSnap.data) ? resSnap.data : [];
+
+                inicializarMesesDisponibles();
 
                 
                 const params = new URLSearchParams(window.location.search);
@@ -565,12 +700,131 @@
             return { rowsToRender, seniorsOnly };
         }
 
+
+        // ========================================================
+        // GESTIÓN DINÁMICA DE MESES / CAMPAÑAS A EVALUAR
+        // ========================================================
+        let campanasTodas = [];
+        let campanasSeleccionadas = new Set();
+        const mesesNombresArr = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+
+        function parseCampanaDateKey(cStr) {
+            if (!cStr) return 0;
+            const clean = cStr.replace('Campaña', '').trim();
+            const parts = clean.split(' ');
+            if (parts.length >= 2) {
+                const m = mesesNombresArr.indexOf(parts[0]);
+                const y = parseInt(parts[1]);
+                if (m !== -1 && !isNaN(y)) return y * 100 + (m + 1);
+            }
+            return 0;
+        }
+
+        function inicializarMesesDisponibles() {
+            // Extraer todas las campañas presentes en semanas_config
+            let camps = [...new Set(dbData.semanas.map(s => s.campana))];
+            
+            // Ordenar de más reciente a más antigua (descendente)
+            camps.sort((a, b) => parseCampanaDateKey(b) - parseCampanaDateKey(a));
+            campanasTodas = camps;
+
+            // Por defecto: Ocultar Mayo, Junio, Julio (datos preliminares/incompletos)
+            // y seleccionar desde Agosto 2026 en adelante (Oficiales)
+            campanasSeleccionadas.clear();
+            campanasTodas.forEach(c => {
+                const key = parseCampanaDateKey(c);
+                if (key >= 202608) {
+                    campanasSeleccionadas.add(c);
+                }
+            });
+
+            // Si por alguna razón ninguna coincide con >= 202608, tomar las primeras 6
+            if (campanasSeleccionadas.size === 0) {
+                campanasTodas.slice(0, 6).forEach(c => campanasSeleccionadas.add(c));
+            }
+
+            renderizarFiltrosMeses();
+        }
+
+        function renderizarFiltrosMeses() {
+            const container = document.getElementById('contenedorChipsMeses');
+            const badge = document.getElementById('badgeMesesActivos');
+            if (!container) return;
+
+            let html = '';
+            campanasTodas.forEach(camp => {
+                const isChecked = campanasSeleccionadas.has(camp);
+                const nombreCorto = camp.replace('Campaña ', '');
+                html += `
+                    <label class="chip-mes-item ${isChecked ? 'active' : ''}" id="chip_${camp.replace(/\s+/g, '_')}">
+                        <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleMesCampana('${camp}')">
+                        <span>${nombreCorto}</span>
+                    </label>
+                `;
+            });
+
+            container.innerHTML = html;
+            if (badge) {
+                const cant = campanasSeleccionadas.size;
+                badge.textContent = `${cant} mes${cant === 1 ? '' : 'es'} seleccionado${cant === 1 ? '' : 's'}`;
+            }
+        }
+
+        function toggleMesCampana(campana) {
+            if (campanasSeleccionadas.has(campana)) {
+                campanasSeleccionadas.delete(campana);
+            } else {
+                campanasSeleccionadas.add(campana);
+            }
+            renderizarFiltrosMeses();
+            renderSemestre();
+        }
+
+        function seleccionarOficiales() {
+            campanasSeleccionadas.clear();
+            campanasTodas.forEach(c => {
+                if (parseCampanaDateKey(c) >= 202608) {
+                    campanasSeleccionadas.add(c);
+                }
+            });
+            renderizarFiltrosMeses();
+            renderSemestre();
+        }
+
+        function seleccionarUltimosN(n = 6) {
+            campanasSeleccionadas.clear();
+            campanasTodas.slice(0, n).forEach(c => campanasSeleccionadas.add(c));
+            renderizarFiltrosMeses();
+            renderSemestre();
+        }
+
+        function seleccionarTodos(estado = true) {
+            campanasSeleccionadas.clear();
+            if (estado) {
+                campanasTodas.forEach(c => campanasSeleccionadas.add(c));
+            }
+            renderizarFiltrosMeses();
+            renderSemestre();
+        }
+
         function renderSemestre() {
             const selSuc = document.getElementById('selSucursal').value;
             const selRiesgo = document.getElementById('selRiesgo').value;
             const hoy = new Date().toISOString().split('T')[0];
             
-            const campanasOrdenadas = [...new Set(dbData.semanas.map(s => s.campana))].reverse();
+            // Evaluar únicamente los meses tildados por el usuario
+            const campanasAEvaluar = campanasTodas.filter(c => campanasSeleccionadas.has(c));
+            const totalMeses = campanasAEvaluar.length;
+
+            if (totalMeses === 0) {
+                document.getElementById('tablaHead').innerHTML = '<tr><th colspan="100" style="text-align:center; padding:15px; color:#e74c3c;">No hay meses seleccionados</th></tr>';
+                document.getElementById('tablaBody').innerHTML = '<tr><td colspan="100" style="text-align:center; padding:40px; color:var(--text-muted); font-size:14px;"><i class="fa-solid fa-calendar-xmark fa-2x"></i><br><br>Por favor, tildá al menos un mes en la barra superior para visualizar y calcular el rendimiento.</td></tr>';
+                return;
+            }
+
+            // Umbrales proporcionales a los meses seleccionados
+            const alertaRoja = totalMeses >= 6 ? ALERTA_ROJA : Math.max(2, Math.ceil(totalMeses * 0.75));
+            const alertaAmarilla = totalMeses >= 6 ? ALERTA_AMARILLA : Math.max(1, Math.ceil(totalMeses * 0.45));
             
             let { rowsToRender, seniorsOnly } = getRowsToRender(selSuc);
             
@@ -581,7 +835,7 @@
                 let falladasMeses = 0;
                 let saldoAcum = 0;
                 
-                campanasOrdenadas.forEach(campana => {
+                campanasAEvaluar.forEach(campana => {
                     let semanasCampana = dbData.semanas.filter(s => s.campana === campana);
                     let netasMes = 0;
                     let objMes = 0;
@@ -635,7 +889,7 @@
                 <th class="col-fija-2" style="width:160px; text-align:center;">Fallas (Meses) / Riesgo</th>
                 <th style="width:80px; text-align:center;">Saldo<br>Hist.</th>`;
             
-            campanasOrdenadas.forEach(campana => {
+            campanasAEvaluar.forEach(campana => {
                 tr1 += `<th class="th-campana">${campana}</th>`;
             });
             tr1 += `</tr>`;
@@ -647,14 +901,14 @@
                 let falladas = mapRiesgo[rowDef.id];
                 let saldo = mapSaldo[rowDef.id];
                 
-                if (selRiesgo === 'ROJO' && falladas < ALERTA_ROJA) return;
-                if (selRiesgo === 'AMARILLO' && (falladas < ALERTA_AMARILLA || falladas >= ALERTA_ROJA)) return;
-                if (selRiesgo === 'VERDE' && falladas >= ALERTA_AMARILLA) return;
+                if (selRiesgo === 'ROJO' && falladas < alertaRoja) return;
+                if (selRiesgo === 'AMARILLO' && (falladas < alertaAmarilla || falladas >= alertaRoja)) return;
+                if (selRiesgo === 'VERDE' && falladas >= alertaAmarilla) return;
                 
                 let badgeRiesgo = '';
-                if (falladas >= ALERTA_ROJA) badgeRiesgo = `<span class="badge badge-rojo">${falladas} Meses (Sanción)</span>`;
-                else if (falladas >= ALERTA_AMARILLA) badgeRiesgo = `<span class="badge badge-amarillo">${falladas} Meses (Alerta)</span>`;
-                else badgeRiesgo = `<span class="badge badge-verde">${falladas} Meses (Saludable)</span>`;
+                if (falladas >= alertaRoja) badgeRiesgo = `<span class="badge badge-rojo">${falladas} / ${totalMeses} Meses (Sanción)</span>`;
+                else if (falladas >= alertaAmarilla) badgeRiesgo = `<span class="badge badge-amarillo">${falladas} / ${totalMeses} Meses (Alerta)</span>`;
+                else badgeRiesgo = `<span class="badge badge-verde">${falladas} / ${totalMeses} Meses (Saludable)</span>`;
                 
                 let subTitulo = '-';
                 if(rowDef.tipo === 'senior') {
@@ -677,7 +931,7 @@
                     <td class="col-fija-2" style="${bgStyle}; text-align:center;">${badgeRiesgo}</td>
                     <td style="text-align:center; font-size:15px; ${bgStyle} ${saldo >= 0 ? 'color:var(--semaforo-verde);' : 'color:var(--semaforo-rojo);'}"><b>${saldo > 0 ? '+' : ''}${saldo}</b></td>`;
                 
-                campanasOrdenadas.forEach(campana => {
+                campanasAEvaluar.forEach(campana => {
                     let semanasCampana = dbData.semanas.filter(s => s.campana === campana);
                     
                     let netasMes = 0;
@@ -767,7 +1021,14 @@
             const selRiesgo = document.getElementById('selRiesgo').value;
             const hoy = new Date().toISOString().split('T')[0];
             
-            const campanasOrdenadas = [...new Set(dbData.semanas.map(s => s.campana))].reverse();
+            const campanasAEvaluar = campanasTodas.filter(c => campanasSeleccionadas.has(c));
+            const totalMeses = campanasAEvaluar.length;
+            if (totalMeses === 0) {
+                alert("Por favor seleccioná al menos un mes para exportar.");
+                return;
+            }
+            const alertaRoja = totalMeses >= 6 ? ALERTA_ROJA : Math.max(2, Math.ceil(totalMeses * 0.75));
+            const alertaAmarilla = totalMeses >= 6 ? ALERTA_AMARILLA : Math.max(1, Math.ceil(totalMeses * 0.45));
             let { rowsToRender, seniorsOnly } = getRowsToRender(selSuc);
             
             rowsToRender.forEach(rowDef => {
@@ -791,7 +1052,7 @@
                     "Equipo/Sucursal": subTitulo
                 };
                 
-                campanasOrdenadas.forEach(campana => {
+                campanasAEvaluar.forEach(campana => {
                     let semanasCampana = dbData.semanas.filter(s => s.campana === campana);
                     let netasMes = 0, objMes = 0, isActiveMes = false, maxFechaFinMes = '';
                     
@@ -837,16 +1098,16 @@
                     }
                 });
                 
-                if (selRiesgo === 'ROJO' && falladasMeses < ALERTA_ROJA) return;
-                if (selRiesgo === 'AMARILLO' && (falladasMeses < ALERTA_AMARILLA || falladasMeses >= ALERTA_ROJA)) return;
-                if (selRiesgo === 'VERDE' && falladasMeses >= ALERTA_AMARILLA) return;
+                if (selRiesgo === 'ROJO' && falladasMeses < alertaRoja) return;
+                if (selRiesgo === 'AMARILLO' && (falladasMeses < alertaAmarilla || falladasMeses >= alertaRoja)) return;
+                if (selRiesgo === 'VERDE' && falladasMeses >= alertaAmarilla) return;
                 
                 let rowDataFinal = {
                     "Nombre": rowData["Nombre"],
                     "Equipo/Sucursal": rowData["Equipo/Sucursal"],
-                    "Meses Fallados": falladasMeses,
+                    "Meses Fallados": `${falladasMeses} / ${totalMeses}`,
                     "Saldo Histórico": saldoAcum,
-                    "Estado de Riesgo": falladasMeses >= ALERTA_ROJA ? "Sanción (Rojo)" : (falladasMeses >= ALERTA_AMARILLA ? "Alerta (Amarillo)" : "Saludable (Verde)")
+                    "Estado de Riesgo": falladasMeses >= alertaRoja ? "Sanción (Rojo)" : (falladasMeses >= alertaAmarilla ? "Alerta (Amarillo)" : "Saludable (Verde)")
                 };
                 
                 Object.keys(rowData).forEach(k => {
