@@ -793,12 +793,13 @@
 
         // CARGA DE DATOS DE SUPABASE
         async function cargarDatosCompletos() {
-            const [resP, resE, resA, resS, resH] = await Promise.all([
+            const [resP, resE, resA, resS, resH, resSnap] = await Promise.all([
                 clienteSupabase.from('perfiles').select('*'),
                 clienteSupabase.from('equipos').select('*').order('nombre'),
                 clienteSupabase.from('agencias').select('*').order('nombre'),
                 clienteSupabase.from('semanas_config').select('*'),
-                clienteSupabase.from('historial_objetivos').select('*')
+                clienteSupabase.from('historial_objetivos').select('*'),
+                clienteSupabase.from('snapshot_campanas').select('*')
             ]);
 
             if (resP.error) throw resP.error;
@@ -811,6 +812,7 @@
             dbData.agencias = resA.data || [];
             dbData.semanas = resS.data || [];
             dbData.historial = resH.data || [];
+            dbData.snapshots = (resSnap && resSnap.data) ? resSnap.data : [];
 
             // Descubrir todas las campañas oficiales (Julio 2026 en adelante, excluyendo Mayo y Junio por ser pruebas)
             const setCampanas = new Set(campanasOrden);
@@ -898,6 +900,11 @@
                 let campStats = {};
 
                 campanasOrden.forEach(camp => {
+                    // Si existe foto congelada de esta campaña, usar los miembros históricos de ese equipo
+                    const snap = (dbData.snapshots || []).find(s => s.campana === camp);
+                    const perfilesCamp = (snap && snap.perfiles && snap.perfiles.length > 0) ? snap.perfiles : dbData.perfiles;
+                    const vendsEquipoCamp = perfilesCamp.filter(p => p.equipo_id === eq.id);
+
                     const vCamp = dbData.ventas.filter(v => v.campana === camp);
                     const semsCamp = dbData.semanas.filter(s => s.campana === camp);
                     const defaultSemObj = semsCamp.reduce((sum, s) => sum + (s.objetivo || 0), 0);
@@ -906,7 +913,7 @@
                     let netas = 0, brutas = 0, bajas = 0, monto = 0, obj = 0;
                     let activeVends = 0;
 
-                    vendsEquipo.forEach(v => {
+                    vendsEquipoCamp.forEach(v => {
                         const misVentas = vCamp.filter(x => x.vendedor_id === v.id);
                         const b = misVentas.reduce((sum, x) => sum + (x.ventas_cerradas || 0), 0);
                         const baj = misVentas.reduce((sum, x) => sum + (x.bajas || 0), 0);

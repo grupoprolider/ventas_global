@@ -167,9 +167,10 @@
             width: 100%;
             padding: 8px;
             border-radius: 4px;
-            border: 1px solid #444;
-            background: #111;
+            border: 1px solid #3d4f61;
+            background: #111a24;
             color: white;
+            color-scheme: dark;
         }
 
         button {
@@ -333,6 +334,10 @@
                             <option value="Junior">Junior (20%)</option>
                         </select>
                     </div>
+                    <div>
+                        <label>Fecha de Alta</label>
+                        <input type="date" id="per_alta" style="padding: 8px; border-radius: 4px; border: 1px solid #3d4f61; background: #111a24; color: #fff; color-scheme: dark;">
+                    </div>
                     <button class="btn-save" onclick="crearPersonal()">Dar de Alta</button>
                 </div>
             </div>
@@ -340,15 +345,15 @@
             <div class="card-admin">
                 <h3>Gestión y Asignación de Equipos</h3>
                 <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
-                    <select id="filtro_estado_personal" onchange="aplicarFiltrosPersonal()" style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Poppins', sans-serif; font-weight: bold;">
+                    <select id="filtro_estado_personal" onchange="aplicarFiltrosPersonal()" style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #3d4f61; background: #111a24; color: #fff; font-family: 'Poppins', sans-serif; font-weight: bold; outline: none;">
                         <option value="ACTIVOS">Solo Activos</option>
                         <option value="BAJAS">Solo Bajas</option>
                         <option value="TODOS">Todos (Activos y Bajas)</option>
                     </select>
-                    <select id="filtro_agencia_personal" onchange="aplicarFiltrosPersonal()" style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Poppins', sans-serif; font-weight: bold;">
+                    <select id="filtro_agencia_personal" onchange="aplicarFiltrosPersonal()" style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #3d4f61; background: #111a24; color: #fff; font-family: 'Poppins', sans-serif; font-weight: bold; outline: none;">
                         <option value="TODAS">Todas las Agencias</option>
                     </select>
-                    <select id="filtro_equipo_personal" onchange="aplicarFiltrosPersonal()" style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Poppins', sans-serif; font-weight: bold;">
+                    <select id="filtro_equipo_personal" onchange="aplicarFiltrosPersonal()" style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #3d4f61; background: #111a24; color: #fff; font-family: 'Poppins', sans-serif; font-weight: bold; outline: none;">
                         <option value="TODOS">Todos los Equipos</option>
                     </select>
                 </div>
@@ -359,8 +364,10 @@
                             <th>Equipo</th>
                             <th>Rol</th>
                             <th>Categoría</th>
+                            <th>F. Alta</th>
+                            <th>F. Baja</th>
                             <th style="text-align:center;">PIN (ACCESO)</th>
-<th>Acciones</th>
+                            <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -381,10 +388,38 @@
             
             <div class="card-admin" style="margin-top: 20px; border-left: 5px solid #e74c3c;">
                 <h3><i class="fa-solid fa-rotate"></i> Reinicio Masivo de Objetivos (Nueva Campaña)</h3>
-                <p style="font-size: 13px; color: #555;">Utilizá esta opción al inicio de una nueva campaña para resetear los objetivos de <b>todos los asesores</b> al valor por defecto.</p>
+                <p style="font-size: 13px; color: #a0aec0;">Utilizá esta opción al inicio de una nueva campaña para resetear los objetivos de <b>todos los asesores</b> al valor por defecto. Al reiniciar, automáticamente se congela la foto de la campaña saliente para blindar sus rankings históricos.</p>
                 <div class="form-row" style="align-items: flex-end;">
                     <div><label>Meta por Defecto (Ventas)</label><input type="number" id="obj_default_vts" value="18" style="width: 150px; font-weight: bold; font-size: 16px; text-align: center;"></div>
                     <button class="btn-save" style="background-color: #e74c3c;" onclick="reiniciarObjetivosMasivos()">Reiniciar Todos los Objetivos</button>
+                </div>
+            </div>
+
+            <!-- Card de Fotos de Estructura de Campaña (Congelar Historial) -->
+            <div class="card-admin" style="margin-top: 20px; border-left: 5px solid var(--gpl-dorado);">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid #334455; padding-bottom: 10px;">
+                    <h3 style="margin: 0; border: none; padding: 0; display: inline-flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-camera-retro"></i> Fotos de Estructura de Campaña (Congelar Historial)
+                    </h3>
+                    <span id="badge_status_foto" style="font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 12px; background: #27ae60; color: white;">Consultando...</span>
+                </div>
+                <p style="font-size: 13px; color: #a0aec0; margin-top: 0; line-height: 1.5;">
+                    Al congelar la foto de una campaña cerrada, se almacena la <b>estructura organizacional exacta</b> de ese momento (equipos, agencias, líderes y asesores). De esta manera, cualquier cambio futuro (creación de nuevos equipos como Boreas, pases de sucursal, bajas o altas) no alterará los rankings, comisiones ni auditorías de campañas pasadas.
+                </p>
+                <div class="form-row" style="align-items: flex-end;">
+                    <div style="flex: 2; min-width: 240px;">
+                        <label>Seleccionar Campaña</label>
+                        <select id="sel_foto_campana" onchange="verificarEstadoFotoCampana()" style="background: #111a24; color: #fff; border: 1px solid #3d4f61; padding: 8px 10px; border-radius: 5px; font-weight: 600;">
+                        </select>
+                    </div>
+                    <button class="btn-save" style="background: #006779; color: white; display: inline-flex; align-items: center; gap: 6px;" onclick="guardarFotoCampanaManual()">
+                        <i class="fa-solid fa-camera"></i> Guardar / Congelar Foto
+                    </button>
+                    <button class="btn-save" style="background: #3d4f61; color: white; display: inline-flex; align-items: center; gap: 6px;" onclick="verResumenFotoCampana()">
+                        <i class="fa-solid fa-eye"></i> Ver Resumen de Foto
+                    </button>
+                </div>
+                <div id="resumen_foto_container" style="display: none; margin-top: 15px; padding: 14px; background: rgba(0,0,0,0.35); border-radius: 6px; border: 1px solid #334455; font-size: 13px;">
                 </div>
             </div>
         </div>
@@ -665,6 +700,11 @@
             document.querySelectorAll('.nav-tabs li').forEach(l => l.classList.remove('active'));
             document.getElementById('tab' + idx).classList.add('active');
             document.querySelectorAll('.nav-tabs li')[idx].classList.add('active');
+            if (idx === 3) {
+                poblarSelectorFotoCampana();
+            } else if (idx === 4) {
+                poblarFiltrosAuditoria();
+            }
             refrescarDatos();
         cargarCompetencias();
         cargarParticipantesCompetencia();
@@ -790,6 +830,20 @@
                 if (mIndex > 11) { mIndex = 0; y++; }
                 const campanaActual = `Campaña ${meses[mIndex]} ${y}`;
 
+                // Campaña saliente anterior
+                let mAnt = hoy.getDate() >= 16 ? hoy.getMonth() : hoy.getMonth() - 1;
+                let yAnt = hoy.getFullYear();
+                if (mAnt < 0) { mAnt = 11; yAnt--; }
+                const campanaSaliente = `Campaña ${meses[mAnt]} ${yAnt}`;
+
+                // Congelar automáticamente la foto de la campaña saliente
+                try {
+                    await congelarFotoCampana(campanaSaliente);
+                    console.log(`Foto congelada automáticamente para ${campanaSaliente}`);
+                } catch(eSnap) {
+                    console.warn("No se pudo congelar snapshot automáticamente:", eSnap);
+                }
+
                 // Guardar en el historial
                 const { data: perfiles } = await clienteSupabase.from('perfiles').select('id, objetivo_campana');
                 if (perfiles) {
@@ -862,7 +916,16 @@
 
         function cargarPersonal(perfiles, equipos) {
             const tbody = document.querySelector('#tabla_personal tbody');
-            tbody.innerHTML = perfiles.map(p => `<tr><td>${p.nombre}</td><td><select onchange="updatePerfil('${p.id}', 'equipo_id', this.value)"><option value="">Sin Equipo</option>${equipos.map(e => `<option value="${e.id}" ${e.id === p.equipo_id ? 'selected' : ''}>${e.nombre}</option>`).join('')}</select></td><td><select onchange="updatePerfil('${p.id}', 'rol', this.value)"><option value="Vendedor" ${p.rol === 'Vendedor' ? 'selected' : ''}>Vendedor</option><option value="Líder de Asesores" ${p.rol === 'Líder de Asesores' ? 'selected' : ''}>Líder de Asesores</option><option value="Líder de Equipos" ${p.rol === 'Líder de Equipos' ? 'selected' : ''}>Líder de Equipos</option><option value="Líder de Sucursal" ${p.rol === 'Líder de Sucursal' ? 'selected' : ''}>Líder de Sucursal</option></select></td><td><select onchange="updatePerfil('${p.id}', 'categoria', this.value)"><option value="Senior" ${p.categoria === 'Senior' ? 'selected' : ''}>Senior</option><option value="Junior" ${p.categoria === 'Junior' ? 'selected' : ''}>Junior</option></select></td><td><input type="text" placeholder="PIN" value="${p.pin_acceso || ''}" onchange="updatePerfil('${p.id}', 'pin_acceso', this.value)" style="width:60px; padding:6px; text-align:center; font-weight:bold; border: 1px solid #444; background: #222; color: #fff; border-radius: 4px;"></td><td><button class="btn-edit" onclick="renombrar('perfiles', '${p.id}', '${p.nombre}')">Renombrar</button><button class="btn-del" style="background-color: #f39c12;" onclick="darDeBajaPerfil('${p.id}', '${p.nombre}')">Baja Lógica</button><button class="btn-del" style="background-color: #9b59b6;" onclick="toggleOcultoPerfil('${p.id}', '${p.nombre}')">Ocultar/Lic.</button><button class="btn-del" onclick="borrar('perfiles', '${p.id}')">Eliminar</button></td></tr>`).join('');
+            tbody.innerHTML = perfiles.map(p => `<tr>
+                <td>${p.nombre}</td>
+                <td><select onchange="updatePerfil('${p.id}', 'equipo_id', this.value)"><option value="">Sin Equipo</option>${equipos.map(e => `<option value="${e.id}" ${e.id === p.equipo_id ? 'selected' : ''}>${e.nombre}</option>`).join('')}</select></td>
+                <td><select onchange="updatePerfil('${p.id}', 'rol', this.value)"><option value="Vendedor" ${p.rol === 'Vendedor' ? 'selected' : ''}>Vendedor</option><option value="Líder de Asesores" ${p.rol === 'Líder de Asesores' ? 'selected' : ''}>Líder de Asesores</option><option value="Líder de Equipos" ${p.rol === 'Líder de Equipos' ? 'selected' : ''}>Líder de Equipos</option><option value="Líder de Sucursal" ${p.rol === 'Líder de Sucursal' ? 'selected' : ''}>Líder de Sucursal</option></select></td>
+                <td><select onchange="updatePerfil('${p.id}', 'categoria', this.value)"><option value="Senior" ${p.categoria === 'Senior' ? 'selected' : ''}>Senior</option><option value="Junior" ${p.categoria === 'Junior' ? 'selected' : ''}>Junior</option></select></td>
+                <td><input type="date" value="${p.fecha_alta ? p.fecha_alta.split('T')[0] : ''}" onchange="updatePerfil('${p.id}', 'fecha_alta', this.value)" style="padding: 4px 6px; font-size: 11px; border-radius: 4px; border: 1px solid #3d4f61; background: #111a24; color: #fff; color-scheme: dark; width: 115px;" title="Fecha de Alta"></td>
+                <td><input type="date" value="${p.fecha_baja ? p.fecha_baja.split('T')[0] : ''}" onchange="updatePerfil('${p.id}', 'fecha_baja', this.value)" style="padding: 4px 6px; font-size: 11px; border-radius: 4px; border: 1px solid #3d4f61; background: #111a24; color: #fff; color-scheme: dark; width: 115px;" title="Fecha de Baja"></td>
+                <td><input type="text" placeholder="PIN" value="${p.pin_acceso || ''}" onchange="updatePerfil('${p.id}', 'pin_acceso', this.value)" style="width:60px; padding:6px; text-align:center; font-weight:bold; border: 1px solid #444; background: #222; color: #fff; border-radius: 4px;"></td>
+                <td><button class="btn-edit" onclick="renombrar('perfiles', '${p.id}', '${p.nombre}')">Renombrar</button><button class="btn-del" style="background-color: #f39c12;" onclick="darDeBajaPerfil('${p.id}', '${p.nombre}')">Baja Lógica</button><button class="btn-del" style="background-color: #9b59b6;" onclick="toggleOcultoPerfil('${p.id}', '${p.nombre}')">Ocultar/Lic.</button><button class="btn-del" onclick="borrar('perfiles', '${p.id}')">Eliminar</button></td>
+            </tr>`).join('');
         }
 
         function calcularProrrateoObjetivo(metaBase = 18) {
@@ -892,12 +955,16 @@
             const n = document.getElementById('per_nombre').value.trim();
             const r = document.getElementById('per_rol').value;
             const c = document.getElementById('per_cat').value;
+            const fa = document.getElementById('per_alta')?.value || new Date().toISOString().split('T')[0];
             if (!n) return alert("Ingresá el nombre");
             const objetivoAsignado = calcularProrrateoObjetivo(18);
             const { error } = await clienteSupabase.from('perfiles').insert([{ 
-                nombre: n, rol: r, categoria: c, objetivo_campana: objetivoAsignado 
+                nombre: n, rol: r, categoria: c, objetivo_campana: objetivoAsignado, fecha_alta: fa 
             }]);
-            if (error) alert("Error: " + error.message); else { document.getElementById('per_nombre').value = ''; refrescarDatos(); }
+            if (error) alert("Error: " + error.message); else { 
+                document.getElementById('per_nombre').value = ''; 
+                refrescarDatos(); 
+            }
         }
 
         async function updatePerfil(id, campo, valor) {
@@ -923,6 +990,170 @@
         let campanaDefaultGlobal = 'TODAS';
 
         // --- SISTEMA DE AUDITORÍA, FILTROS Y ASIENTOS DE REVERSIÓN ---
+        // --- GESTIÓN DE SNAPSHOTS DE ESTRUCTURA DE CAMPAÑA (FOTOS HISTÓRICAS) ---
+        async function poblarSelectorFotoCampana() {
+            const sel = document.getElementById('sel_foto_campana');
+            if (!sel) return;
+
+            let campanas = [
+                'Campaña Diciembre 2026',
+                'Campaña Noviembre 2026',
+                'Campaña Octubre 2026',
+                'Campaña Septiembre 2026',
+                'Campaña Agosto 2026',
+                'Campaña Julio 2026',
+                'Campaña Junio 2026',
+                'Campaña Mayo 2026'
+            ];
+
+            const mesesNombres = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+            function getCampanaSortKey(cStr) {
+                if (!cStr) return 0;
+                const clean = cStr.replace('Campaña', '').trim();
+                const parts = clean.split(' ');
+                if (parts.length >= 2) {
+                    const m = mesesNombres.indexOf(parts[0]);
+                    const y = parseInt(parts[1]);
+                    if (m !== -1 && !isNaN(y)) return y * 100 + (m + 1);
+                }
+                return 0;
+            }
+
+            try {
+                const { data: semData } = await clienteSupabase
+                    .from('semanas_config')
+                    .select('campana')
+                    .order('fecha_inicio', { ascending: false });
+                if (semData) {
+                    semData.forEach(s => {
+                        if (s.campana && !campanas.includes(s.campana)) campanas.push(s.campana);
+                    });
+                }
+            } catch(e) {}
+
+            campanas = Array.from(new Set(campanas)).filter(c => {
+                const k = getCampanaSortKey(c);
+                return k >= 202401 && k <= 203012;
+            }).sort((a, b) => getCampanaSortKey(b) - getCampanaSortKey(a));
+
+            const prev = sel.value;
+            sel.innerHTML = campanas.map(c => `<option value="${c}" style="background:#111a24; color:#fff;">${c}</option>`).join('');
+            if (prev && campanas.includes(prev)) {
+                sel.value = prev;
+            } else {
+                sel.value = 'Campaña Noviembre 2026';
+            }
+            verificarEstadoFotoCampana();
+        }
+
+        async function verificarEstadoFotoCampana() {
+            const campana = document.getElementById('sel_foto_campana')?.value;
+            const badge = document.getElementById('badge_status_foto');
+            const resumen = document.getElementById('resumen_foto_container');
+            if (!campana || !badge) return;
+            badge.textContent = 'Consultando...';
+            badge.style.background = '#7f8c8d';
+            if (resumen) resumen.style.display = 'none';
+
+            try {
+                const { data, error } = await clienteSupabase
+                    .from('snapshot_campanas')
+                    .select('campana, fecha_cierre, perfiles, equipos, agencias')
+                    .eq('campana', campana)
+                    .maybeSingle();
+
+                if (data && data.perfiles && data.perfiles.length > 0) {
+                    const fecha = data.fecha_cierre ? new Date(data.fecha_cierre).toLocaleDateString('es-AR') : '';
+                    badge.innerHTML = `<i class="fa-solid fa-lock"></i> FOTO CONGELADA (${fecha})`;
+                    badge.style.background = '#27ae60';
+                    badge.style.color = '#fff';
+                } else {
+                    badge.innerHTML = `<i class="fa-solid fa-lock-open"></i> ESTRUCTURA EN VIVO (Sin Congelar)`;
+                    badge.style.background = '#e67e22';
+                    badge.style.color = '#fff';
+                }
+            } catch(e) {
+                badge.textContent = 'Error';
+            }
+        }
+
+        async function congelarFotoCampana(campanaNombre) {
+            if (!campanaNombre) return { error: new Error("Nombre de campaña inválido") };
+            
+            async function fetchAll(table) {
+                let allData = [];
+                let s = 1000, f = 0;
+                while (true) {
+                    const { data } = await clienteSupabase.from(table).select('*').order('nombre').range(f, f + s - 1);
+                    if (!data || data.length === 0) break;
+                    allData = allData.concat(data);
+                    if (data.length < s) break;
+                    f += s;
+                }
+                return allData;
+            }
+
+            const perfiles = await fetchAll('perfiles');
+            const equipos = await fetchAll('equipos');
+            const agencias = await fetchAll('agencias');
+
+            const row = {
+                campana: campanaNombre,
+                perfiles: perfiles || [],
+                equipos: equipos || [],
+                agencias: agencias || [],
+                fecha_cierre: new Date().toISOString()
+            };
+            const { error } = await clienteSupabase.from('snapshot_campanas').upsert([row], { onConflict: 'campana' });
+            return { error };
+        }
+
+        async function guardarFotoCampanaManual() {
+            const campana = document.getElementById('sel_foto_campana')?.value;
+            if (!campana) return alert("Seleccioná una campaña");
+            if (!confirm(`¿Deseas congelar la foto de la estructura actual para "${campana}"?\n\nEsto guardará la plantilla completa de asesores, líderes, equipos y agencias tal como están ahora, blindando esta campaña de cambios futuros.`)) return;
+
+            const { error } = await congelarFotoCampana(campana);
+            if (error) {
+                alert("Error al congelar foto: " + error.message);
+            } else {
+                alert(`¡Foto de "${campana}" congelada con éxito!`);
+                verificarEstadoFotoCampana();
+            }
+        }
+
+        async function verResumenFotoCampana() {
+            const campana = document.getElementById('sel_foto_campana')?.value;
+            const resumen = document.getElementById('resumen_foto_container');
+            if (!campana || !resumen) return;
+
+            const { data, error } = await clienteSupabase
+                .from('snapshot_campanas')
+                .select('*')
+                .eq('campana', campana)
+                .maybeSingle();
+
+            if (!data || !data.perfiles || data.perfiles.length === 0) {
+                resumen.style.display = 'block';
+                resumen.innerHTML = `<span style="color:#e67e22;"><i class="fa-solid fa-triangle-exclamation"></i> No hay foto congelada para "${campana}". Esta campaña actualmente lee la estructura viva de la base de datos.</span>`;
+                return;
+            }
+
+            const nPer = (data.perfiles || []).length;
+            const nEq = (data.equipos || []).length;
+            const nAg = (data.agencias || []).length;
+            const fecha = data.fecha_cierre ? new Date(data.fecha_cierre).toLocaleString('es-AR') : 'Sin fecha';
+            const listaEq = (data.equipos || []).map(e => e.nombre).sort().join(', ');
+
+            resumen.style.display = 'block';
+            resumen.innerHTML = `
+                <div style="font-weight:bold; color:var(--gpl-dorado); margin-bottom:6px;"><i class="fa-solid fa-circle-check" style="color:#27ae60;"></i> Detalle de la Foto Congelada - ${campana}</div>
+                <div><b>Fecha de Cierre / Congelamiento:</b> ${fecha}</div>
+                <div style="margin-top:4px;"><b>Personal registrado:</b> ${nPer} personas | <b>Equipos:</b> ${nEq} | <b>Agencias:</b> ${nAg}</div>
+                <div style="margin-top:4px; font-size:12px; color:#cbd5e1;"><b>Equipos congelados:</b> ${listaEq || 'Ninguno'}</div>
+            `;
+        }
+
         async function poblarFiltrosAuditoria() {
             try {
                 const selectCampana = document.getElementById('filtro_campana_audit');
@@ -967,13 +1198,31 @@
                     if (vtasCamp && vtasCamp.length > 0) {
                         vtasCamp.forEach(v => {
                             if (v.campana && !campanas.includes(v.campana)) {
-                                campanas.unshift(v.campana);
+                                campanas.push(v.campana);
                             }
                         });
                     }
                 } catch (e) {
                     console.error("Error obteniendo campañas para auditoría:", e);
                 }
+
+                // Filtrar solo campañas de años reales (2024 a 2030) y ordenar descendente (más recientes primero)
+                const mNombres = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+                function sortCamp(cStr) {
+                    if (!cStr) return 0;
+                    const parts = cStr.replace('Campaña', '').trim().split(' ');
+                    if (parts.length >= 2) {
+                        const m = mNombres.indexOf(parts[0]);
+                        const y = parseInt(parts[1]);
+                        if (m !== -1 && !isNaN(y)) return y * 100 + (m + 1);
+                    }
+                    return 0;
+                }
+
+                campanas = Array.from(new Set(campanas)).filter(c => {
+                    const k = sortCamp(c);
+                    return k >= 202401 && k <= 203012;
+                }).sort((a, b) => sortCamp(b) - sortCamp(a));
 
                 // Determinar campaña actual calculada
                 const hoy = new Date();
@@ -1155,9 +1404,26 @@
             let lblTotal = document.getElementById('lbl_total_audit');
             if (lblTotal) lblTotal.textContent = 'Cargando...';
 
-            const personal = (window.datosGlobalesMaster?.perfiles || globalGenteAudit || []);
-            const equipos = (window.datosGlobalesMaster?.equipos || []);
-            const agencias = (window.datosGlobalesMaster?.agencias || []);
+            let personal = (window.datosGlobalesMaster?.perfiles || globalGenteAudit || []);
+            let equipos = (window.datosGlobalesMaster?.equipos || []);
+            let agencias = (window.datosGlobalesMaster?.agencias || []);
+
+            if (campanaSel && campanaSel !== 'TODAS') {
+                try {
+                    const { data: snap } = await clienteSupabase
+                        .from('snapshot_campanas')
+                        .select('perfiles, equipos, agencias')
+                        .eq('campana', campanaSel)
+                        .maybeSingle();
+                    if (snap && snap.perfiles && snap.perfiles.length > 0) {
+                        personal = snap.perfiles;
+                        equipos = snap.equipos;
+                        agencias = snap.agencias;
+                    }
+                } catch(eSnap) {
+                    console.warn("No se pudo cargar snapshot para auditoría:", eSnap);
+                }
+            }
 
             // Determinar vendedores filtrados por Sucursal / Equipo si no se eligió un vendedor puntual
             let vIdsFiltro = null;
@@ -1438,10 +1704,11 @@
             if (nombreActual.includes('(BAJA)')) {
                 return alert("Este perfil ya está dado de baja.");
             }
-            if (!confirm(`¿Estás seguro de que querés marcar a ${nombreActual} como (BAJA) ?\nEsto ocultará su perfil (salvo que tenga ventas) de los radares activos.`)) return;
+            if (!confirm(`¿Estás seguro de que querés marcar a ${nombreActual} como (BAJA) ?\nEsto ocultará su perfil (salvo que tenga ventas) de los radares activos y registrará la fecha de baja de hoy.`)) return;
             
             const nuevoNombre = nombreActual + ' (BAJA)';
-            const { error } = await clienteSupabase.from('perfiles').update({ nombre: nuevoNombre }).eq('id', id);
+            const hoyStr = new Date().toISOString().split('T')[0];
+            const { error } = await clienteSupabase.from('perfiles').update({ nombre: nuevoNombre, fecha_baja: hoyStr }).eq('id', id);
             
             if (error) {
                 alert("Error al dar de baja: " + error.message);
@@ -1643,8 +1910,16 @@
                         } else if (typeof fechaExcel === 'string') {
                             let p = fechaExcel.split('/');
                             if(p.length === 3) {
-                                fechaDB = new Date(p[2], p[1]-1, p[0]);
+                                let yr = parseInt(p[2]);
+                                if (yr < 100) yr += 2000;
+                                fechaDB = new Date(yr, p[1]-1, p[0]);
                             }
+                        }
+
+                        // Sanidad: evitar que fechas mal tipeadas en Excel (ej. 2094, 2099) generen años ficticios
+                        const anioActualSistema = new Date().getFullYear();
+                        if (fechaDB.getFullYear() > anioActualSistema + 1 || fechaDB.getFullYear() < 2024) {
+                            fechaDB.setFullYear(anioActualSistema);
                         }
                         
                         let dia = fechaDB.getDate();
@@ -2353,6 +2628,13 @@ async function guardarEdicionVenta() {
         cargarAuditoria();
     }
 }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const perAlta = document.getElementById('per_alta');
+            if (perAlta) perAlta.value = new Date().toISOString().split('T')[0];
+            refrescarDatos();
+            poblarSelectorFotoCampana();
+        });
 </script>
 
 </body>

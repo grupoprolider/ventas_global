@@ -980,12 +980,21 @@
                     return allData;
                 }
 
-                const [perfiles, equipos, agencias, reqHistorial] = await Promise.all([
+                let [perfiles, equipos, agencias, reqHistorial, reqSnapshot] = await Promise.all([
                     fetchAll('perfiles'),
                     fetchAll('equipos'),
                     fetchAll('agencias'),
-                    clienteSupabase.from('historial_objetivos').select('*').eq('campana', campanaStr)
+                    clienteSupabase.from('historial_objetivos').select('*').eq('campana', campanaStr),
+                    clienteSupabase.from('snapshot_campanas').select('perfiles, equipos, agencias').eq('campana', campanaStr).maybeSingle()
                 ]);
+
+                // Si existe foto congelada para esta campaña, blindar con la estructura exacta
+                if (reqSnapshot && reqSnapshot.data && reqSnapshot.data.perfiles && reqSnapshot.data.perfiles.length > 0) {
+                    perfiles = reqSnapshot.data.perfiles;
+                    equipos = reqSnapshot.data.equipos;
+                    agencias = reqSnapshot.data.agencias;
+                    console.log(`[Snapshot Gerencia] Foto congelada cargada para "${campanaStr}"`);
+                }
 
                 // Integrar historial de objetivos si existe para esta campaña
                 if (reqHistorial.data) {
