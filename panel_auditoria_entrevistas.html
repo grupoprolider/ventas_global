@@ -295,13 +295,19 @@
                     </select>
                 </div>
                 <div class="filtro-item">
-                    <label>Estado</label>
-                    <select id="filtro_est">
-                        <option value="TODOS">Todos los Estados</option>
+                    <label>Motivo</label>
+                    <select id="filtro_motivo" onchange="renderizarTabla()">
+                        <option value="TODOS">Todos los Motivos</option>
+                    </select>
+                </div>
+                <div class="filtro-item">
+                    <label>Sugerencia</label>
+                    <select id="filtro_sugerencia" onchange="renderizarTabla()">
+                        <option value="TODAS">Todas las Sugerencias</option>
                     </select>
                 </div>
                 <div class="filtro-item" style="display: flex; align-items: center; gap: 8px; margin-top: 25px;">
-                    <input type="checkbox" id="filtro_tel_valido" style="width: 16px; height: 16px; cursor: pointer;">
+                    <input type="checkbox" id="filtro_tel_valido" style="width: 16px; height: 16px; cursor: pointer;" onchange="renderizarTabla()">
                     <label for="filtro_tel_valido" style="margin: 0; cursor: pointer; color: #555;">Ocultar sin teléfono válido</label>
                 </div>
                 <div>
@@ -351,8 +357,56 @@
         }
         const clienteSupabase = supabase.createClient('https://pumpwqyazqaxeeknrhyo.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1bXB3cXlhenFheGVla25yaHlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MjQ4ODEsImV4cCI6MjA5NDIwMDg4MX0.-AQZZYAt-uskDLUpbiafJXbHgW0lErf8bwEnk7eq1DE');
         
-        let globalEstados = [];
         window.datosExcel = [];
+        window.datosRaw = [];
+
+        const MOTIVOS_DEFAULT = [
+            'El precio.',
+            'Este mes no lo puedo pagar.',
+            'Necesito más información.',
+            'No era lo que estaba buscando.',
+            'Prefiero esperar.',
+            'Ya tengo otra cobertura.',
+            'Otro.'
+        ];
+
+        const SUGERENCIAS_DEFAULT = [
+            'Más beneficios.',
+            'Mejor información sobre el servicio.',
+            'Un asesoramiento más personalizado.',
+            'Un precio más conveniente.',
+            'Otro.'
+        ];
+
+        function actualizarOpcionesFiltros(data) {
+            const selMotivo = document.getElementById('filtro_motivo');
+            const selSugerencia = document.getElementById('filtro_sugerencia');
+            if (!selMotivo || !selSugerencia) return;
+
+            const valMotivo = selMotivo.value || 'TODOS';
+            const valSugerencia = selSugerencia.value || 'TODAS';
+
+            const setMotivos = new Set(MOTIVOS_DEFAULT);
+            const setSugerencias = new Set(SUGERENCIAS_DEFAULT);
+
+            (data || []).forEach(v => {
+                try {
+                    const extra = v.dni ? JSON.parse(v.dni) : {};
+                    const m = String(extra.motivo || '').trim();
+                    const s = String(extra.mejora || '').trim();
+                    if (m && m !== '-' && m !== 'null') setMotivos.add(m);
+                    if (s && s !== '-' && s !== 'null') setSugerencias.add(s);
+                } catch(e) {}
+            });
+
+            const arrMotivos = [...setMotivos].sort((a,b) => a.localeCompare(b));
+            selMotivo.innerHTML = '<option value="TODOS">Todos los Motivos</option>' +
+                arrMotivos.map(m => `<option value="${m}" ${m === valMotivo ? 'selected' : ''}>${m}</option>`).join('');
+
+            const arrSugerencias = [...setSugerencias].sort((a,b) => a.localeCompare(b));
+            selSugerencia.innerHTML = '<option value="TODAS">Todas las Sugerencias</option>' +
+                arrSugerencias.map(s => `<option value="${s}" ${s === valSugerencia ? 'selected' : ''}>${s}</option>`).join('');
+        }
 
         async function init() {
             // Cargar Vendedores
@@ -378,16 +432,11 @@
                 document.getElementById('filtro_camp').innerHTML = '<option value="TODAS">Todas</option>' + unicas.map(c => `<option value="${c}">${c}</option>`).join('');
                 
                 // Set default to current campaign
-                
                 document.getElementById('filtro_camp').value = campanaActual;
             }
             
-            // Cargar Estados
-            const { data: estados } = await clienteSupabase.from('opciones_estados_entrevista').select('nombre').order('nombre');
-            if(estados) {
-                globalEstados = estados.map(e => e.nombre);
-                document.getElementById('filtro_est').innerHTML = '<option value="TODOS">Todos los Estados</option>' + globalEstados.map(e => `<option value="${e}">${e}</option>`).join('');
-            }
+            // Inicializar opciones de Motivo y Sugerencia
+            actualizarOpcionesFiltros([]);
             
             // Auto-load on startup
             setTimeout(() => cargarAuditoriaEntrevistas(), 300);
@@ -399,40 +448,66 @@
             
             const vId = document.getElementById('filtro_vend').value;
             const cStr = document.getElementById('filtro_camp').value;
-            const eStr = document.getElementById('filtro_est').value;
             
             let query = clienteSupabase.from('registro_entrevistas').select('*, perfiles(nombre)');
             if(vId) query = query.eq('vendedor_id', vId);
             if(cStr !== 'TODAS') query = query.eq('campana', cStr);
-            if(eStr !== 'TODOS') query = query.eq('estado', eStr);
             
-            query = query.order('created_at', { ascending: false }).limit(500); // 500 max display
+            query = query.order('created_at', { ascending: false }).limit(1000); // 1000 max display
             
             const { data, error } = await query;
             btn.innerHTML = '<i class="fa-solid fa-search"></i> Buscar';
             
             if(error) return alert("Error: " + error.message);
             
-            window.datosExcel = data;
-            
+            window.datosRaw = data || [];
+            actualizarOpcionesFiltros(window.datosRaw);
+            renderizarTabla();
+        }
+
+        function renderizarTabla() {
             const tbody = document.querySelector('#tabla_auditoria tbody');
-            
-            let hideInvalidPhone = document.getElementById('filtro_tel_valido').checked;
-            let dataFiltrada = data;
-            
-            if (hideInvalidPhone && data) {
-                dataFiltrada = data.filter(v => {
-                    let tel = v.telefono ? String(v.telefono).replace(/\D/g, '') : '';
-                    return tel.length >= 6;
-                });
+            if(!window.datosRaw) {
+                tbody.innerHTML = '<tr><td colspan="9" class="empty-state">Utilizá los filtros y presioná Buscar.</td></tr>';
+                return;
             }
+
+            const hideInvalidPhone = document.getElementById('filtro_tel_valido').checked;
+            const motivoSel = document.getElementById('filtro_motivo') ? document.getElementById('filtro_motivo').value : 'TODOS';
+            const sugerenciaSel = document.getElementById('filtro_sugerencia') ? document.getElementById('filtro_sugerencia').value : 'TODAS';
+
+            let dataFiltrada = window.datosRaw.filter(v => {
+                if (hideInvalidPhone) {
+                    let tel = v.telefono ? String(v.telefono).replace(/\D/g, '') : '';
+                    if (tel.length < 6) return false;
+                }
+
+                let extraData = {};
+                try {
+                    extraData = v.dni ? JSON.parse(v.dni) : {};
+                } catch(e) {
+                    extraData = { motivo: v.dni || '-', mejora: '-', calificacion: '-' };
+                }
+
+                if (motivoSel && motivoSel !== 'TODOS') {
+                    let m = String(extraData.motivo || '').trim();
+                    if (m !== motivoSel) return false;
+                }
+
+                if (sugerenciaSel && sugerenciaSel !== 'TODAS') {
+                    let s = String(extraData.mejora || '').trim();
+                    if (s !== sugerenciaSel) return false;
+                }
+
+                return true;
+            });
+
+            window.datosExcel = dataFiltrada;
 
             if(!dataFiltrada || dataFiltrada.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No se encontraron resultados.</td></tr>';
                 return;
             }
-            
-            window.datosExcel = dataFiltrada;
             
             tbody.innerHTML = dataFiltrada.map(v => {
                 let d = new Date(v.created_at);
@@ -496,17 +571,8 @@
                     <td class="col-motivo" style="white-space:normal; font-size:11px; line-height:1.3; color:#333;">${extraData.motivo || '-'}</td>
                     <td class="col-sugerencia" style="white-space:normal; font-size:11px; line-height:1.3; color:#333;">${extraData.mejora || '-'}</td>
                     <td class="col-accion" style="text-align:center;"><button class="btn-delete" onclick="eliminarProspecto('${v.id}')" title="Eliminar"><i class="fa-solid fa-trash"></i></button></td>
-                </tr>`;            }).join('');
-        }
-
-        async function updateEstado(id, selectElement) {
-            let nuevo = selectElement.value;
-            let colorEstado = nuevo.toLowerCase().includes('ok') ? '#27ae60' : (nuevo.toLowerCase().includes('sin') ? '#e74c3c' : '#34495e');
-            selectElement.style.borderColor = colorEstado;
-            selectElement.style.color = colorEstado;
-            
-            const { error } = await clienteSupabase.from('registro_entrevistas').update({ estado: nuevo }).eq('id', id);
-            if(error) alert("Error al guardar en base de datos: " + error.message);
+                </tr>`;
+            }).join('');
         }
 
         function editVendedor(id) {
